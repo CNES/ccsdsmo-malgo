@@ -31,7 +31,7 @@ import (
 )
 
 func (transport *TCPTransport) decode(buf []byte, from string) (*Message, error) {
-	decoder := binary.NewBinaryDecoder(buf)
+	decoder := binary.NewBinaryDecoder(buf, false)
 
 	b, err := decoder.Read()
 	if err != nil {
@@ -214,7 +214,9 @@ func (transport *TCPTransport) decode(buf []byte, from string) (*Message, error)
 		authenticationId = &transport.dfltAuthenticationId
 	}
 
-	body, err := decoder.ReadBody()
+	// The remaining part of the buffer corresponds to the body part
+	// of the message.
+	body, err := decoder.Remaining()
 
 	var msg *Message = &Message{
 		UriFrom:          urifrom,

@@ -32,7 +32,7 @@ func (transport *TCPTransport) encode(msg *Message) ([]byte, error) {
 	// TODO (AF): calculates the size of the encoded message
 	var length uint32 = 8192
 	buf := make([]byte, 0, length)
-	encoder := binary.NewBinaryEncoder(buf)
+	encoder := binary.NewBinaryEncoder(buf, false)
 
 	sdu, err := encodeSDU(msg.InteractionType, msg.InteractionStage)
 	if err != nil {
@@ -176,5 +176,5 @@ func (transport *TCPTransport) encode(msg *Message) ([]byte, error) {
 
 	err = encoder.WriteBody(msg.Body)
 
-	return encoder.Buffer(), nil
+	return encoder.Body(), nil
 }
