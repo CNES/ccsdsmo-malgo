@@ -32,10 +32,14 @@ import (
 	"time"
 )
 
+const (
+	VARINT bool = true
+)
+
 func TestByte(t *testing.T) {
 	var length uint32 = 8192
 	buf := make([]byte, 0, length)
-	encoder := binary.NewBinaryEncoder(buf)
+	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	var b byte = 0
 	for {
@@ -49,8 +53,8 @@ func TestByte(t *testing.T) {
 		}
 	}
 
-	buf = encoder.Buffer()
-	decoder := binary.NewBinaryDecoder(buf)
+	buf = encoder.Body()
+	decoder := binary.NewBinaryDecoder(buf, VARINT)
 	for i := 0; i < 256; i++ {
 		b, err := decoder.Read()
 		if err != nil {
@@ -65,7 +69,7 @@ func TestByte(t *testing.T) {
 func TestUInt32(t *testing.T) {
 	var length uint32 = 8192
 	buf := make([]byte, 0, length)
-	encoder := binary.NewBinaryEncoder(buf)
+	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	var list [65536]uint32
 	for i := 0; i < 65536; i++ {
@@ -78,8 +82,8 @@ func TestUInt32(t *testing.T) {
 		}
 	}
 
-	buf = encoder.Buffer()
-	decoder := binary.NewBinaryDecoder(buf)
+	buf = encoder.Body()
+	decoder := binary.NewBinaryDecoder(buf, VARINT)
 	for i, x := range list {
 		y, err := decoder.ReadUInt32()
 		if err != nil {
@@ -94,7 +98,7 @@ func TestUInt32(t *testing.T) {
 func TestUOctet(t *testing.T) {
 	var length uint32 = 8192
 	buf := make([]byte, 0, length)
-	encoder := binary.NewBinaryEncoder(buf)
+	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	var o UOctet = 0
 	for {
@@ -108,8 +112,8 @@ func TestUOctet(t *testing.T) {
 		}
 	}
 
-	buf = encoder.Buffer()
-	decoder := binary.NewBinaryDecoder(buf)
+	buf = encoder.Body()
+	decoder := binary.NewBinaryDecoder(buf, VARINT)
 	for i := 0; i < 256; i++ {
 		o, err := decoder.DecodeUOctet()
 		if err != nil {
@@ -126,7 +130,7 @@ func TestUOctet(t *testing.T) {
 func TestOctet(t *testing.T) {
 	var length uint32 = 8192
 	buf := make([]byte, 0, length)
-	encoder := binary.NewBinaryEncoder(buf)
+	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	var o Octet = -128
 	for {
@@ -140,8 +144,8 @@ func TestOctet(t *testing.T) {
 		}
 	}
 
-	buf = encoder.Buffer()
-	decoder := binary.NewBinaryDecoder(buf)
+	buf = encoder.Body()
+	decoder := binary.NewBinaryDecoder(buf, VARINT)
 	for i := -128; i < 128; i++ {
 		o, err := decoder.DecodeOctet()
 		if err != nil {
@@ -158,7 +162,7 @@ func TestOctet(t *testing.T) {
 func TestUShort(t *testing.T) {
 	var length uint32 = 8192
 	buf := make([]byte, 0, length)
-	encoder := binary.NewBinaryEncoder(buf)
+	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	var s UShort = 0
 	for {
@@ -172,8 +176,8 @@ func TestUShort(t *testing.T) {
 		}
 	}
 
-	buf = encoder.Buffer()
-	decoder := binary.NewBinaryDecoder(buf)
+	buf = encoder.Body()
+	decoder := binary.NewBinaryDecoder(buf, VARINT)
 	for i := 0; i < 65536; i++ {
 		s, err := decoder.DecodeUShort()
 		if err != nil {
@@ -190,7 +194,7 @@ func TestUShort(t *testing.T) {
 func TestShort(t *testing.T) {
 	var length uint32 = 8192
 	buf := make([]byte, 0, length)
-	encoder := binary.NewBinaryEncoder(buf)
+	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	var s Short = -32768
 	for {
@@ -204,12 +208,12 @@ func TestShort(t *testing.T) {
 		}
 	}
 
-	buf = encoder.Buffer()
-	decoder := binary.NewBinaryDecoder(buf)
+	buf = encoder.Body()
+	decoder := binary.NewBinaryDecoder(buf, VARINT)
 	for i := -32768; i < 32768; i++ {
 		s, err := decoder.DecodeShort()
 		if err != nil {
-			t.Fatalf("Error during decode: %d", i)
+			t.Fatalf("Error during decode (%s): %d", err, i)
 		}
 		if *s != Short(i) {
 			t.Errorf("Bad decoding, got: %d, want: %d", s, i)
@@ -222,7 +226,7 @@ func TestShort(t *testing.T) {
 func TestUInteger(t *testing.T) {
 	var length uint32 = 8192
 	buf := make([]byte, 0, length)
-	encoder := binary.NewBinaryEncoder(buf)
+	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	var list [65536]UInteger
 	for i := 0; i < len(list); i++ {
@@ -235,8 +239,8 @@ func TestUInteger(t *testing.T) {
 		}
 	}
 
-	buf = encoder.Buffer()
-	decoder := binary.NewBinaryDecoder(buf)
+	buf = encoder.Body()
+	decoder := binary.NewBinaryDecoder(buf, VARINT)
 	for i, x := range list {
 		y, err := decoder.DecodeUInteger()
 		if err != nil {
@@ -251,7 +255,7 @@ func TestUInteger(t *testing.T) {
 func TestNullableUInteger(t *testing.T) {
 	var length uint32 = 8192
 	buf := make([]byte, 0, length)
-	encoder := binary.NewBinaryEncoder(buf)
+	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	var list = []*UInteger{
 		nil,
@@ -273,8 +277,8 @@ func TestNullableUInteger(t *testing.T) {
 		}
 	}
 
-	buf = encoder.Buffer()
-	decoder := binary.NewBinaryDecoder(buf)
+	buf = encoder.Body()
+	decoder := binary.NewBinaryDecoder(buf, VARINT)
 	for i, x := range list {
 		y, err := decoder.DecodeNullableUInteger()
 		if err != nil {
@@ -295,7 +299,7 @@ func TestNullableUInteger(t *testing.T) {
 func TestInteger(t *testing.T) {
 	var length uint32 = 8192
 	buf := make([]byte, 0, length)
-	encoder := binary.NewBinaryEncoder(buf)
+	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	var list [65536]Integer
 	for i := 0; i < len(list); i++ {
@@ -308,8 +312,8 @@ func TestInteger(t *testing.T) {
 		}
 	}
 
-	buf = encoder.Buffer()
-	decoder := binary.NewBinaryDecoder(buf)
+	buf = encoder.Body()
+	decoder := binary.NewBinaryDecoder(buf, VARINT)
 	for i, x := range list {
 		y, err := decoder.DecodeInteger()
 		if err != nil {
@@ -326,7 +330,7 @@ func TestInteger(t *testing.T) {
 func TestULong(t *testing.T) {
 	var length uint32 = 8192
 	buf := make([]byte, 0, length)
-	encoder := binary.NewBinaryEncoder(buf)
+	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	var list [65536]ULong
 	for i := 0; i < len(list); i++ {
@@ -339,8 +343,8 @@ func TestULong(t *testing.T) {
 		}
 	}
 
-	buf = encoder.Buffer()
-	decoder := binary.NewBinaryDecoder(buf)
+	buf = encoder.Body()
+	decoder := binary.NewBinaryDecoder(buf, VARINT)
 	for i, x := range list {
 		y, err := decoder.DecodeULong()
 		if err != nil {
@@ -357,7 +361,7 @@ func TestULong(t *testing.T) {
 func TestLong(t *testing.T) {
 	var length uint32 = 8192
 	buf := make([]byte, 0, length)
-	encoder := binary.NewBinaryEncoder(buf)
+	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	var list [65536]Long
 	for i := 0; i < len(list); i++ {
@@ -370,8 +374,8 @@ func TestLong(t *testing.T) {
 		}
 	}
 
-	buf = encoder.Buffer()
-	decoder := binary.NewBinaryDecoder(buf)
+	buf = encoder.Body()
+	decoder := binary.NewBinaryDecoder(buf, VARINT)
 	for i, x := range list {
 		y, err := decoder.DecodeLong()
 		if err != nil {
@@ -388,7 +392,7 @@ func TestLong(t *testing.T) {
 func TestFloat(t *testing.T) {
 	var length uint32 = 8192
 	buf := make([]byte, 0, length)
-	encoder := binary.NewBinaryEncoder(buf)
+	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	var list [65536]Float
 	for i := 0; i < len(list); i++ {
@@ -401,8 +405,8 @@ func TestFloat(t *testing.T) {
 		}
 	}
 
-	buf = encoder.Buffer()
-	decoder := binary.NewBinaryDecoder(buf)
+	buf = encoder.Body()
+	decoder := binary.NewBinaryDecoder(buf, VARINT)
 	for i, x := range list {
 		y, err := decoder.DecodeFloat()
 		if err != nil {
@@ -419,7 +423,7 @@ func TestFloat(t *testing.T) {
 func TestDouble(t *testing.T) {
 	var length uint32 = 8192
 	buf := make([]byte, 0, length)
-	encoder := binary.NewBinaryEncoder(buf)
+	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	var list [65536]Double
 	for i := 0; i < len(list); i++ {
@@ -432,8 +436,8 @@ func TestDouble(t *testing.T) {
 		}
 	}
 
-	buf = encoder.Buffer()
-	decoder := binary.NewBinaryDecoder(buf)
+	buf = encoder.Body()
+	decoder := binary.NewBinaryDecoder(buf, VARINT)
 	for i, x := range list {
 		y, err := decoder.DecodeDouble()
 		if err != nil {
@@ -450,7 +454,7 @@ func TestDouble(t *testing.T) {
 func TestBlob(t *testing.T) {
 	var length uint32 = 8192
 	buf := make([]byte, 0, length)
-	encoder := binary.NewBinaryEncoder(buf)
+	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	var list [16384]Blob
 	for i := 0; i < len(list); i++ {
@@ -466,8 +470,8 @@ func TestBlob(t *testing.T) {
 		}
 	}
 
-	buf = encoder.Buffer()
-	decoder := binary.NewBinaryDecoder(buf)
+	buf = encoder.Body()
+	decoder := binary.NewBinaryDecoder(buf, VARINT)
 	for i, x := range list {
 		y, err := decoder.DecodeBlob()
 		if err != nil {
@@ -486,7 +490,7 @@ func TestBlob(t *testing.T) {
 func TestString(t *testing.T) {
 	var length uint32 = 8192
 	buf := make([]byte, 0, length)
-	encoder := binary.NewBinaryEncoder(buf)
+	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	var list [65536]String
 	for i := 0; i < len(list); i++ {
@@ -502,8 +506,8 @@ func TestString(t *testing.T) {
 		}
 	}
 
-	buf = encoder.Buffer()
-	decoder := binary.NewBinaryDecoder(buf)
+	buf = encoder.Body()
+	decoder := binary.NewBinaryDecoder(buf, VARINT)
 	for i, x := range list {
 		y, err := decoder.DecodeString()
 		if err != nil {
@@ -518,7 +522,7 @@ func TestString(t *testing.T) {
 func TestNullableString(t *testing.T) {
 	var length uint32 = 8192
 	buf := make([]byte, 0, length)
-	encoder := binary.NewBinaryEncoder(buf)
+	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	var list = []*String{
 		nil,
@@ -539,8 +543,8 @@ func TestNullableString(t *testing.T) {
 		}
 	}
 
-	buf = encoder.Buffer()
-	decoder := binary.NewBinaryDecoder(buf)
+	buf = encoder.Body()
+	decoder := binary.NewBinaryDecoder(buf, VARINT)
 	for i, x := range list {
 		y, err := decoder.DecodeNullableString()
 		if err != nil {
@@ -562,7 +566,7 @@ func TestNullableString(t *testing.T) {
 func TestTime(t *testing.T) {
 	var length uint32 = 8192
 	buf := make([]byte, 0, length)
-	encoder := binary.NewBinaryEncoder(buf)
+	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	var list [65536]Time
 	list[0] = *TimeNow()
@@ -576,8 +580,8 @@ func TestTime(t *testing.T) {
 		}
 	}
 
-	buf = encoder.Buffer()
-	decoder := binary.NewBinaryDecoder(buf)
+	buf = encoder.Body()
+	decoder := binary.NewBinaryDecoder(buf, VARINT)
 	for i, x := range list {
 		y, err := decoder.DecodeTime()
 		if err != nil {
@@ -594,7 +598,7 @@ func TestTime(t *testing.T) {
 func TestFineTime(t *testing.T) {
 	var length uint32 = 8192
 	buf := make([]byte, 0, length)
-	encoder := binary.NewBinaryEncoder(buf)
+	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	var list [65536]FineTime
 	list[0] = *FineTimeNow()
@@ -608,8 +612,8 @@ func TestFineTime(t *testing.T) {
 		}
 	}
 
-	buf = encoder.Buffer()
-	decoder := binary.NewBinaryDecoder(buf)
+	buf = encoder.Body()
+	decoder := binary.NewBinaryDecoder(buf, VARINT)
 	for i, x := range list {
 		y, err := decoder.DecodeFineTime()
 		if err != nil {
@@ -628,7 +632,7 @@ func TestFineTime(t *testing.T) {
 func TestAttribute(t *testing.T) {
 	var length uint32 = 8192
 	buf := make([]byte, 0, length)
-	encoder := binary.NewBinaryEncoder(buf)
+	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	var list = []Attribute{
 		NewBoolean(false),
@@ -659,8 +663,8 @@ func TestAttribute(t *testing.T) {
 		}
 	}
 
-	buf = encoder.Buffer()
-	decoder := binary.NewBinaryDecoder(buf)
+	buf = encoder.Body()
+	decoder := binary.NewBinaryDecoder(buf, VARINT)
 	for i, x := range list {
 		y, err := decoder.DecodeAttribute()
 		if err != nil {
@@ -678,7 +682,7 @@ func TestAttribute(t *testing.T) {
 func TestNullableAttribute(t *testing.T) {
 	var length uint32 = 8192
 	buf := make([]byte, 0, length)
-	encoder := binary.NewBinaryEncoder(buf)
+	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	var list = []Attribute{
 		NewBoolean(false),
@@ -715,8 +719,8 @@ func TestNullableAttribute(t *testing.T) {
 		}
 	}
 
-	buf = encoder.Buffer()
-	decoder := binary.NewBinaryDecoder(buf)
+	buf = encoder.Body()
+	decoder := binary.NewBinaryDecoder(buf, VARINT)
 	for i, x := range list {
 		y, err := decoder.DecodeNullableAttribute()
 		if err != nil {
@@ -734,7 +738,7 @@ func TestNullableAttribute(t *testing.T) {
 func TestElement(t *testing.T) {
 	var length uint32 = 8192
 	buf := make([]byte, 0, length)
-	encoder := binary.NewBinaryEncoder(buf)
+	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	var list = []Element{
 		NewBoolean(false),
@@ -765,8 +769,8 @@ func TestElement(t *testing.T) {
 		}
 	}
 
-	buf = encoder.Buffer()
-	decoder := binary.NewBinaryDecoder(buf)
+	buf = encoder.Body()
+	decoder := binary.NewBinaryDecoder(buf, VARINT)
 	for i, x := range list {
 		y, err := decoder.DecodeElement(x)
 		if err != nil {
@@ -782,7 +786,7 @@ func TestElement(t *testing.T) {
 func TestNullableElement(t *testing.T) {
 	var length uint32 = 8192
 	buf := make([]byte, 0, length)
-	encoder := binary.NewBinaryEncoder(buf)
+	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	var list = []Element{
 		NewBoolean(false),
@@ -824,8 +828,8 @@ func TestNullableElement(t *testing.T) {
 		}
 	}
 
-	buf = encoder.Buffer()
-	decoder := binary.NewBinaryDecoder(buf)
+	buf = encoder.Body()
+	decoder := binary.NewBinaryDecoder(buf, VARINT)
 	for i, x := range list {
 		y, err := decoder.DecodeNullableElement(x)
 		if err != nil {
@@ -840,7 +844,7 @@ func TestNullableElement(t *testing.T) {
 func TestBlobAttribute(t *testing.T) {
 	var length uint32 = 8192
 	buf := make([]byte, 0, length)
-	encoder := binary.NewBinaryEncoder(buf)
+	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	var list = []Attribute{
 		&Blob{0, 1, 2, 3, 4, 5, 6, 7, 8, 9},
@@ -853,8 +857,8 @@ func TestBlobAttribute(t *testing.T) {
 		}
 	}
 
-	buf = encoder.Buffer()
-	decoder := binary.NewBinaryDecoder(buf)
+	buf = encoder.Body()
+	decoder := binary.NewBinaryDecoder(buf, VARINT)
 	for i, x := range list {
 		y, err := decoder.DecodeAttribute()
 		if err != nil {
@@ -869,7 +873,7 @@ func TestBlobAttribute(t *testing.T) {
 func TestTimeAttribute(t *testing.T) {
 	var length uint32 = 8192
 	buf := make([]byte, 0, length)
-	encoder := binary.NewBinaryEncoder(buf)
+	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	var list = []Attribute{
 		NewTime(time.Now().Truncate(time.Millisecond)),
@@ -890,8 +894,8 @@ func TestTimeAttribute(t *testing.T) {
 		}
 	}
 
-	buf = encoder.Buffer()
-	decoder := binary.NewBinaryDecoder(buf)
+	buf = encoder.Body()
+	decoder := binary.NewBinaryDecoder(buf, VARINT)
 	for i, x := range list {
 		y, err := decoder.DecodeAttribute()
 		if err != nil {
@@ -908,7 +912,7 @@ func TestTimeAttribute(t *testing.T) {
 func TestBooleanList(t *testing.T) {
 	var length uint32 = 8192
 	buf := make([]byte, 0, length)
-	encoder := binary.NewBinaryEncoder(buf)
+	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	var idlist = []*Boolean{
 		NewBoolean(true),
@@ -919,8 +923,8 @@ func TestBooleanList(t *testing.T) {
 	var x = BooleanList(idlist)
 	x.Encode(encoder)
 
-	buf = encoder.Buffer()
-	decoder := binary.NewBinaryDecoder(buf)
+	buf = encoder.Body()
+	decoder := binary.NewBinaryDecoder(buf, VARINT)
 
 	y, err := DecodeBooleanList(decoder)
 	if err != nil {
@@ -934,7 +938,7 @@ func TestBooleanList(t *testing.T) {
 func TestOctetList(t *testing.T) {
 	var length uint32 = 8192
 	buf := make([]byte, 0, length)
-	encoder := binary.NewBinaryEncoder(buf)
+	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	var idlist = []*Octet{
 		NewOctet(-128),
@@ -946,8 +950,8 @@ func TestOctetList(t *testing.T) {
 	var x = OctetList(idlist)
 	x.Encode(encoder)
 
-	buf = encoder.Buffer()
-	decoder := binary.NewBinaryDecoder(buf)
+	buf = encoder.Body()
+	decoder := binary.NewBinaryDecoder(buf, VARINT)
 
 	y, err := DecodeOctetList(decoder)
 	if err != nil {
@@ -961,7 +965,7 @@ func TestOctetList(t *testing.T) {
 func TestUOctetList(t *testing.T) {
 	var length uint32 = 8192
 	buf := make([]byte, 0, length)
-	encoder := binary.NewBinaryEncoder(buf)
+	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	var idlist = []*UOctet{
 		NewUOctet(255),
@@ -973,8 +977,8 @@ func TestUOctetList(t *testing.T) {
 	var x = UOctetList(idlist)
 	x.Encode(encoder)
 
-	buf = encoder.Buffer()
-	decoder := binary.NewBinaryDecoder(buf)
+	buf = encoder.Body()
+	decoder := binary.NewBinaryDecoder(buf, VARINT)
 
 	y, err := DecodeUOctetList(decoder)
 	if err != nil {
@@ -988,7 +992,7 @@ func TestUOctetList(t *testing.T) {
 func TestShortList(t *testing.T) {
 	var length uint32 = 8192
 	buf := make([]byte, 0, length)
-	encoder := binary.NewBinaryEncoder(buf)
+	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	var idlist = []*Short{
 		NewShort(-32768),
@@ -1000,8 +1004,8 @@ func TestShortList(t *testing.T) {
 	var x = ShortList(idlist)
 	x.Encode(encoder)
 
-	buf = encoder.Buffer()
-	decoder := binary.NewBinaryDecoder(buf)
+	buf = encoder.Body()
+	decoder := binary.NewBinaryDecoder(buf, VARINT)
 
 	y, err := DecodeShortList(decoder)
 	if err != nil {
@@ -1015,7 +1019,7 @@ func TestShortList(t *testing.T) {
 func TestUShortList(t *testing.T) {
 	var length uint32 = 8192
 	buf := make([]byte, 0, length)
-	encoder := binary.NewBinaryEncoder(buf)
+	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	var idlist = []*UShort{
 		NewUShort(65535),
@@ -1027,8 +1031,8 @@ func TestUShortList(t *testing.T) {
 	var x = UShortList(idlist)
 	x.Encode(encoder)
 
-	buf = encoder.Buffer()
-	decoder := binary.NewBinaryDecoder(buf)
+	buf = encoder.Body()
+	decoder := binary.NewBinaryDecoder(buf, VARINT)
 
 	y, err := DecodeUShortList(decoder)
 	if err != nil {
@@ -1042,7 +1046,7 @@ func TestUShortList(t *testing.T) {
 func TestIntegerList(t *testing.T) {
 	var length uint32 = 8192
 	buf := make([]byte, 0, length)
-	encoder := binary.NewBinaryEncoder(buf)
+	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	var idlist = []*Integer{
 		NewInteger(int32(INTEGER_MIN)),
@@ -1054,8 +1058,8 @@ func TestIntegerList(t *testing.T) {
 	var x = IntegerList(idlist)
 	x.Encode(encoder)
 
-	buf = encoder.Buffer()
-	decoder := binary.NewBinaryDecoder(buf)
+	buf = encoder.Body()
+	decoder := binary.NewBinaryDecoder(buf, VARINT)
 
 	y, err := DecodeIntegerList(decoder)
 	if err != nil {
@@ -1069,7 +1073,7 @@ func TestIntegerList(t *testing.T) {
 func TestUIntegerList(t *testing.T) {
 	var length uint32 = 8192
 	buf := make([]byte, 0, length)
-	encoder := binary.NewBinaryEncoder(buf)
+	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	var idlist = []*UInteger{
 		NewUInteger(uint32(UINTEGER_MIN)),
@@ -1081,8 +1085,8 @@ func TestUIntegerList(t *testing.T) {
 	var x = UIntegerList(idlist)
 	x.Encode(encoder)
 
-	buf = encoder.Buffer()
-	decoder := binary.NewBinaryDecoder(buf)
+	buf = encoder.Body()
+	decoder := binary.NewBinaryDecoder(buf, VARINT)
 
 	y, err := DecodeUIntegerList(decoder)
 	if err != nil {
@@ -1096,7 +1100,7 @@ func TestUIntegerList(t *testing.T) {
 func TestLongList(t *testing.T) {
 	var length uint32 = 8192
 	buf := make([]byte, 0, length)
-	encoder := binary.NewBinaryEncoder(buf)
+	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	var idlist = []*Long{
 		NewLong(int64(LONG_MIN)),
@@ -1108,8 +1112,8 @@ func TestLongList(t *testing.T) {
 	var x = LongList(idlist)
 	x.Encode(encoder)
 
-	buf = encoder.Buffer()
-	decoder := binary.NewBinaryDecoder(buf)
+	buf = encoder.Body()
+	decoder := binary.NewBinaryDecoder(buf, VARINT)
 
 	y, err := DecodeLongList(decoder)
 	if err != nil {
@@ -1123,7 +1127,7 @@ func TestLongList(t *testing.T) {
 func TestULongList(t *testing.T) {
 	var length uint32 = 8192
 	buf := make([]byte, 0, length)
-	encoder := binary.NewBinaryEncoder(buf)
+	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	var idlist = []*ULong{
 		NewULong(uint64(ULONG_MIN)),
@@ -1135,8 +1139,8 @@ func TestULongList(t *testing.T) {
 	var x = ULongList(idlist)
 	x.Encode(encoder)
 
-	buf = encoder.Buffer()
-	decoder := binary.NewBinaryDecoder(buf)
+	buf = encoder.Body()
+	decoder := binary.NewBinaryDecoder(buf, VARINT)
 
 	y, err := DecodeULongList(decoder)
 	if err != nil {
@@ -1150,7 +1154,7 @@ func TestULongList(t *testing.T) {
 func TestFloatList(t *testing.T) {
 	var length uint32 = 8192
 	buf := make([]byte, 0, length)
-	encoder := binary.NewBinaryEncoder(buf)
+	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	var idlist = []*Float{
 		NewFloat(12.4),
@@ -1162,8 +1166,8 @@ func TestFloatList(t *testing.T) {
 	var x = FloatList(idlist)
 	x.Encode(encoder)
 
-	buf = encoder.Buffer()
-	decoder := binary.NewBinaryDecoder(buf)
+	buf = encoder.Body()
+	decoder := binary.NewBinaryDecoder(buf, VARINT)
 
 	y, err := DecodeFloatList(decoder)
 	if err != nil {
@@ -1177,7 +1181,7 @@ func TestFloatList(t *testing.T) {
 func TestTimeList(t *testing.T) {
 	var length uint32 = 8192
 	buf := make([]byte, 0, length)
-	encoder := binary.NewBinaryEncoder(buf)
+	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	var idlist = []*Time{
 		NewTime(time.Now().Truncate(time.Millisecond)),
@@ -1189,8 +1193,8 @@ func TestTimeList(t *testing.T) {
 	var x = TimeList(idlist)
 	x.Encode(encoder)
 
-	buf = encoder.Buffer()
-	decoder := binary.NewBinaryDecoder(buf)
+	buf = encoder.Body()
+	decoder := binary.NewBinaryDecoder(buf, VARINT)
 
 	y, err := DecodeTimeList(decoder)
 	if err != nil {
@@ -1204,7 +1208,7 @@ func TestTimeList(t *testing.T) {
 func TestFineTimeList(t *testing.T) {
 	var length uint32 = 8192
 	buf := make([]byte, 0, length)
-	encoder := binary.NewBinaryEncoder(buf)
+	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	var idlist = []*FineTime{
 		NewFineTime(time.Now().Truncate(time.Nanosecond)),
@@ -1216,8 +1220,8 @@ func TestFineTimeList(t *testing.T) {
 	var x = FineTimeList(idlist)
 	x.Encode(encoder)
 
-	buf = encoder.Buffer()
-	decoder := binary.NewBinaryDecoder(buf)
+	buf = encoder.Body()
+	decoder := binary.NewBinaryDecoder(buf, VARINT)
 
 	y, err := DecodeFineTimeList(decoder)
 	if err != nil {
@@ -1231,7 +1235,7 @@ func TestFineTimeList(t *testing.T) {
 func TestIdentifierList(t *testing.T) {
 	var length uint32 = 8192
 	buf := make([]byte, 0, length)
-	encoder := binary.NewBinaryEncoder(buf)
+	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	var idlist = []*Identifier{
 		NewIdentifier("DOMAIN1"),
@@ -1243,8 +1247,8 @@ func TestIdentifierList(t *testing.T) {
 	var x = IdentifierList(idlist)
 	x.Encode(encoder)
 
-	buf = encoder.Buffer()
-	decoder := binary.NewBinaryDecoder(buf)
+	buf = encoder.Body()
+	decoder := binary.NewBinaryDecoder(buf, VARINT)
 
 	y, err := DecodeIdentifierList(decoder)
 	if err != nil {
@@ -1258,7 +1262,7 @@ func TestIdentifierList(t *testing.T) {
 func TestEntityKey(t *testing.T) {
 	var length uint32 = 8192
 	buf := make([]byte, 0, length)
-	encoder := binary.NewBinaryEncoder(buf)
+	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	var list = []*EntityKey{
 		&EntityKey{NewIdentifier("abcde"), NewLong(0), NewLong(1), NewLong(2)},
@@ -1274,8 +1278,8 @@ func TestEntityKey(t *testing.T) {
 		}
 	}
 
-	buf = encoder.Buffer()
-	decoder := binary.NewBinaryDecoder(buf)
+	buf = encoder.Body()
+	decoder := binary.NewBinaryDecoder(buf, VARINT)
 	for i, x := range list {
 		y, err := decoder.DecodeElement(list[0])
 		if err != nil {
@@ -1291,7 +1295,7 @@ func TestEntityKey(t *testing.T) {
 func TestEntityKeyList(t *testing.T) {
 	var length uint32 = 8192
 	buf := make([]byte, 0, length)
-	encoder := binary.NewBinaryEncoder(buf)
+	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	key1 := EntityKey{NewIdentifier("abcde"), NewLong(0), NewLong(1), NewLong(2)}
 	key2 := EntityKey{NewIdentifier("fghijklmn"), NewLong(3), NewLong(4), NewLong(5)}
@@ -1313,8 +1317,8 @@ func TestEntityKeyList(t *testing.T) {
 	var x = EntityKeyList(list)
 	x.Encode(encoder)
 
-	buf = encoder.Buffer()
-	decoder := binary.NewBinaryDecoder(buf)
+	buf = encoder.Body()
+	decoder := binary.NewBinaryDecoder(buf, VARINT)
 
 	y, err := DecodeEntityKeyList(decoder)
 	if err != nil {
@@ -1328,7 +1332,7 @@ func TestEntityKeyList(t *testing.T) {
 func TestEntityRequest(t *testing.T) {
 	var length uint32 = 8192
 	buf := make([]byte, 0, length)
-	encoder := binary.NewBinaryEncoder(buf)
+	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	key1 := EntityKey{NewIdentifier("abcde"), NewLong(0), NewLong(1), NewLong(2)}
 	key2 := EntityKey{NewIdentifier("fghijklmn"), NewLong(3), NewLong(4), NewLong(5)}
@@ -1379,8 +1383,8 @@ func TestEntityRequest(t *testing.T) {
 		}
 	}
 
-	buf = encoder.Buffer()
-	decoder := binary.NewBinaryDecoder(buf)
+	buf = encoder.Body()
+	decoder := binary.NewBinaryDecoder(buf, VARINT)
 	for i, x := range list {
 		y, err := decoder.DecodeElement(list[0])
 		if err != nil {
@@ -1395,7 +1399,7 @@ func TestEntityRequest(t *testing.T) {
 func TestEntityRequestList(t *testing.T) {
 	var length uint32 = 8192
 	buf := make([]byte, 0, length)
-	encoder := binary.NewBinaryEncoder(buf)
+	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	key1 := EntityKey{NewIdentifier("abcde"), NewLong(0), NewLong(1), NewLong(2)}
 	key2 := EntityKey{NewIdentifier("fghijklmn"), NewLong(3), NewLong(4), NewLong(5)}
@@ -1455,8 +1459,8 @@ func TestEntityRequestList(t *testing.T) {
 	var x = EntityRequestList(list)
 	x.Encode(encoder)
 
-	buf = encoder.Buffer()
-	decoder := binary.NewBinaryDecoder(buf)
+	buf = encoder.Body()
+	decoder := binary.NewBinaryDecoder(buf, VARINT)
 
 	y, err := DecodeEntityRequestList(decoder)
 	if err != nil {
@@ -1475,7 +1479,7 @@ func TestEntityRequestList(t *testing.T) {
 func TestOctetElementList(t *testing.T) {
 	var length uint32 = 8192
 	buf := make([]byte, 0, length)
-	encoder := binary.NewBinaryEncoder(buf)
+	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	var list = []Element{
 		NewOctet(-128),
@@ -1485,8 +1489,8 @@ func TestOctetElementList(t *testing.T) {
 	}
 	encoder.EncodeList(list)
 
-	buf = encoder.Buffer()
-	decoder := binary.NewBinaryDecoder(buf)
+	buf = encoder.Body()
+	decoder := binary.NewBinaryDecoder(buf, VARINT)
 
 	y, err := decoder.DecodeList(NewOctet(0))
 	if err != nil {

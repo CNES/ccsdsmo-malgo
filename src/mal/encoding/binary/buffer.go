@@ -23,92 +23,158 @@
  */
 package binary
 
-import ()
+import (
+	"errors"
+)
 
 var empty []byte
 
 type BinaryBuffer struct {
-	offset int
-	buf    []byte
+	Offset int
+	Buf    []byte
 }
 
-func (buffer *BinaryBuffer) Buffer() []byte {
-	return buffer.buf
+// Returns a slice containing all encoded datas
+func (buffer *BinaryBuffer) Body() []byte {
+	return buffer.Buf
 }
 
-func (buffer *BinaryBuffer) Reset() {
-	buffer.buf = buffer.buf[:0]
+// Reset the buffer allowing to reuse it
+func (buffer *BinaryBuffer) Reset(write bool) {
+	if write {
+		buffer.Buf = buffer.Buf[:0]
+	}
+	buffer.Offset = 0
 }
 
 func (buffer *BinaryBuffer) Write(value byte) error {
-	buffer.buf = append(buffer.buf, value)
+	buffer.Buf = append(buffer.Buf, value)
 	return nil
 }
 
 func (buffer *BinaryBuffer) Write16(value uint16) error {
-	buffer.buf = append(buffer.buf, byte(value>>8), byte(value>>0))
+	buffer.Buf = append(buffer.Buf, byte(value>>8), byte(value>>0))
 	return nil
 }
 
 func (buffer *BinaryBuffer) Write32(value uint32) error {
-	buffer.buf = append(buffer.buf, byte(value>>24), byte(value>>16), byte(value>>8), byte(value>>0))
+	buffer.Buf = append(buffer.Buf, byte(value>>24), byte(value>>16), byte(value>>8), byte(value>>0))
 	return nil
 }
 
 func (buffer *BinaryBuffer) Write64(value uint64) error {
-	buffer.buf = append(buffer.buf,
+	buffer.Buf = append(buffer.Buf,
 		byte(value>>56), byte(value>>48), byte(value>>40), byte(value>>32),
 		byte(value>>24), byte(value>>16), byte(value>>8), byte(value>>0))
 	return nil
 }
 
+// Writes an unsigned varint as defined in 5.25 section of the specification.
+func (buffer *BinaryBuffer) WriteUVarInt(value uint64) error {
+	buffer.Buf = WriteUVarInt(value, buffer.Buf)
+	return nil
+}
+
+func WriteUVarInt(value uint64, buf []byte) []byte {
+	for (value & 0xFFFFFFFFFFFFFF80) != 0 {
+		buf = append(buf, byte((value&0x7F)|0x80))
+		value >>= 7
+	}
+	buf = append(buf, byte(value&0x7F))
+	return buf
+}
+
+func (buffer *BinaryBuffer) WriteFlag(value bool) error {
+	if value {
+		buffer.Buf = append(buffer.Buf, TRUE)
+	} else {
+		buffer.Buf = append(buffer.Buf, FALSE)
+	}
+	return nil
+}
+
 func (buffer *BinaryBuffer) WriteBytes(value []byte) error {
-	buffer.buf = append(buffer.buf, value...)
+	buffer.Buf = append(buffer.Buf, value...)
 	return nil
 }
 
 func (buffer *BinaryBuffer) Read() (byte, error) {
-	b := buffer.buf[buffer.offset]
-	buffer.offset += 1
+	b := buffer.Buf[buffer.Offset]
+	buffer.Offset += 1
 	return b, nil
 }
 
 func (buffer *BinaryBuffer) Read16() (uint16, error) {
-	s := uint16(buffer.buf[buffer.offset+1]) | uint16(buffer.buf[buffer.offset])<<8
-	buffer.offset += 2
+	s := uint16(buffer.Buf[buffer.Offset+1]) | uint16(buffer.Buf[buffer.Offset])<<8
+	buffer.Offset += 2
 	return s, nil
 }
 
 func (buffer *BinaryBuffer) Read32() (uint32, error) {
-	i := uint32(buffer.buf[buffer.offset+3]) | uint32(buffer.buf[buffer.offset+2])<<8 |
-		uint32(buffer.buf[buffer.offset+1])<<16 | uint32(buffer.buf[buffer.offset])<<24
-	buffer.offset += 4
+	i := uint32(buffer.Buf[buffer.Offset+3]) | uint32(buffer.Buf[buffer.Offset+2])<<8 |
+		uint32(buffer.Buf[buffer.Offset+1])<<16 | uint32(buffer.Buf[buffer.Offset])<<24
+	buffer.Offset += 4
 	return i, nil
 }
 
 func (buffer *BinaryBuffer) Read64() (uint64, error) {
-	l := uint64(buffer.buf[buffer.offset+7]) | uint64(buffer.buf[buffer.offset+6])<<8 |
-		uint64(buffer.buf[buffer.offset+5])<<16 | uint64(buffer.buf[buffer.offset+4])<<24 |
-		uint64(buffer.buf[buffer.offset+3])<<32 | uint64(buffer.buf[buffer.offset+2])<<40 |
-		uint64(buffer.buf[buffer.offset+1])<<48 | uint64(buffer.buf[buffer.offset])<<56
-	buffer.offset += 8
+	l := uint64(buffer.Buf[buffer.Offset+7]) | uint64(buffer.Buf[buffer.Offset+6])<<8 |
+		uint64(buffer.Buf[buffer.Offset+5])<<16 | uint64(buffer.Buf[buffer.Offset+4])<<24 |
+		uint64(buffer.Buf[buffer.Offset+3])<<32 | uint64(buffer.Buf[buffer.Offset+2])<<40 |
+		uint64(buffer.Buf[buffer.Offset+1])<<48 | uint64(buffer.Buf[buffer.Offset])<<56
+	buffer.Offset += 8
 	return l, nil
 }
 
+// Reads an unsigned varint as defined in 5.25 section of the specification.
+func (buffer *BinaryBuffer) ReadUVarInt() (uint64, error) {
+	value := ReadUVarInt(buffer.Buf, &buffer.Offset)
+	return value, nil
+}
+
+func ReadUVarInt(buf []byte, offset *int) uint64 {
+	var value uint64 = 0
+	var i uint = 0
+
+	for {
+		b := buf[*offset]
+		*offset += 1
+		value |= uint64(b&0x7F) << i
+		if (b & 0x80) == 0 {
+			break
+		}
+		i += 7
+	}
+
+	return value
+}
+
+func (buffer *BinaryBuffer) ReadFlag() (bool, error) {
+	b := buffer.Buf[buffer.Offset]
+	buffer.Offset += 1
+	if b == FALSE {
+		return false, nil
+	} else if b == TRUE {
+		return true, nil
+	}
+	return false, errors.New("Bad boolean encoding: " + string(b))
+}
+
 func (buffer *BinaryBuffer) ReadBytes(buf []byte) error {
-	_ = buffer.buf[buffer.offset+len(buf)-1] // bounds check hint to compiler; see golang.org/issue/14808
-	copy(buf, buffer.buf[buffer.offset:])
-	buffer.offset += len(buf)
+	_ = buffer.Buf[buffer.Offset+len(buf)-1] // bounds check hint to compiler; see golang.org/issue/14808
+	copy(buf, buffer.Buf[buffer.Offset:])
+	buffer.Offset += len(buf)
 	return nil
 }
 
+// Returns the part of buffer that still needs to be decoded
 func (buffer *BinaryBuffer) Remaining() ([]byte, error) {
-	if buffer.offset == len(buffer.buf) {
+	if buffer.Offset == len(buffer.Buf) {
 		return empty, nil
 	} else {
-		_ = buffer.buf[buffer.offset] // bounds check hint to compiler; see golang.org/issue/14808
-		off := buffer.offset
-		buffer.offset = len(buffer.buf)
-		return buffer.buf[off:], nil
+		_ = buffer.Buf[buffer.Offset] // bounds check hint to compiler; see golang.org/issue/14808
+		off := buffer.Offset
+		buffer.Offset = len(buffer.Buf)
+		return buffer.Buf[off:], nil
 	}
 }

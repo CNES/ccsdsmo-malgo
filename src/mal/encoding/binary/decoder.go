@@ -24,6 +24,7 @@
 package binary
 
 import (
+	"errors"
 	. "mal"
 	"math"
 	"time"
@@ -31,49 +32,78 @@ import (
 
 type BinaryDecoder struct {
 	GenDecoder
-	buffer Buffer
+	Varint bool
+	In     Buffer
 }
 
 // Creates a new decoder using a slice containing binary data to decode.
-func NewBinaryDecoder(buf []byte) *BinaryDecoder {
+func NewBinaryDecoder(buf []byte, varint bool) *BinaryDecoder {
 	decoder := &BinaryDecoder{
-		buffer: &BinaryBuffer{
-			offset: 0,
-			buf:    buf,
+		Varint: varint,
+		In: &BinaryBuffer{
+			Offset: 0,
+			Buf:    buf,
 		},
 	}
 	decoder.GenDecoder.Decoder = decoder
 	return decoder
 }
 
+// ================================================================================
+// These methods are not part of the Encoder interface, they are needed to encode
+// message header
+
 func (decoder *BinaryDecoder) Read() (byte, error) {
-	return decoder.buffer.Read()
+	return decoder.In.Read()
 }
 
 func (decoder *BinaryDecoder) ReadUInt32() (uint32, error) {
-	return decoder.buffer.Read32()
+	return decoder.In.Read32()
 }
 
-func (decoder *BinaryDecoder) ReadBody() ([]byte, error) {
-	return decoder.buffer.Remaining()
+// Returns the part of buffer that still needs to be decoded
+func (decoder *BinaryDecoder) Remaining() ([]byte, error) {
+	return decoder.In.Remaining()
 }
+
+// Reads an unsigned varint as defined in 5.25 section of the specification.
+//func (decoder *BinaryDecoder) readUVarInt() (uint64, error) {
+//	var value uint64 = 0
+//	var i uint = 0
+//	for {
+//		b, err := decoder.In.Read()
+//		if err != nil {
+//			return value, err
+//		}
+//
+//		value |= uint64(b&0x7F) << i
+//		if (b & 0x80) == 0 {
+//			break
+//		}
+//		i += 7
+//	}
+//
+//	return value, nil
+//}
 
 // ================================================================================
 // Implements Decoder interface
 
 func (decoder *BinaryDecoder) IsNull() (bool, error) {
-	b, err := decoder.buffer.Read()
+	// TODO (AF): It should be simple to have a method from buffer that reads the
+	// presence flag directly (or defining a IsPresent method in decoder).
+	b, err := decoder.In.ReadFlag()
 	if err != nil {
 		return false, err
 	}
 	// Note: the encoded value corresponds to the presence flag.
-	return (b == FALSE), nil
+	return (b == false), nil
 }
 
 // Decodes the short form of an attribute.
 // @return The short form of the attribute.
 func (decoder *BinaryDecoder) DecodeAttributeType() (Integer, error) {
-	b, err := decoder.buffer.Read()
+	b, err := decoder.In.Read()
 	if err != nil {
 		return -1, err
 	}
@@ -83,17 +113,18 @@ func (decoder *BinaryDecoder) DecodeAttributeType() (Integer, error) {
 // Decodes a Boolean.
 // @return The decoded Boolean.
 func (decoder *BinaryDecoder) DecodeBoolean() (*Boolean, error) {
-	b, err := decoder.buffer.Read()
+	b, err := decoder.In.ReadFlag()
 	if err != nil {
+		// TODO (AF): Should be nil?
 		return new(Boolean), err
 	}
-	return NewBoolean(b == TRUE), nil
+	return NewBoolean(b), nil
 }
 
 // Decodes a Float.
 // @return The decoded Float.
 func (decoder *BinaryDecoder) DecodeFloat() (*Float, error) {
-	f, err := decoder.buffer.Read32()
+	f, err := decoder.In.Read32()
 	if err != nil {
 		return nil, err
 	}
@@ -103,7 +134,7 @@ func (decoder *BinaryDecoder) DecodeFloat() (*Float, error) {
 // Decodes a Double.
 // @return The decoded Double.
 func (decoder *BinaryDecoder) DecodeDouble() (*Double, error) {
-	d, err := decoder.buffer.Read64()
+	d, err := decoder.In.Read64()
 	if err != nil {
 		return nil, err
 	}
@@ -113,7 +144,7 @@ func (decoder *BinaryDecoder) DecodeDouble() (*Double, error) {
 // Decodes an Octet.
 // @return The decoded Octet.
 func (decoder *BinaryDecoder) DecodeOctet() (*Octet, error) {
-	o, err := decoder.buffer.Read()
+	o, err := decoder.In.Read()
 	if err != nil {
 		return nil, err
 	}
@@ -123,7 +154,7 @@ func (decoder *BinaryDecoder) DecodeOctet() (*Octet, error) {
 // Decodes a UOctet.
 // @return The decoded UOctet.
 func (decoder *BinaryDecoder) DecodeUOctet() (*UOctet, error) {
-	o, err := decoder.buffer.Read()
+	o, err := decoder.In.Read()
 	if err != nil {
 		return nil, err
 	}
@@ -133,73 +164,148 @@ func (decoder *BinaryDecoder) DecodeUOctet() (*UOctet, error) {
 // Decodes a Short.
 // @return The decoded Short.
 func (decoder *BinaryDecoder) DecodeShort() (*Short, error) {
-	s, err := decoder.buffer.Read16()
-	if err != nil {
-		return nil, err
+	if decoder.Varint {
+		value, err := decoder.In.ReadUVarInt()
+		if err != nil {
+			return nil, err
+		}
+		if (value & 0xFFFFFFFFFFFE0000) != 0 {
+			return nil, errors.New("Error decoding varint short: " + string(value))
+		}
+		var res int16 = 0
+		if (value & 1) != 0 {
+			res = -1
+		}
+		res = res ^ int16(value>>1)
+		return NewShort(res), nil
+	} else {
+		s, err := decoder.In.Read16()
+		if err != nil {
+			return nil, err
+		}
+		return NewShort(int16(s)), nil
 	}
-	return NewShort(int16(s)), nil
 }
 
 // Decodes a UShort.
 // @return The decoded UShort.
 func (decoder *BinaryDecoder) DecodeUShort() (*UShort, error) {
-	s, err := decoder.buffer.Read16()
-	if err != nil {
-		return nil, err
+	if decoder.Varint {
+		value, err := decoder.In.ReadUVarInt()
+		if err != nil {
+			return nil, err
+		}
+		if (value & 0xFFFFFFFFFFFF0000) != 0 {
+			return nil, errors.New("Error decoding varint short: " + string(value))
+		}
+		return NewUShort(uint16(value)), nil
+	} else {
+		s, err := decoder.In.Read16()
+		if err != nil {
+			return nil, err
+		}
+		return NewUShort(s), nil
 	}
-	return NewUShort(uint16(s)), nil
 }
 
 // Decodes an Integer.
 // @return The decoded Integer.
 func (decoder *BinaryDecoder) DecodeInteger() (*Integer, error) {
-	i, err := decoder.buffer.Read32()
-	if err != nil {
-		return nil, err
+	if decoder.Varint {
+		value, err := decoder.In.ReadUVarInt()
+		if err != nil {
+			return nil, err
+		}
+		if (value & 0xFFFFFFFE00000000) != 0 {
+			return nil, errors.New("Error decoding varint integer: " + string(value))
+		}
+		var res int32 = 0
+		if (value & 1) != 0 {
+			res = -1
+		}
+		res = res ^ int32(value>>1)
+		return NewInteger(res), nil
+	} else {
+		i, err := decoder.In.Read32()
+		if err != nil {
+			return nil, err
+		}
+		return NewInteger(int32(i)), nil
 	}
-	return NewInteger(int32(i)), nil
 }
 
 // Decodes a UInteger.
 // @return The decoded UInteger.
 func (decoder *BinaryDecoder) DecodeUInteger() (*UInteger, error) {
-	i, err := decoder.buffer.Read32()
-	if err != nil {
-		return nil, err
+	if decoder.Varint {
+		value, err := decoder.In.ReadUVarInt()
+		if err != nil {
+			return nil, err
+		}
+		if (value & 0xFFFFFFFF00000000) != 0 {
+			return nil, errors.New("Error decoding varint integer: " + string(value))
+		}
+		return NewUInteger(uint32(value)), nil
+	} else {
+		i, err := decoder.In.Read32()
+		if err != nil {
+			return nil, err
+		}
+		return NewUInteger(i), nil
 	}
-	return NewUInteger(i), nil
 }
 
 // Decodes a Long.
 // @return The decoded Long.
 func (decoder *BinaryDecoder) DecodeLong() (*Long, error) {
-	l, err := decoder.buffer.Read64()
-	if err != nil {
-		return nil, err
+	if decoder.Varint {
+		value, err := decoder.In.ReadUVarInt()
+		if err != nil {
+			return nil, err
+		}
+		var res int64 = 0
+		if (value & 1) != 0 {
+			res = -1
+		}
+		res = res ^ int64(value>>1)
+		return NewLong(res), nil
+	} else {
+		l, err := decoder.In.Read64()
+		if err != nil {
+			return nil, err
+		}
+		return NewLong(int64(l)), nil
 	}
-	return NewLong(int64(l)), nil
 }
 
 // Decodes a ULong.
 // @return The decoded ULong.
 func (decoder *BinaryDecoder) DecodeULong() (*ULong, error) {
-	l, err := decoder.buffer.Read64()
-	if err != nil {
-		return nil, err
+	if decoder.Varint {
+		value, err := decoder.In.ReadUVarInt()
+		if err != nil {
+			return nil, err
+		}
+		return NewULong(value), nil
+	} else {
+		l, err := decoder.In.Read64()
+		if err != nil {
+			return nil, err
+		}
+		return NewULong(l), nil
 	}
-	return NewULong(l), nil
 }
 
 // TODO (AF): Declares this method in Decoder interface then implements
 // DecodeString, DecodeIdentifier and DecodeURI in GenDecoder.
 func (decoder *BinaryDecoder) readString() (string, error) {
-	length, err := decoder.buffer.Read32()
+	length, err := decoder.In.Read32()
 	if err != nil {
 		return "", err
 	}
 	// TODO (AF): We may avoid a data copy getting bytes directly in source buffer.
 	buf := make([]byte, length)
-	err = decoder.buffer.ReadBytes(buf)
+	err = decoder.In.ReadBytes(buf)
 	if err != nil {
 		return "", err
 	}
@@ -219,13 +325,13 @@ func (decoder *BinaryDecoder) DecodeString() (*String, error) {
 // Decodes a Blob.
 // @return The decoded Blob.
 func (decoder *BinaryDecoder) DecodeBlob() (*Blob, error) {
-	length, err := decoder.buffer.Read32()
+	length, err := decoder.In.Read32()
 	if err != nil {
 		return nil, err
 	}
 	// TODO (AF): We may avoid a data copy getting bytes directly in source buffer.
 	buf := Blob(make([]byte, length))
-	err = decoder.buffer.ReadBytes(buf)
+	err = decoder.In.ReadBytes(buf)
 	if err != nil {
 		return nil, err
 	}
@@ -245,7 +351,7 @@ func (decoder *BinaryDecoder) DecodeIdentifier() (*Identifier, error) {
 // Decodes a Duration.
 // @return The decoded Duration.
 func (decoder *BinaryDecoder) DecodeDuration() (*Duration, error) {
-	d, err := decoder.buffer.Read64()
+	d, err := decoder.In.Read64()
 	if err != nil {
 		return nil, err
 	}
@@ -255,11 +361,11 @@ func (decoder *BinaryDecoder) DecodeDuration() (*Duration, error) {
 // Decodes a Time.
 // @return The decoded Time.
 func (decoder *BinaryDecoder) DecodeTime() (*Time, error) {
-	days, err := decoder.buffer.Read16()
+	days, err := decoder.In.Read16()
 	if err != nil {
 		return nil, err
 	}
-	millis, err := decoder.buffer.Read32()
+	millis, err := decoder.In.Read32()
 	if err != nil {
 		return nil, err
 	}
@@ -275,15 +381,15 @@ func (decoder *BinaryDecoder) DecodeTime() (*Time, error) {
 // Decodes a FineTime.
 // @return The decoded FineTime.
 func (decoder *BinaryDecoder) DecodeFineTime() (*FineTime, error) {
-	days, err := decoder.buffer.Read16()
+	days, err := decoder.In.Read16()
 	if err != nil {
 		return nil, err
 	}
-	millis, err := decoder.buffer.Read32()
+	millis, err := decoder.In.Read32()
 	if err != nil {
 		return nil, err
 	}
-	picos, err := decoder.buffer.Read32()
+	picos, err := decoder.In.Read32()
 	if err != nil {
 		return nil, err
 	}
@@ -310,7 +416,7 @@ func (decoder *BinaryDecoder) DecodeURI() (*URI, error) {
 // TODO (AF): Handling of enumeration
 
 func (decoder *BinaryDecoder) DecodeSmallEnum() (uint8, error) {
-	o, err := decoder.buffer.Read()
+	o, err := decoder.In.Read()
 	if err != nil {
 		return 0, err
 	}
@@ -318,7 +424,7 @@ func (decoder *BinaryDecoder) DecodeSmallEnum() (uint8, error) {
 }
 
 func (decoder *BinaryDecoder) DecodeMediumEnum() (uint16, error) {
-	s, err := decoder.buffer.Read16()
+	s, err := decoder.In.Read16()
 	if err != nil {
 		return 0, err
 	}
@@ -326,7 +432,7 @@ func (decoder *BinaryDecoder) DecodeMediumEnum() (uint16, error) {
 }
 
 func (decoder *BinaryDecoder) DecodelargeEnum() (uint32, error) {
-	i, err := decoder.buffer.Read32()
+	i, err := decoder.In.Read32()
 	if err != nil {
 		return 0, err
 	}

@@ -32,36 +32,62 @@ import (
 
 type BinaryEncoder struct {
 	GenEncoder
-	buffer Buffer
+	Varint bool
+	Out    Buffer
 }
+
+// TODO (AF): To remove
+//func (encoder *BinaryEncoder) InitBinaryEncoder(varint bool) {
+//	encoder.GenEncoder.Encoder = encoder
+//	encoder.Varint = varint
+//}
 
 // Creates a new encoder using a slice with sufficient capacity to encode datas.
 // If the slice is not empty the encoded datas are append afterwards.
-func NewBinaryEncoder(buf []byte) *BinaryEncoder {
+func NewBinaryEncoder(buf []byte, varint bool) *BinaryEncoder {
 	encoder := &BinaryEncoder{
-		buffer: &BinaryBuffer{
-			offset: 0,
-			buf:    buf,
+		Varint: varint,
+		Out: &BinaryBuffer{
+			Offset: 0,
+			Buf:    buf,
 		},
 	}
 	encoder.GenEncoder.Encoder = encoder
 	return encoder
 }
 
-func (encoder *BinaryEncoder) Buffer() []byte {
-	return encoder.buffer.Buffer()
+// Returns a slice containing all encoded data as needed to be sent
+func (encoder *BinaryEncoder) Body() []byte {
+	return encoder.Out.(*BinaryBuffer).Buf
 }
 
+// TODO (AF): No longer needed
+// Writes an unsigned varint as defined in 5.25 section of the specification.
+//func (encoder *BinaryEncoder) writeUVarInt(value uint64) error {
+//	for (value & 0xFFFFFFFFFFFFFF80) != 0 {
+//		err := encoder.Out.Write(byte((value & 0x7F) | 0x80))
+//		if err != nil {
+//			return err
+//		}
+//		value >>= 7
+//	}
+//	return encoder.Out.Write(byte(value & 0x7F))
+//}
+
+// ================================================================================
+// These methods are not part of the Encoder interface, they are needed to encode
+// message header
+
 func (encoder *BinaryEncoder) Write(b byte) error {
-	return encoder.buffer.Write(b)
+	return encoder.Out.Write(b)
 }
 
 func (encoder *BinaryEncoder) WriteUInt32(i uint32) error {
-	return encoder.buffer.Write32(i)
+	return encoder.Out.Write32(i)
 }
 
 func (encoder *BinaryEncoder) WriteBody(buf []byte) error {
-	return encoder.buffer.WriteBytes(buf)
+	return encoder.Out.WriteBytes(buf)
 }
 
 // ================================================================================
@@ -69,26 +95,26 @@ func (encoder *BinaryEncoder) WriteBody(buf []byte) error {
 
 func (encoder *BinaryEncoder) EncodeNull() error {
 	// Encode False (presence flag) -> 0
-	return encoder.buffer.Write(FALSE)
+	return encoder.Out.WriteFlag(false)
 }
 
 func (encoder *BinaryEncoder) EncodeNotNull() error {
 	// Encode True (presence flag) -> 1
-	return encoder.buffer.Write(TRUE)
+	return encoder.Out.WriteFlag(true)
 }
 
 // Encodes the short form of an attribute.
 func (encoder *BinaryEncoder) EncodeAttributeType(typeval Integer) error {
-	return encoder.buffer.Write(byte(typeval))
+	return encoder.Out.Write(byte(typeval))
 }
 
 // Encodes a non-null Boolean.
 // @param att The Boolean to encode.
 func (encoder *BinaryEncoder) EncodeBoolean(att *Boolean) error {
 	if *att {
-		return encoder.buffer.Write(TRUE)
+		return encoder.Out.WriteFlag(true)
 	} else {
-		return encoder.buffer.Write(FALSE)
+		return encoder.Out.WriteFlag(false)
 	}
 }
 
@@ -96,101 +122,128 @@ func (encoder *BinaryEncoder) EncodeBoolean(att *Boolean) error {
 // @param att The Float to encode.
 func (encoder *BinaryEncoder) EncodeFloat(att *Float) error {
 	val := math.Float32bits(float32(*att))
-	return encoder.buffer.Write32(val)
+	return encoder.Out.Write32(val)
 }
 
 // Encodes a non-null Double.
 // @param att The Double to encode.
 func (encoder *BinaryEncoder) EncodeDouble(att *Double) error {
 	val := math.Float64bits(float64(*att))
-	return encoder.buffer.Write64(val)
+	return encoder.Out.Write64(val)
 }
 
 // Encodes a non-null Octet.
 // @param att The Octet to encode.
 func (encoder *BinaryEncoder) EncodeOctet(att *Octet) error {
-	return encoder.buffer.Write(byte(*att))
+	return encoder.Out.Write(byte(*att))
 }
 
 // Encodes a non-null UOctet.
 // @param att The UOctet to encode.
 func (encoder *BinaryEncoder) EncodeUOctet(att *UOctet) error {
-	return encoder.buffer.Write(byte(*att))
+	return encoder.Out.Write(byte(*att))
 }
 
 // Encodes a non-null Short.
 // @param att The Short to encode.
 func (encoder *BinaryEncoder) EncodeShort(att *Short) error {
-	return encoder.buffer.Write16(uint16(*att))
+	if encoder.Varint {
+		value := int16(*att)
+		return encoder.Out.WriteUVarInt(uint64((value<<1)^(value>>15)) & 0xFFFF)
+	} else {
+		return encoder.Out.Write16(uint16(*att))
+	}
 }
 
 // Encodes a non-null UShort.
 // @param att The UShort to encode.
 func (encoder *BinaryEncoder) EncodeUShort(att *UShort) error {
-	return encoder.buffer.Write16(uint16(*att))
+	if encoder.Varint {
+		return encoder.Out.WriteUVarInt(uint64(*att))
+	} else {
+		return encoder.Out.Write16(uint16(*att))
+	}
 }
 
 // Encodes a non-null Integer.
 // @param att The Integer to encode.
 func (encoder *BinaryEncoder) EncodeInteger(att *Integer) error {
-	return encoder.buffer.Write32(uint32(*att))
+	if encoder.Varint {
+		value := int32(*att)
+		return encoder.Out.WriteUVarInt(uint64((value<<1)^(value>>31)) & 0xFFFFFFFF)
+	} else {
+		return encoder.Out.Write32(uint32(*att))
+	}
 }
 
 // Encodes a non-null UInteger.
 // @param att The UInteger to encode.
 func (encoder *BinaryEncoder) EncodeUInteger(att *UInteger) error {
-	return encoder.buffer.Write32(uint32(*att))
+	if encoder.Varint {
+		return encoder.Out.WriteUVarInt(uint64(*att))
+	} else {
+		return encoder.Out.Write32(uint32(*att))
+	}
 }
 
 // Encodes a non-null Long.
 // @param att The Long to encode.
 func (encoder *BinaryEncoder) EncodeLong(att *Long) error {
-	return encoder.buffer.Write64(uint64(*att))
+	if encoder.Varint {
+		value := int64(*att)
+		return encoder.Out.WriteUVarInt(uint64((value << 1) ^ (value >> 63)))
+	} else {
+		return encoder.Out.Write64(uint64(*att))
+	}
 }
 
 // Encodes a non-null ULong.
 // @param att The ULong to encode.
 func (encoder *BinaryEncoder) EncodeULong(att *ULong) error {
-	return encoder.buffer.Write64(uint64(*att))
+	if encoder.Varint {
+		return encoder.Out.WriteUVarInt(uint64(*att))
+	} else {
+		return encoder.Out.Write64(uint64(*att))
+	}
 }
 
 // Encodes a non-null String.
 // @param att The String to encode.
 func (encoder *BinaryEncoder) EncodeString(str *String) error {
 	buf := []byte(*str)
-	err := encoder.buffer.Write32(uint32(len(buf)))
+	err := encoder.Out.Write32(uint32(len(buf)))
 	if err != nil {
 		return err
 	}
-	return encoder.buffer.WriteBytes(buf)
+	return encoder.Out.WriteBytes(buf)
 }
 
 // Encodes a non-null Blob.
 // @param att The Blob to encode.
 func (encoder *BinaryEncoder) EncodeBlob(blob *Blob) error {
-	err := encoder.buffer.Write32(uint32(len(*blob)))
+	err := encoder.Out.Write32(uint32(len(*blob)))
 	if err != nil {
 		return err
 	}
-	return encoder.buffer.WriteBytes([]byte(*blob))
+	return encoder.Out.WriteBytes([]byte(*blob))
 }
 
 // Encodes a non-null Identifier.
 // @param att The Identifier to encode.
 func (encoder *BinaryEncoder) EncodeIdentifier(id *Identifier) error {
 	buf := []byte(*id)
-	err := encoder.buffer.Write32(uint32(len(buf)))
+	err := encoder.Out.Write32(uint32(len(buf)))
 	if err != nil {
 		return err
 	}
-	return encoder.buffer.WriteBytes(buf)
+	return encoder.Out.WriteBytes(buf)
 }
 
 // Encodes a non-null Duration.
 // @param att The Duration to encode.
 func (encoder *BinaryEncoder) EncodeDuration(att *Duration) error {
 	val := math.Float64bits(float64(*att))
-	return encoder.buffer.Write64(val)
+	return encoder.Out.Write64(val)
 }
 
 // Encodes a non-null Time.
@@ -207,8 +260,8 @@ func (encoder *BinaryEncoder) EncodeTime(t *Time) error {
 		return errors.New("Cannot encode Time: " + time.Time(*t).String())
 	}
 
-	encoder.buffer.Write16(uint16(days))
-	encoder.buffer.Write32(uint32(millis))
+	encoder.Out.Write16(uint16(days))
+	encoder.Out.Write32(uint32(millis))
 
 	return nil
 }
@@ -228,9 +281,9 @@ func (encoder *BinaryEncoder) EncodeFineTime(t *FineTime) error {
 		return errors.New("Cannot encode FineTime: " + time.Time(*t).String())
 	}
 
-	encoder.buffer.Write16(uint16(days))
-	encoder.buffer.Write32(uint32(millis))
-	encoder.buffer.Write32(uint32(picos))
+	encoder.Out.Write16(uint16(days))
+	encoder.Out.Write32(uint32(millis))
+	encoder.Out.Write32(uint32(picos))
 
 	return nil
 }
@@ -240,23 +293,23 @@ func (encoder *BinaryEncoder) EncodeFineTime(t *FineTime) error {
 // @throws IllegalArgumentException If the argument is null.
 func (encoder *BinaryEncoder) EncodeURI(uri *URI) error {
 	buf := []byte(*uri)
-	err := encoder.buffer.Write32(uint32(len(buf)))
+	err := encoder.Out.Write32(uint32(len(buf)))
 	if err != nil {
 		return err
 	}
-	return encoder.buffer.WriteBytes(buf)
+	return encoder.Out.WriteBytes(buf)
 }
 
 // TODO (AF): Handling of enumeration
 
 func (encoder *BinaryEncoder) EncodeSmallEnum(ordinal uint8) error {
-	return encoder.buffer.Write(ordinal)
+	return encoder.Out.Write(ordinal)
 }
 
 func (encoder *BinaryEncoder) EncodeMediumEnum(ordinal uint16) error {
-	return encoder.buffer.Write16(ordinal)
+	return encoder.Out.Write16(ordinal)
 }
 
 func (encoder *BinaryEncoder) EncodelargeEnum(ordinal uint32) error {
-	return encoder.buffer.Write32(ordinal)
+	return encoder.Out.Write32(ordinal)
 }
