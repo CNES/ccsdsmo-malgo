@@ -1,7 +1,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2017 CNES
+ * Copyright (c) 2017 - 2018 CNES
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -88,6 +88,7 @@ const (
 	_INITIATED
 	_ACKNOWLEDGED
 	_PROGRESSING
+	_REGISTERED
 	_FINAL
 	// TODO (AF): Should define PubSub status
 )
@@ -228,6 +229,208 @@ func (op *SubmitOperation) OnClose() error {
 }
 
 // ================================================================================
+// Request Operation
+
+type RequestOperation struct {
+	Operation
+	response *Message
+}
+
+func (ictx *OperationContext) NewRequestOperation(area UShort, areaVersion UOctet, service UShort, operation UShort) (*RequestOperation, error) {
+	// Gets a new TransactionId for operation
+	tid := ictx.TransactionId()
+	// TODO (AF): Fix length of channel
+	ch := make(chan *Message, 10)
+	op := &RequestOperation{Operation: Operation{ictx, tid, ch, area, areaVersion, service, operation, _CREATED}}
+	return op, nil
+}
+
+func (op *RequestOperation) Request(msg *Message) (*Message, error) {
+	if op.status != _CREATED {
+		return nil, errors.New("Bad operation status")
+	}
+
+	msg.ServiceArea = op.area
+	msg.AreaVersion = op.areaVersion
+	msg.Service = op.service
+	msg.Operation = op.operation
+	msg.InteractionType = MAL_INTERACTIONTYPE_REQUEST
+	msg.InteractionStage = MAL_IP_STAGE_REQUEST
+	msg.TransactionId = op.tid
+	msg.UriFrom = op.ictx.Uri
+
+	// Registers this Request Operation in OperationContext
+	err := op.ictx.register(op.tid, op)
+	if err != nil {
+		return nil, err
+	}
+	op.status = _INITIATED
+
+	// Send the REQUEST MAL message
+	err = op.ictx.Ctx.Send(msg)
+	if err != nil {
+		op.status = _FINAL
+		return nil, err
+	}
+
+	// Waits for the RESPONSE MAL message
+	msg, more := <-op.ch
+	if !more {
+		fmt.Println("Operation ends: ", op.ictx.Uri, op.tid)
+		// TODO (AF): Returns an error
+		op.status = _FINAL
+		return nil, errors.New("Operation ends")
+	}
+	op.status = _FINAL
+
+	// TODO (AF): Verify that the message is ok (response or error)
+	if msg.InteractionStage == MAL_IP_STAGE_REQUEST_RESPONSE {
+		op.response = msg
+		// This operation should not received anymore messages,
+		// unregisters this Request Operation in OperationContext
+		op.ictx.deregister(op.tid)
+		return msg, nil
+	} else {
+		// TODO (AF): Close the operation
+		return nil, errors.New("Bad operation stage")
+	}
+}
+
+// Returns the response.
+func (op *RequestOperation) GetResponse() (*Message, error) {
+	if (op.status == _FINAL) && (op.response != nil) {
+		return op.response, nil
+	}
+
+	return nil, errors.New("Bad operation status")
+}
+
+func (op *RequestOperation) OnMessage(msg *Message) error {
+	// TODO (AF): Verify the message: service area, version, service, operation
+	if msg.InteractionType != MAL_INTERACTIONTYPE_REQUEST {
+		// TODO (AF): log an error
+		return errors.New("Bad message")
+	}
+	op.ch <- msg
+	return nil
+}
+
+func (op *RequestOperation) OnClose() error {
+	// TODO (AF):
+	return nil
+}
+
+// ================================================================================
+// Invoke Operation
+
+type InvokeOperation struct {
+	Operation
+	response *Message
+}
+
+func (ictx *OperationContext) NewInvokeOperation(area UShort, areaVersion UOctet, service UShort, operation UShort) (*InvokeOperation, error) {
+	// Gets a new TransactionId for operation
+	tid := ictx.TransactionId()
+	// TODO (AF): Fix length of channel
+	ch := make(chan *Message, 10)
+	op := &InvokeOperation{Operation: Operation{ictx, tid, ch, area, areaVersion, service, operation, _CREATED}}
+	return op, nil
+}
+
+func (op *InvokeOperation) Invoke(msg *Message) (*Message, error) {
+	if op.status != _CREATED {
+		return nil, errors.New("Bad operation status")
+	}
+
+	msg.ServiceArea = op.area
+	msg.AreaVersion = op.areaVersion
+	msg.Service = op.service
+	msg.Operation = op.operation
+	msg.InteractionType = MAL_INTERACTIONTYPE_INVOKE
+	msg.InteractionStage = MAL_IP_STAGE_INVOKE
+	msg.TransactionId = op.tid
+	msg.UriFrom = op.ictx.Uri
+
+	// Registers this Invoke Operation in OperationContext
+	err := op.ictx.register(op.tid, op)
+	if err != nil {
+		return nil, err
+	}
+	op.status = _INITIATED
+
+	// Send the INVOKE MAL message
+	err = op.ictx.Ctx.Send(msg)
+	if err != nil {
+		op.status = _FINAL
+		return nil, err
+	}
+
+	// Waits for the ACKNOWLEDGE MAL message
+	msg, more := <-op.ch
+	if !more {
+		fmt.Println("Operation ends: ", op.ictx.Uri, op.tid)
+		// TODO (AF): Returns an error
+		op.status = _FINAL
+		return nil, errors.New("Operation ends")
+	}
+	op.status = _ACKNOWLEDGED
+
+	// TODO (AF): Verify that the message is ok (ack or error)
+	if msg.InteractionStage != MAL_IP_STAGE_INVOKE_ACK {
+		// TODO (AF): Close the operation
+		return nil, errors.New("Bad operation stage")
+	}
+
+	return msg, nil
+}
+
+// Returns the response.
+func (op *InvokeOperation) GetResponse() (*Message, error) {
+	if (op.status == _FINAL) && (op.response != nil) {
+		return op.response, nil
+	}
+
+	if op.status != _ACKNOWLEDGED {
+		return nil, errors.New("Bad operation status")
+	}
+
+	// Waits for next MAL message
+	msg, more := <-op.ch
+	if !more {
+		fmt.Println("Operation ends: ", op.ictx.Uri, op.tid)
+		// TODO (AF): Returns an error
+		op.status = _FINAL
+		return nil, errors.New("Operation ends")
+	}
+
+	if msg.InteractionStage == MAL_IP_STAGE_INVOKE_RESPONSE {
+		op.response = msg
+		op.status = _FINAL
+		op.ictx.deregister(op.tid)
+		return msg, nil
+	} else {
+		// TODO (AF): Close the operation
+		op.status = _FINAL
+		return nil, errors.New("Bad operation stage")
+	}
+}
+
+func (op *InvokeOperation) OnMessage(msg *Message) error {
+	// TODO (AF): Verify the message: service area, version, service, operation
+	if msg.InteractionType != MAL_INTERACTIONTYPE_INVOKE {
+		// TODO (AF): log an error
+		return errors.New("Bad message")
+	}
+	op.ch <- msg
+	return nil
+}
+
+func (op *InvokeOperation) OnClose() error {
+	// TODO (AF):
+	return nil
+}
+
+// ================================================================================
 // Progress Operation
 
 type ProgressOperation struct {
@@ -282,7 +485,7 @@ func (op *ProgressOperation) Progress(msg *Message) (*Message, error) {
 	op.status = _ACKNOWLEDGED
 
 	// TODO (AF): Verify that the message is ok (ack or error)
-	if msg.InteractionStage != MAL_IP_STAGE_SUBMIT_ACK {
+	if msg.InteractionStage != MAL_IP_STAGE_PROGRESS_ACK {
 		// TODO (AF): Close the operation
 		return nil, errors.New("Bad operation stage")
 	}
@@ -359,6 +562,300 @@ func (op *ProgressOperation) OnMessage(msg *Message) error {
 }
 
 func (op *ProgressOperation) OnClose() error {
+	// TODO (AF):
+	return nil
+}
+
+// ================================================================================
+// Subscriber Operation
+
+type SubscriberOperation struct {
+	Operation
+}
+
+func (ictx *OperationContext) NewSubscriberOperation(area UShort, areaVersion UOctet, service UShort, operation UShort) (*SubscriberOperation, error) {
+	// Gets a new TransactionId for operation
+	tid := ictx.TransactionId()
+	// TODO (AF): Fix length of channel
+	ch := make(chan *Message, 10)
+	op := &SubscriberOperation{Operation: Operation{ictx, tid, ch, area, areaVersion, service, operation, _CREATED}}
+	return op, nil
+}
+
+func (op *SubscriberOperation) Register(msg *Message) (*Message, error) {
+	if op.status != _CREATED {
+		return nil, errors.New("Bad operation status")
+	}
+
+	msg.ServiceArea = op.area
+	msg.AreaVersion = op.areaVersion
+	msg.Service = op.service
+	msg.Operation = op.operation
+	msg.InteractionType = MAL_INTERACTIONTYPE_PUBSUB
+	msg.InteractionStage = MAL_IP_STAGE_PUBSUB_REGISTER
+	msg.TransactionId = op.tid
+	msg.UriFrom = op.ictx.Uri
+
+	// Registers this Operation in OperationContext
+	err := op.ictx.register(op.tid, op)
+	if err != nil {
+		return nil, err
+	}
+	op.status = _INITIATED
+
+	// Send the REGISTER MAL message
+	err = op.ictx.Ctx.Send(msg)
+	if err != nil {
+		op.status = _FINAL
+		return nil, err
+	}
+
+	// Waits for the REGISTER_ACK MAL message
+	msg, more := <-op.ch
+	if !more {
+		fmt.Println("Operation ends: ", op.ictx.Uri, op.tid)
+		// TODO (AF): Returns an error
+		op.status = _FINAL
+		return nil, errors.New("Operation ends")
+	}
+	op.status = _REGISTERED
+
+	// TODO (AF): Verify that the message is ok (ack or error)
+	if msg.InteractionStage != MAL_IP_STAGE_PUBSUB_REGISTER_ACK {
+		// TODO (AF): Close the operation
+		return nil, errors.New("Bad operation stage")
+	}
+
+	return msg, nil
+}
+
+// Returns next update or nil if there is no more update.
+func (op *SubscriberOperation) GetNotify() (*Message, error) {
+	if op.status != _REGISTERED {
+		return nil, errors.New("Bad operation status")
+	}
+
+	// Waits for next MAL message
+	msg, more := <-op.ch
+	if !more {
+		fmt.Println("Operation ends: ", op.ictx.Uri, op.tid)
+		// TODO (AF): Returns an error
+		op.status = _FINAL
+		return nil, errors.New("Operation ends")
+	}
+
+	if msg.InteractionStage == MAL_IP_STAGE_PUBSUB_NOTIFY {
+		return msg, nil
+	} else {
+		// TODO (AF): Close the operation
+		return nil, errors.New("Bad operation stage")
+	}
+}
+
+func (op *SubscriberOperation) Deregister(msg *Message) (*Message, error) {
+	if op.status != _REGISTERED {
+		return nil, errors.New("Bad operation status")
+	}
+
+	msg.ServiceArea = op.area
+	msg.AreaVersion = op.areaVersion
+	msg.Service = op.service
+	msg.Operation = op.operation
+	msg.InteractionType = MAL_INTERACTIONTYPE_PUBSUB
+	msg.InteractionStage = MAL_IP_STAGE_PUBSUB_DEREGISTER
+	msg.TransactionId = op.tid
+	msg.UriFrom = op.ictx.Uri
+
+	// Send the DEREGISTER MAL message
+	err := op.ictx.Ctx.Send(msg)
+	if err != nil {
+		op.status = _FINAL
+		return nil, err
+	}
+
+	// Removes useless notify waiting messages
+	for {
+		// Waits for the PROGRESS_ACK MAL message
+		msg, more := <-op.ch
+		if !more {
+			fmt.Println("Operation ends: ", op.ictx.Uri, op.tid)
+			// TODO (AF): Returns an error
+			op.status = _FINAL
+			return nil, errors.New("Operation ends")
+		}
+
+		if msg.InteractionStage == MAL_IP_STAGE_PUBSUB_NOTIFY {
+			continue
+		}
+
+		op.ictx.deregister(op.tid)
+		op.status = _FINAL
+
+		// TODO (AF): Verify that the message is ok (ack or error)
+		if msg.InteractionStage != MAL_IP_STAGE_PUBSUB_DEREGISTER_ACK {
+			// TODO (AF): Close the operation
+			return nil, errors.New("Bad operation stage")
+		}
+
+		return msg, nil
+	}
+}
+
+func (op *SubscriberOperation) OnMessage(msg *Message) error {
+	// TODO (AF): Verify the message: service area, version, service, operation
+	if msg.InteractionType != MAL_INTERACTIONTYPE_PUBSUB {
+		// TODO (AF): log an error
+		return errors.New("Bad message")
+	}
+	op.ch <- msg
+	return nil
+}
+
+func (op *SubscriberOperation) OnClose() error {
+	// TODO (AF):
+	return nil
+}
+
+// ================================================================================
+// Publisher Operation
+
+type PublisherOperation struct {
+	Operation
+}
+
+func (ictx *OperationContext) NewPublisherOperation(area UShort, areaVersion UOctet, service UShort, operation UShort) (*PublisherOperation, error) {
+	// Gets a new TransactionId for operation
+	tid := ictx.TransactionId()
+	// TODO (AF): Fix length of channel
+	ch := make(chan *Message, 10)
+	op := &PublisherOperation{Operation: Operation{ictx, tid, ch, area, areaVersion, service, operation, _CREATED}}
+	return op, nil
+}
+
+func (op *PublisherOperation) Register(msg *Message) (*Message, error) {
+	if op.status != _CREATED {
+		return nil, errors.New("Bad operation status")
+	}
+
+	msg.ServiceArea = op.area
+	msg.AreaVersion = op.areaVersion
+	msg.Service = op.service
+	msg.Operation = op.operation
+	msg.InteractionType = MAL_INTERACTIONTYPE_PUBSUB
+	msg.InteractionStage = MAL_IP_STAGE_PUBSUB_PUBLISH_REGISTER
+	msg.TransactionId = op.tid
+	msg.UriFrom = op.ictx.Uri
+
+	// Registers this Operation in OperationContext
+	err := op.ictx.register(op.tid, op)
+	if err != nil {
+		return nil, err
+	}
+	op.status = _INITIATED
+
+	// Send the PUBLISH_REGISTER MAL message
+	err = op.ictx.Ctx.Send(msg)
+	if err != nil {
+		op.status = _FINAL
+		return nil, err
+	}
+
+	// Waits for the PUBLISH_REGISTER_ACK MAL message
+	msg, more := <-op.ch
+	if !more {
+		fmt.Println("Operation ends: ", op.ictx.Uri, op.tid)
+		// TODO (AF): Returns an error
+		op.status = _FINAL
+		return nil, errors.New("Operation ends")
+	}
+	op.status = _REGISTERED
+
+	// TODO (AF): Verify that the message is ok (ack or error)
+	if msg.InteractionStage != MAL_IP_STAGE_PUBSUB_PUBLISH_REGISTER_ACK {
+		// TODO (AF): Close the operation
+		return nil, errors.New("Bad operation stage")
+	}
+
+	return msg, nil
+}
+
+func (op *PublisherOperation) Publish(msg *Message) error {
+	if op.status != _REGISTERED {
+		return errors.New("Bad operation status")
+	}
+
+	msg.ServiceArea = op.area
+	msg.AreaVersion = op.areaVersion
+	msg.Service = op.service
+	msg.Operation = op.operation
+	msg.InteractionType = MAL_INTERACTIONTYPE_PUBSUB
+	msg.InteractionStage = MAL_IP_STAGE_PUBSUB_PUBLISH
+	msg.TransactionId = op.tid
+	msg.UriFrom = op.ictx.Uri
+
+	// Send the MAL message
+	err := op.ictx.Ctx.Send(msg)
+	if err != nil {
+		op.status = _FINAL
+		return err
+	}
+
+	return nil
+}
+
+func (op *PublisherOperation) Deregister(msg *Message) (*Message, error) {
+	if op.status != _REGISTERED {
+		return nil, errors.New("Bad operation status")
+	}
+
+	msg.ServiceArea = op.area
+	msg.AreaVersion = op.areaVersion
+	msg.Service = op.service
+	msg.Operation = op.operation
+	msg.InteractionType = MAL_INTERACTIONTYPE_PUBSUB
+	msg.InteractionStage = MAL_IP_STAGE_PUBSUB_PUBLISH_DEREGISTER
+	msg.TransactionId = op.tid
+	msg.UriFrom = op.ictx.Uri
+
+	// Send the DEREGISTER MAL message
+	err := op.ictx.Ctx.Send(msg)
+	if err != nil {
+		op.status = _FINAL
+		return nil, err
+	}
+
+	// Waits for the PUBLISH_DEREGISTER_ACK MAL message
+	msg, more := <-op.ch
+	if !more {
+		fmt.Println("Operation ends: ", op.ictx.Uri, op.tid)
+		// TODO (AF): Returns an error
+		op.status = _FINAL
+		return nil, errors.New("Operation ends")
+	}
+
+	op.status = _FINAL
+	op.ictx.deregister(op.tid)
+
+	// TODO (AF): Verify that the message is ok (ack or error)
+	if msg.InteractionStage != MAL_IP_STAGE_PUBSUB_PUBLISH_DEREGISTER_ACK {
+		// TODO (AF): Close the operation
+		return nil, errors.New("Bad operation stage")
+	}
+
+	return msg, nil
+}
+
+func (op *PublisherOperation) OnMessage(msg *Message) error {
+	// TODO (AF): Verify the message: service area, version, service, operation
+	if msg.InteractionType != MAL_INTERACTIONTYPE_PUBSUB {
+		// TODO (AF): log an error
+		return errors.New("Bad message")
+	}
+	op.ch <- msg
+	return nil
+}
+
+func (op *PublisherOperation) OnClose() error {
 	// TODO (AF):
 	return nil
 }
