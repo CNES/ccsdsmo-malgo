@@ -751,7 +751,7 @@ func (op *SubscriberOperationX) OnClose() error {
 }
 
 // ================================================================================
-// PubSub Provider Operation
+// Publisher Operation
 
 type PublisherOperation interface {
 	Operation
