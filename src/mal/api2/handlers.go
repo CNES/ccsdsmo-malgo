@@ -23,6 +23,9 @@
  */
 package api2
 
+// Note (AF): This API is now deprecated, a merged API allows to use either handler
+// based and interface based interfaces in a same way.
+
 import (
 	. "mal"
 )
