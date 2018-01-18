@@ -1,7 +1,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2017 CNES
+ * Copyright (c) 2017 - 2018 CNES
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -33,11 +33,14 @@ import (
 )
 
 const (
-	maltcp1 = "maltcp://127.0.0.1:16001"
-	maltcp2 = "maltcp://127.0.0.1:16002"
+	provider_url = "maltcp://127.0.0.1:16001"
+	consumer_url = "maltcp://127.0.0.1:16002"
 )
 
 // ########## ########## ########## ########## ########## ########## ########## ##########
+// Test Send interaction
+
+// Define SendProvider
 
 type SendProvider struct {
 	pctx  *ProviderContext
@@ -67,25 +70,25 @@ func (provider *SendProvider) OnSend(msg *Message, transaction SendTransaction) 
 
 // Test TCP transport Send Interaction using the high level API
 func TestSend(t *testing.T) {
-	ctx1, err := NewContext(maltcp1)
+	provider_ctx, err := NewContext(provider_url)
 	if err != nil {
 		t.Fatal("Error creating context, ", err)
 		return
 	}
 
-	provider, err := NewSendProvider(ctx1, "provider")
+	provider, err := NewSendProvider(provider_ctx, "provider")
 	if err != nil {
 		t.Fatal("Error creating provider, ", err)
 		return
 	}
 
-	ctx2, err := NewContext(maltcp2)
+	consumer_ctx, err := NewContext(consumer_url)
 	if err != nil {
 		t.Fatal("Error creating context, ", err)
 		return
 	}
 
-	consumer, err := NewOperationContext(ctx2, "consumer")
+	consumer, err := NewOperationContext(consumer_ctx, "consumer")
 	if err != nil {
 		t.Fatal("Error creating consumer, ", err)
 		return
@@ -106,8 +109,8 @@ func TestSend(t *testing.T) {
 	op2.Send(msg2)
 
 	time.Sleep(250 * time.Millisecond)
-	ctx1.Close()
-	ctx2.Close()
+	provider_ctx.Close()
+	consumer_ctx.Close()
 
 	if provider.nbmsg != 2 {
 		t.Errorf("Receives %d messages, expect %d ", provider.nbmsg, 2)
@@ -118,6 +121,9 @@ func TestSend(t *testing.T) {
 }
 
 // ########## ########## ########## ########## ########## ########## ########## ##########
+// Test Submit interaction
+
+// Define SubmitProvider
 
 type SubmitProvider struct {
 	pctx  *ProviderContext
@@ -148,25 +154,25 @@ func (provider *SubmitProvider) OnSubmit(msg *Message, transaction SubmitTransac
 
 // Test TCP transport Submit Interaction using the high level API
 func TestSubmit(t *testing.T) {
-	ctx1, err := NewContext(maltcp1)
+	provider_ctx, err := NewContext(provider_url)
 	if err != nil {
 		t.Fatal("Error creating context, ", err)
 		return
 	}
 
-	provider, err := NewSubmitProvider(ctx1, "provider")
+	provider, err := NewSubmitProvider(provider_ctx, "provider")
 	if err != nil {
 		t.Fatal("Error creating provider, ", err)
 		return
 	}
 
-	ctx2, err := NewContext(maltcp2)
+	consumer_ctx, err := NewContext(consumer_url)
 	if err != nil {
 		t.Fatal("Error creating context, ", err)
 		return
 	}
 
-	consumer, err := NewOperationContext(ctx2, "consumer")
+	consumer, err := NewOperationContext(consumer_ctx, "consumer")
 	if err != nil {
 		t.Fatal("Error creating consumer, ", err)
 		return
@@ -191,8 +197,8 @@ func TestSubmit(t *testing.T) {
 	fmt.Println("\n\n &&&&& Submit2: OK\n\n")
 
 	time.Sleep(250 * time.Millisecond)
-	ctx1.Close()
-	ctx2.Close()
+	provider_ctx.Close()
+	consumer_ctx.Close()
 
 	if provider.nbmsg != 2 {
 		t.Errorf("Receives %d messages, expect %d ", provider.nbmsg, 2)
@@ -203,6 +209,189 @@ func TestSubmit(t *testing.T) {
 }
 
 // ########## ########## ########## ########## ########## ########## ########## ##########
+// Test Request interaction
+
+// Define RequestProvider
+
+type RequestProvider struct {
+	pctx  *ProviderContext
+	nbmsg int
+}
+
+func NewRequestProvider(ctx *Context, service string) (*RequestProvider, error) {
+	pctx, err := NewProviderContext(ctx, service)
+	if err != nil {
+		return nil, err
+	}
+	requestProvider := &RequestProvider{pctx: pctx}
+	pctx.RegisterRequestHandler(200, 1, 1, 1, requestProvider)
+
+	return requestProvider, nil
+}
+
+func (provider *RequestProvider) OnRequest(msg *Message, transaction RequestTransaction) error {
+	if msg != nil {
+		fmt.Println("\n\n $$$$$ requestHandler receive: ", string(msg.Body), "\n\n")
+		provider.nbmsg += 1
+		transaction.Reply([]byte("reply message"), nil)
+	} else {
+		fmt.Println("receive: nil")
+	}
+	return nil
+}
+
+// Test TCP transport Request Interaction using the high level API
+func TestRequest(t *testing.T) {
+	provider_ctx, err := NewContext(provider_url)
+	if err != nil {
+		t.Fatal("Error creating context, ", err)
+		return
+	}
+
+	provider, err := NewRequestProvider(provider_ctx, "provider")
+	if err != nil {
+		t.Fatal("Error creating provider, ", err)
+		return
+	}
+
+	consumer_ctx, err := NewContext(consumer_url)
+	if err != nil {
+		t.Fatal("Error creating context, ", err)
+		return
+	}
+
+	consumer, err := NewOperationContext(consumer_ctx, "consumer")
+	if err != nil {
+		t.Fatal("Error creating consumer, ", err)
+		return
+	}
+
+	op1, err := consumer.NewRequestOperation(200, 1, 1, 1)
+	msg1 := &Message{
+		UriTo: provider.pctx.Uri,
+		Body:  []byte("message1"),
+	}
+	op1.Request(msg1)
+
+	fmt.Println("\n\n &&&&& Request1: OK\n\n")
+
+	op2, err := consumer.NewRequestOperation(200, 1, 1, 1)
+	msg2 := &Message{
+		UriTo: provider.pctx.Uri,
+		Body:  []byte("message2"),
+	}
+	op2.Request(msg2)
+
+	fmt.Println("\n\n &&&&& Request2: OK\n\n")
+
+	time.Sleep(250 * time.Millisecond)
+	provider_ctx.Close()
+	consumer_ctx.Close()
+
+	if provider.nbmsg != 2 {
+		t.Errorf("Receives %d messages, expect %d ", provider.nbmsg, 2)
+	}
+
+	// Waits for socket close
+	time.Sleep(250 * time.Millisecond)
+}
+
+// ########## ########## ########## ########## ########## ########## ########## ##########
+// Test Invoke interaction
+
+// Define InvokeProvider
+
+type InvokeProvider struct {
+	pctx  *ProviderContext
+	nbmsg int
+}
+
+func NewInvokeProvider(ctx *Context, service string) (*InvokeProvider, error) {
+	pctx, err := NewProviderContext(ctx, service)
+	if err != nil {
+		return nil, err
+	}
+	invokeProvider := &InvokeProvider{pctx: pctx}
+	pctx.RegisterInvokeHandler(200, 1, 1, 1, invokeProvider)
+
+	return invokeProvider, nil
+}
+
+func (provider *InvokeProvider) OnInvoke(msg *Message, transaction InvokeTransaction) error {
+	if msg != nil {
+		fmt.Println("\n\n $$$$$ invokeHandler receive: ", string(msg.Body), "\n\n")
+		transaction.Ack(nil)
+		provider.nbmsg += 1
+		time.Sleep(250 * time.Millisecond)
+		transaction.Reply([]byte("reply message"), nil)
+	} else {
+		fmt.Println("receive: nil")
+	}
+	return nil
+}
+
+// Test TCP transport Invoke Interaction using the high level API
+func TestInvoke(t *testing.T) {
+	provider_ctx, err := NewContext(provider_url)
+	if err != nil {
+		t.Fatal("Error creating context, ", err)
+		return
+	}
+
+	provider, err := NewInvokeProvider(provider_ctx, "provider")
+	if err != nil {
+		t.Fatal("Error creating provider, ", err)
+		return
+	}
+
+	consumer_ctx, err := NewContext(consumer_url)
+	if err != nil {
+		t.Fatal("Error creating context, ", err)
+		return
+	}
+
+	consumer, err := NewOperationContext(consumer_ctx, "consumer")
+	if err != nil {
+		t.Fatal("Error creating consumer, ", err)
+		return
+	}
+
+	op1, err := consumer.NewInvokeOperation(200, 1, 1, 1)
+	msg1 := &Message{
+		UriTo: provider.pctx.Uri,
+		Body:  []byte("message1"),
+	}
+	op1.Invoke(msg1)
+
+	r1, err := op1.GetResponse()
+	fmt.Println("\n\n &&&&& Invoke1: OK\n", string(r1.Body), "\n\n")
+
+	op2, err := consumer.NewInvokeOperation(200, 1, 1, 1)
+	msg2 := &Message{
+		UriTo: provider.pctx.Uri,
+		Body:  []byte("message2"),
+	}
+	op2.Invoke(msg2)
+
+	r2, err := op1.GetResponse()
+	fmt.Println("\n\n &&&&& Invoke2: OK\n", string(r2.Body), "\n\n")
+
+	time.Sleep(250 * time.Millisecond)
+	provider_ctx.Close()
+	consumer_ctx.Close()
+
+	if provider.nbmsg != 2 {
+		t.Errorf("Receives %d messages, expect %d ", provider.nbmsg, 2)
+	}
+
+	// Waits for socket close
+	time.Sleep(250 * time.Millisecond)
+}
+
+// ########## ########## ########## ########## ########## ########## ########## ##########
+// Test Progress interaction
+
+// Define ProgressProvider
 
 type ProgressProvider struct {
 	pctx *ProviderContext
@@ -235,25 +424,25 @@ func (provider *ProgressProvider) OnProgress(msg *Message, transaction ProgressT
 
 // Test TCP transport Progress Interaction using the high level API
 func TestProgress(t *testing.T) {
-	ctx1, err := NewContext(maltcp1)
+	provider_ctx, err := NewContext(provider_url)
 	if err != nil {
 		t.Fatal("Error creating context, ", err)
 		return
 	}
 
-	provider, err := NewProgressProvider(ctx1, "provider")
+	provider, err := NewProgressProvider(provider_ctx, "provider")
 	if err != nil {
 		t.Fatal("Error creating provider, ", err)
 		return
 	}
 
-	ctx2, err := NewContext(maltcp2)
+	consumer_ctx, err := NewContext(consumer_url)
 	if err != nil {
 		t.Fatal("Error creating context, ", err)
 		return
 	}
 
-	consumer, err := NewOperationContext(ctx2, "consumer")
+	consumer, err := NewOperationContext(consumer_ctx, "consumer")
 	if err != nil {
 		t.Fatal("Error creating consumer, ", err)
 		return
@@ -289,8 +478,8 @@ func TestProgress(t *testing.T) {
 	fmt.Println("\n\n &&&&& Progress1: Response -> ", string(rep.Body), "\n\n")
 
 	time.Sleep(250 * time.Millisecond)
-	ctx1.Close()
-	ctx2.Close()
+	provider_ctx.Close()
+	consumer_ctx.Close()
 
 	if nbmsg != 11 {
 		t.Errorf("Receives %d messages, expect %d ", nbmsg, 2)

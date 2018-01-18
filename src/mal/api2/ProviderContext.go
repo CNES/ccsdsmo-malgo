@@ -1,7 +1,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2017 CNES
+ * Copyright (c) 2017 - 2018 CNES
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -170,12 +170,87 @@ func (pctx *ProviderContext) RegisterSubmitHandler(area UShort, areaVersion UOct
 // ================================================================================
 // RequestHandler
 
-// TODO(AF):
+type RequestTransactionX struct {
+	TransactionX
+}
+
+func (tx *RequestTransactionX) Reply(body []byte, err error) error {
+	msg := &Message{
+		InteractionType:  MAL_INTERACTIONTYPE_REQUEST,
+		InteractionStage: MAL_IP_STAGE_REQUEST_RESPONSE,
+		IsErrorMessage:   false,
+		TransactionId:    tx.tid,
+		ServiceArea:      tx.area,
+		AreaVersion:      tx.areaVersion,
+		Service:          tx.service,
+		Operation:        tx.operation,
+		UriFrom:          tx.pctx.Uri,
+		UriTo:            tx.urifrom,
+	}
+	if err != nil {
+		msg.IsErrorMessage = true
+		msg.Body = []byte(err.Error())
+	} else {
+		msg.Body = body
+	}
+	return tx.pctx.Ctx.Send(msg)
+}
+
+func (pctx *ProviderContext) RegisterRequestHandler(area UShort, areaVersion UOctet, service UShort, operation UShort, handler RequestHandler) error {
+	return pctx.register(_REQUEST_HANDLER, area, areaVersion, service, operation, handler)
+}
 
 // ================================================================================
 // InvokeHandler
 
-// TODO(AF):
+type InvokeTransactionX struct {
+	TransactionX
+}
+
+func (tx *InvokeTransactionX) Ack(err error) error {
+	msg := &Message{
+		InteractionType:  MAL_INTERACTIONTYPE_INVOKE,
+		InteractionStage: MAL_IP_STAGE_INVOKE_ACK,
+		TransactionId:    tx.tid,
+		ServiceArea:      tx.area,
+		AreaVersion:      tx.areaVersion,
+		Service:          tx.service,
+		Operation:        tx.operation,
+		UriFrom:          tx.pctx.Uri,
+		UriTo:            tx.urifrom,
+	}
+	if err != nil {
+		msg.IsErrorMessage = true
+		msg.Body = []byte(err.Error())
+	}
+	return tx.pctx.Ctx.Send(msg)
+}
+
+func (tx *InvokeTransactionX) Reply(body []byte, err error) error {
+	msg := &Message{
+		InteractionType:  MAL_INTERACTIONTYPE_INVOKE,
+		InteractionStage: MAL_IP_STAGE_INVOKE_RESPONSE,
+		IsErrorMessage:   false,
+		TransactionId:    tx.tid,
+		ServiceArea:      tx.area,
+		AreaVersion:      tx.areaVersion,
+		Service:          tx.service,
+		Operation:        tx.operation,
+		UriFrom:          tx.pctx.Uri,
+		UriTo:            tx.urifrom,
+	}
+	if err != nil {
+		msg.IsErrorMessage = true
+		msg.Body = []byte(err.Error())
+	} else {
+		msg.Body = body
+	}
+	return tx.pctx.Ctx.Send(msg)
+}
+
+func (pctx *ProviderContext) RegisterInvokeHandler(area UShort, areaVersion UOctet, service UShort, operation UShort, handler InvokeHandler) error {
+	return pctx.register(_INVOKE_HANDLER, area, areaVersion, service, operation, handler)
+}
 
 // ================================================================================
 // ProgressHandler
@@ -228,7 +303,7 @@ func (tx *ProgressTransactionX) Reply(body []byte, err error) error {
 	msg := &Message{
 		InteractionType:  MAL_INTERACTIONTYPE_PROGRESS,
 		InteractionStage: MAL_IP_STAGE_PROGRESS_RESPONSE,
-		IsErrorMessage:   true,
+		IsErrorMessage:   false,
 		TransactionId:    tx.tid,
 		ServiceArea:      tx.area,
 		AreaVersion:      tx.areaVersion,
@@ -248,6 +323,123 @@ func (tx *ProgressTransactionX) Reply(body []byte, err error) error {
 
 func (pctx *ProviderContext) RegisterProgressHandler(area UShort, areaVersion UOctet, service UShort, operation UShort, handler ProgressHandler) error {
 	return pctx.register(_PROGRESS_HANDLER, area, areaVersion, service, operation, handler)
+}
+
+// ================================================================================
+// BrokerHandler
+
+type SubscriberTransactionX struct {
+	TransactionX
+}
+
+func (tx *SubscriberTransactionX) RegisterAck(err error) error {
+	msg := &Message{
+		InteractionType:  MAL_INTERACTIONTYPE_PUBSUB,
+		InteractionStage: MAL_IP_STAGE_PUBSUB_REGISTER_ACK,
+		IsErrorMessage:   false,
+		TransactionId:    tx.tid,
+		ServiceArea:      tx.area,
+		AreaVersion:      tx.areaVersion,
+		Service:          tx.service,
+		Operation:        tx.operation,
+		UriFrom:          tx.pctx.Uri,
+		UriTo:            tx.urifrom,
+	}
+	if err != nil {
+		msg.IsErrorMessage = true
+		msg.Body = []byte(err.Error())
+	}
+	return tx.pctx.Ctx.Send(msg)
+}
+
+func (tx *SubscriberTransactionX) Notify(body []byte, err error) error {
+	msg := &Message{
+		InteractionType:  MAL_INTERACTIONTYPE_PUBSUB,
+		InteractionStage: MAL_IP_STAGE_PUBSUB_NOTIFY,
+		IsErrorMessage:   false,
+		TransactionId:    tx.tid,
+		ServiceArea:      tx.area,
+		AreaVersion:      tx.areaVersion,
+		Service:          tx.service,
+		Operation:        tx.operation,
+		UriFrom:          tx.pctx.Uri,
+		UriTo:            tx.urifrom,
+	}
+	if err != nil {
+		msg.IsErrorMessage = true
+		msg.Body = []byte(err.Error())
+	} else {
+		msg.Body = body
+	}
+	return tx.pctx.Ctx.Send(msg)
+}
+
+func (tx *SubscriberTransactionX) DeregisterAck(err error) error {
+	msg := &Message{
+		InteractionType:  MAL_INTERACTIONTYPE_PUBSUB,
+		InteractionStage: MAL_IP_STAGE_PUBSUB_DEREGISTER_ACK,
+		IsErrorMessage:   false,
+		TransactionId:    tx.tid,
+		ServiceArea:      tx.area,
+		AreaVersion:      tx.areaVersion,
+		Service:          tx.service,
+		Operation:        tx.operation,
+		UriFrom:          tx.pctx.Uri,
+		UriTo:            tx.urifrom,
+	}
+	if err != nil {
+		msg.IsErrorMessage = true
+		msg.Body = []byte(err.Error())
+	}
+	return tx.pctx.Ctx.Send(msg)
+}
+
+type PublisherTransactionX struct {
+	TransactionX
+}
+
+func (tx *PublisherTransactionX) RegisterAck(err error) error {
+	msg := &Message{
+		InteractionType:  MAL_INTERACTIONTYPE_PUBSUB,
+		InteractionStage: MAL_IP_STAGE_PUBSUB_PUBLISH_REGISTER_ACK,
+		IsErrorMessage:   false,
+		TransactionId:    tx.tid,
+		ServiceArea:      tx.area,
+		AreaVersion:      tx.areaVersion,
+		Service:          tx.service,
+		Operation:        tx.operation,
+		UriFrom:          tx.pctx.Uri,
+		UriTo:            tx.urifrom,
+	}
+	if err != nil {
+		msg.IsErrorMessage = true
+		msg.Body = []byte(err.Error())
+	}
+	return tx.pctx.Ctx.Send(msg)
+}
+
+func (tx *PublisherTransactionX) DeregisterAck(err error) error {
+	msg := &Message{
+		InteractionType:  MAL_INTERACTIONTYPE_PUBSUB,
+		InteractionStage: MAL_IP_STAGE_PUBSUB_PUBLISH_DEREGISTER_ACK,
+		IsErrorMessage:   false,
+		TransactionId:    tx.tid,
+		ServiceArea:      tx.area,
+		AreaVersion:      tx.areaVersion,
+		Service:          tx.service,
+		Operation:        tx.operation,
+		UriFrom:          tx.pctx.Uri,
+		UriTo:            tx.urifrom,
+	}
+	if err != nil {
+		msg.IsErrorMessage = true
+		msg.Body = []byte(err.Error())
+	}
+	return tx.pctx.Ctx.Send(msg)
+}
+
+func (pctx *ProviderContext) RegisterBrokerHandler(area UShort, areaVersion UOctet, service UShort, operation UShort, handler BrokerHandler) error {
+	return pctx.register(_PUBSUB_HANDLER, area, areaVersion, service, operation, handler)
 }
 
 // ================================================================================
@@ -297,6 +489,24 @@ func (pctx *ProviderContext) OnMessage(msg *Message) error {
 		transaction := &SubmitTransactionX{TransactionX{pctx, msg.UriFrom, msg.TransactionId, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation}}
 		// TODO (AF): use a goroutine
 		return submitHandler.OnSubmit(msg, transaction)
+	case MAL_INTERACTIONTYPE_REQUEST:
+		handler, err := pctx.GetHandler(_REQUEST_HANDLER, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation)
+		if err != nil {
+			return err
+		}
+		requestHandler := handler.(RequestHandler)
+		transaction := &RequestTransactionX{TransactionX{pctx, msg.UriFrom, msg.TransactionId, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation}}
+		// TODO (AF): use a goroutine
+		return requestHandler.OnRequest(msg, transaction)
+	case MAL_INTERACTIONTYPE_INVOKE:
+		handler, err := pctx.GetHandler(_INVOKE_HANDLER, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation)
+		if err != nil {
+			return err
+		}
+		invokeHandler := handler.(InvokeHandler)
+		transaction := &InvokeTransactionX{TransactionX{pctx, msg.UriFrom, msg.TransactionId, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation}}
+		// TODO (AF): use a goroutine
+		return invokeHandler.OnInvoke(msg, transaction)
 	case MAL_INTERACTIONTYPE_PROGRESS:
 		handler, err := pctx.GetHandler(_PROGRESS_HANDLER, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation)
 		if err != nil {
@@ -306,6 +516,36 @@ func (pctx *ProviderContext) OnMessage(msg *Message) error {
 		transaction := &ProgressTransactionX{TransactionX{pctx, msg.UriFrom, msg.TransactionId, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation}}
 		// TODO (AF): use a goroutine
 		return progressHandler.OnProgress(msg, transaction)
+	case MAL_INTERACTIONTYPE_PUBSUB:
+		handler, err := pctx.GetHandler(_PUBSUB_HANDLER, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation)
+		if err != nil {
+			return err
+		}
+		broker := handler.(BrokerHandler)
+		if msg.InteractionStage == MAL_IP_STAGE_PUBSUB_PUBLISH_REGISTER {
+			transaction := &PublisherTransactionX{TransactionX{pctx, msg.UriFrom, msg.TransactionId, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation}}
+			// TODO (AF): use a goroutine
+			return broker.OnPublishRegister(msg, transaction)
+		} else if msg.InteractionStage == MAL_IP_STAGE_PUBSUB_PUBLISH {
+			transaction := &PublisherTransactionX{TransactionX{pctx, msg.UriFrom, msg.TransactionId, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation}}
+			// TODO (AF): use a goroutine
+			return broker.OnPublish(msg, transaction)
+		} else if msg.InteractionStage == MAL_IP_STAGE_PUBSUB_PUBLISH_DEREGISTER {
+			transaction := &PublisherTransactionX{TransactionX{pctx, msg.UriFrom, msg.TransactionId, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation}}
+			// TODO (AF): use a goroutine
+			return broker.OnPublishDeregister(msg, transaction)
+		} else if msg.InteractionStage == MAL_IP_STAGE_PUBSUB_REGISTER {
+			transaction := &SubscriberTransactionX{TransactionX{pctx, msg.UriFrom, msg.TransactionId, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation}}
+			// TODO (AF): use a goroutine
+			return broker.OnRegister(msg, transaction)
+		} else if msg.InteractionStage == MAL_IP_STAGE_PUBSUB_DEREGISTER {
+			transaction := &SubscriberTransactionX{TransactionX{pctx, msg.UriFrom, msg.TransactionId, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation}}
+			// TODO (AF): use a goroutine
+			return broker.OnDeregister(msg, transaction)
+		} else {
+			// TODO (AF): Log an error, May be wa should not return this error
+			return errors.New("Bad interaction stage for PubSub")
+		}
 	default:
 		fmt.Println("Cannot route message to: ", *msg.UriTo)
 	}

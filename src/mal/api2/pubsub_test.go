@@ -24,6 +24,7 @@
 package api2_test
 
 import (
+	"fmt"
 	. "mal"
 	. "mal/api2"
 	_ "mal/transport/tcp" // Needed to initialize TCP transport factory
@@ -32,9 +33,9 @@ import (
 )
 
 const (
-	//	maltcp1 = "maltcp://127.0.0.1:16001"
-	//	maltcp2 = "maltcp://127.0.0.1:16002"
-	maltcp3 = "maltcp://127.0.0.1:16003"
+	subscriber_url = "maltcp://127.0.0.1:16001"
+	publisher_url  = "maltcp://127.0.0.1:16002"
+	broker_url     = "maltcp://127.0.0.1:16003"
 )
 
 // ########## ########## ########## ########## ########## ########## ########## ##########
@@ -49,76 +50,116 @@ func NewBroker(ctx *Context, service string) (*BrokerContext, error) {
 		return nil, err
 	}
 	broker := &BrokerContext{pctx: pctx}
-	// TODO (AF): Registers the broker handler
-	//	pctx.RegisterBrokerHandler(200, 1, 1, 1, broker)
+	// Registers the broker handler
+	pctx.RegisterBrokerHandler(200, 1, 1, 1, broker)
 
 	return broker, nil
 }
 
-func (handler *BrokerContext) OnRegister(msg *Message, transaction SubscriberTransaction) error {
+func (handler *BrokerContext) OnRegister(msg *Message, tx SubscriberTransaction) error {
+	fmt.Println("\n\n##########\n# OnRegister:\n##########\n\n")
+	tx.RegisterAck(nil)
 	return nil
 }
 
-func (handler *BrokerContext) OnDeregister(msg *Message, transaction SubscriberTransaction) error {
+func (handler *BrokerContext) OnDeregister(msg *Message, tx SubscriberTransaction) error {
+	fmt.Println("\n\n##########\n# OnDeregister:\n##########\n\n")
+	tx.DeregisterAck(nil)
 	return nil
 }
 
-func (handler *BrokerContext) OnPublishRegister(msg *Message, transaction PublisherTransaction) error {
+func (handler *BrokerContext) OnPublishRegister(msg *Message, tx PublisherTransaction) error {
+	fmt.Println("\n\n##########\n# OnPublishRegister:\n##########\n\n")
+	tx.RegisterAck(nil)
 	return nil
 }
 
-func (handler *BrokerContext) OnPublishDeregister(msg *Message, transaction PublisherTransaction) error {
+func (handler *BrokerContext) OnPublishDeregister(msg *Message, tx PublisherTransaction) error {
+	fmt.Println("\n\n##########\n# OnPublishDeregister:\n##########\n\n")
+	tx.DeregisterAck(nil)
 	return nil
 }
 
-func (handler *BrokerContext) OnPublish(msg *Message, transaction PublisherTransaction) error {
+func (handler *BrokerContext) OnPublish(msg *Message, tx PublisherTransaction) error {
+	fmt.Println("\n\n##########\n# OnPublish:\n##########\n\n")
 	return nil
 }
 
 // Test TCP transport Pub/Sub Interaction using the high level API
 func TestPubSub(t *testing.T) {
-	ctx1, err := NewContext(maltcp1)
+	broker_ctx, err := NewContext(broker_url)
 	if err != nil {
 		t.Fatal("Error creating context, ", err)
 		return
 	}
-	broker, err := NewBroker(ctx1, "broker")
+	broker, err := NewBroker(broker_ctx, "broker")
+	t.Log("Broker: ", broker)
 
 	// TODO (AF): Creates broker
 
-	ctx2, err := NewContext(maltcp2)
+	pub_ctx, err := NewContext(publisher_url)
 	if err != nil {
 		t.Fatal("Error creating context, ", err)
 		return
 	}
 
-	publisher, err := NewOperationContext(ctx2, "publisher")
+	publisher, err := NewOperationContext(pub_ctx, "publisher")
 	if err != nil {
 		t.Fatal("Error creating publisher, ", err)
 		return
 	}
 	pubop, err := publisher.NewPublisherOperation(200, 1, 1, 1)
 	// TODO (AF): Build PublishRegister message
-	pubmsg := &Message{}
-	pubop.PublishRegister(pubmsg)
+	pubregmsg := &Message{
+		UriTo: broker.pctx.Uri,
+		Body:  []byte("publish register"),
+	}
+	pubop.Register(pubregmsg)
 
-	ctx3, err := NewContext(maltcp3)
+	sub_ctx, err := NewContext(subscriber_url)
 	if err != nil {
 		t.Fatal("Error creating context, ", err)
 		return
 	}
 
-	subscriber, err := NewOperationContext(ctx3, "subscriber")
+	subscriber, err := NewOperationContext(sub_ctx, "subscriber")
 	if err != nil {
 		t.Fatal("Error creating subscriber, ", err)
 		return
 	}
 	subop, err := subscriber.NewSubscriberOperation(200, 1, 1, 1)
 	// TODO (AF): Build Register message
-	submsg := &Message{}
-	subop.Register(submsg)
+	regmsg := &Message{
+		UriTo: broker.pctx.Uri,
+		Body:  []byte("register"),
+	}
+	subop.Register(regmsg)
 
 	//	nbmsg := 0
+
+	pubmsg1 := &Message{
+		UriTo: broker.pctx.Uri,
+		Body:  []byte("publish #1"),
+	}
+	pubop.Publish(pubmsg1)
+
+	pubmsg2 := &Message{
+		UriTo: broker.pctx.Uri,
+		Body:  []byte("publish #2"),
+	}
+	pubop.Publish(pubmsg2)
+
+	pubderegmsg := &Message{
+		UriTo: broker.pctx.Uri,
+		Body:  []byte("publish deregister"),
+	}
+	pubop.Deregister(pubderegmsg)
+
+	deregmsg := &Message{
+		UriTo: broker.pctx.Uri,
+		Body:  []byte("deregister"),
+	}
+	subop.Deregister(deregmsg)
 
 	// Waits for socket close
 	time.Sleep(250 * time.Millisecond)
