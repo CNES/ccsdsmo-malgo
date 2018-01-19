@@ -97,19 +97,11 @@ func TestSendProvider(t *testing.T) {
 		return
 	}
 
-	op1, err := consumer.NewSendOperation(200, 1, 1, 1)
-	msg1 := &Message{
-		UriTo: provider.pctx.Uri,
-		Body:  []byte("message1"),
-	}
-	op1.Send(msg1)
+	op1, err := consumer.NewSendOperation(provider.pctx.Uri, 200, 1, 1, 1)
+	op1.Send([]byte("message1"))
 
-	op2, err := consumer.NewSendOperation(200, 1, 1, 1)
-	msg2 := &Message{
-		UriTo: provider.pctx.Uri,
-		Body:  []byte("message2"),
-	}
-	op2.Send(msg2)
+	op2, err := consumer.NewSendOperation(provider.pctx.Uri, 200, 1, 1, 1)
+	op2.Send([]byte("message2"))
 
 	time.Sleep(250 * time.Millisecond)
 	provider_ctx.Close()
@@ -181,32 +173,24 @@ func TestSubmitProvider(t *testing.T) {
 		return
 	}
 
-	op1, err := consumer.NewSubmitOperation(200, 1, 1, 1)
+	op1, err := consumer.NewSubmitOperation(provider.pctx.Uri, 200, 1, 1, 1)
 	if err != nil {
 		t.Fatal("Error creating operation, ", err)
 		return
 	}
-	msg1 := &Message{
-		UriTo: provider.pctx.Uri,
-		Body:  []byte("message1"),
-	}
-	_, err = op1.Submit(msg1)
+	_, err = op1.Submit([]byte("message1"))
 	if err != nil {
 		t.Fatal("Error during submit, ", err)
 		return
 	}
 	fmt.Println("\t&&&&& Submit1: OK")
 
-	op2, err := consumer.NewSubmitOperation(200, 1, 1, 1)
+	op2, err := consumer.NewSubmitOperation(provider.pctx.Uri, 200, 1, 1, 1)
 	if err != nil {
 		t.Fatal("Error creating operation, ", err)
 		return
 	}
-	msg2 := &Message{
-		UriTo: provider.pctx.Uri,
-		Body:  []byte("message2"),
-	}
-	_, err = op2.Submit(msg2)
+	_, err = op2.Submit([]byte("message2"))
 	if err != nil {
 		t.Fatal("Error during submit, ", err)
 		return
@@ -283,32 +267,24 @@ func TestRequestProvider(t *testing.T) {
 		return
 	}
 
-	op1, err := consumer.NewRequestOperation(200, 1, 1, 1)
+	op1, err := consumer.NewRequestOperation(provider.pctx.Uri, 200, 1, 1, 1)
 	if err != nil {
 		t.Fatal("Error creating operation, ", err)
 		return
 	}
-	msg1 := &Message{
-		UriTo: provider.pctx.Uri,
-		Body:  []byte("message1"),
-	}
-	ret1, err := op1.Request(msg1)
+	ret1, err := op1.Request([]byte("message1"))
 	if err != nil {
 		t.Fatal("Error during request, ", err)
 		return
 	}
 	fmt.Println("\t&&&&& Request1: OK, ", string(ret1.Body))
 
-	op2, err := consumer.NewRequestOperation(200, 1, 1, 1)
+	op2, err := consumer.NewRequestOperation(provider.pctx.Uri, 200, 1, 1, 1)
 	if err != nil {
 		t.Fatal("Error creating operation, ", err)
 		return
 	}
-	msg2 := &Message{
-		UriTo: provider.pctx.Uri,
-		Body:  []byte("message2"),
-	}
-	ret2, err := op2.Request(msg2)
+	ret2, err := op2.Request([]byte("message2"))
 	if err != nil {
 		t.Fatal("Error during request, ", err)
 		return
@@ -388,16 +364,12 @@ func TestInvokeProvider(t *testing.T) {
 		return
 	}
 
-	op1, err := consumer.NewInvokeOperation(200, 1, 1, 1)
+	op1, err := consumer.NewInvokeOperation(provider.pctx.Uri, 200, 1, 1, 1)
 	if err != nil {
 		t.Fatal("Error creating operation, ", err)
 		return
 	}
-	msg1 := &Message{
-		UriTo: provider.pctx.Uri,
-		Body:  []byte("message1"),
-	}
-	_, err = op1.Invoke(msg1)
+	_, err = op1.Invoke([]byte("message1"))
 	if err != nil {
 		t.Fatal("Error during invoke, ", err)
 		return
@@ -410,16 +382,12 @@ func TestInvokeProvider(t *testing.T) {
 	}
 	fmt.Println("\t&&&&& Invoke1: OK, ", string(r1.Body))
 
-	op2, err := consumer.NewInvokeOperation(200, 1, 1, 1)
+	op2, err := consumer.NewInvokeOperation(provider.pctx.Uri, 200, 1, 1, 1)
 	if err != nil {
 		t.Fatal("Error creating operation, ", err)
 		return
 	}
-	msg2 := &Message{
-		UriTo: provider.pctx.Uri,
-		Body:  []byte("message2"),
-	}
-	_, err = op2.Invoke(msg2)
+	_, err = op2.Invoke([]byte("message2"))
 	if err != nil {
 		t.Fatal("Error during invoke, ", err)
 		return
@@ -506,12 +474,8 @@ func TestProgressProvider(t *testing.T) {
 
 	nbmsg := 0
 
-	op1, err := consumer.NewProgressOperation(200, 1, 1, 1)
-	msg1 := &Message{
-		UriTo: provider.pctx.Uri,
-		Body:  []byte("message1"),
-	}
-	op1.Progress(msg1)
+	op1, err := consumer.NewProgressOperation(provider.pctx.Uri, 200, 1, 1, 1)
+	op1.Progress([]byte("message1"))
 	fmt.Println("\t&&&&& Progress1: OK")
 
 	updt, err := op1.GetUpdate()
@@ -620,13 +584,9 @@ func TestPubSubProvider(t *testing.T) {
 		t.Fatal("Error creating publisher, ", err)
 		return
 	}
-	pubop, err := publisher.NewPublisherOperation(200, 1, 1, 1)
+	pubop, err := publisher.NewPublisherOperation(broker.pctx.Uri, 200, 1, 1, 1)
 	// TODO (AF): Build PublishRegister message
-	pubregmsg := &Message{
-		UriTo: broker.pctx.Uri,
-		Body:  []byte("publish register"),
-	}
-	pubop.Register(pubregmsg)
+	pubop.Register([]byte("register"))
 
 	sub_ctx, err := NewContext(subscriber_url)
 	if err != nil {
@@ -639,27 +599,12 @@ func TestPubSubProvider(t *testing.T) {
 		t.Fatal("Error creating subscriber, ", err)
 		return
 	}
-	subop, err := subscriber.NewSubscriberOperation(200, 1, 1, 1)
+	subop, err := subscriber.NewSubscriberOperation(broker.pctx.Uri, 200, 1, 1, 1)
 	// TODO (AF): Build Register message
-	regmsg := &Message{
-		UriTo: broker.pctx.Uri,
-		Body:  []byte("register"),
-	}
-	subop.Register(regmsg)
+	subop.Register([]byte("register"))
 
-	//	nbmsg := 0
-
-	pubmsg1 := &Message{
-		UriTo: broker.pctx.Uri,
-		Body:  []byte("publish #1"),
-	}
-	pubop.Publish(pubmsg1)
-
-	pubmsg2 := &Message{
-		UriTo: broker.pctx.Uri,
-		Body:  []byte("publish #2"),
-	}
-	pubop.Publish(pubmsg2)
+	pubop.Publish([]byte("publish #1"))
+	pubop.Publish([]byte("publish #2"))
 
 	// Try to get Notify
 	r1, err := subop.GetNotify()
@@ -669,17 +614,9 @@ func TestPubSubProvider(t *testing.T) {
 	r2, err := subop.GetNotify()
 	fmt.Println("\t&&&&& Subscriber notified: OK, ", string(r2.Body))
 
-	pubderegmsg := &Message{
-		UriTo: broker.pctx.Uri,
-		Body:  []byte("publish deregister"),
-	}
-	pubop.Deregister(pubderegmsg)
+	pubop.Deregister([]byte("deregister"))
 
-	deregmsg := &Message{
-		UriTo: broker.pctx.Uri,
-		Body:  []byte("deregister"),
-	}
-	subop.Deregister(deregmsg)
+	subop.Deregister([]byte("deregister"))
 
 	// Waits for socket close
 	time.Sleep(250 * time.Millisecond)

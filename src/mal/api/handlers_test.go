@@ -84,19 +84,11 @@ func TestSend(t *testing.T) {
 	// Registers Send handler
 	provider.RegisterSendHandler(200, 1, 1, 1, sendHandler)
 
-	op1, err := consumer.NewSendOperation(200, 1, 1, 1)
-	msg1 := &Message{
-		UriTo: provider.Uri,
-		Body:  []byte("message1"),
-	}
-	op1.Send(msg1)
+	op1, err := consumer.NewSendOperation(provider.Uri, 200, 1, 1, 1)
+	op1.Send([]byte("message1"))
 
-	op2, err := consumer.NewSendOperation(200, 1, 1, 1)
-	msg2 := &Message{
-		UriTo: provider.Uri,
-		Body:  []byte("message2"),
-	}
-	op2.Send(msg2)
+	op2, err := consumer.NewSendOperation(provider.Uri, 200, 1, 1, 1)
+	op2.Send([]byte("message2"))
 
 	time.Sleep(250 * time.Millisecond)
 	provider_ctx.Close()
@@ -155,32 +147,24 @@ func TestSubmit(t *testing.T) {
 	// Registers Submit handler
 	provider.RegisterSubmitHandler(200, 1, 1, 1, submitHandler)
 
-	op1, err := consumer.NewSubmitOperation(200, 1, 1, 1)
+	op1, err := consumer.NewSubmitOperation(provider.Uri, 200, 1, 1, 1)
 	if err != nil {
 		t.Fatal("Error creating operation, ", err)
 		return
 	}
-	msg1 := &Message{
-		UriTo: provider.Uri,
-		Body:  []byte("message1"),
-	}
-	_, err = op1.Submit(msg1)
+	_, err = op1.Submit([]byte("message1"))
 	if err != nil {
 		t.Fatal("Error during submit, ", err)
 		return
 	}
 	fmt.Println("\t&&&&& Submit1: OK")
 
-	op2, err := consumer.NewSubmitOperation(200, 1, 1, 1)
+	op2, err := consumer.NewSubmitOperation(provider.Uri, 200, 1, 1, 1)
 	if err != nil {
 		t.Fatal("Error creating operation, ", err)
 		return
 	}
-	msg2 := &Message{
-		UriTo: provider.Uri,
-		Body:  []byte("message2"),
-	}
-	_, err = op2.Submit(msg2)
+	_, err = op2.Submit([]byte("message2"))
 	if err != nil {
 		t.Fatal("Error during submit, ", err)
 		return
@@ -246,32 +230,24 @@ func TestRequest(t *testing.T) {
 
 	provider.RegisterRequestHandler(200, 1, 1, 1, requestHandler)
 
-	op1, err := consumer.NewRequestOperation(200, 1, 1, 1)
+	op1, err := consumer.NewRequestOperation(provider.Uri, 200, 1, 1, 1)
 	if err != nil {
 		t.Fatal("Error creating operation, ", err)
 		return
 	}
-	msg1 := &Message{
-		UriTo: provider.Uri,
-		Body:  []byte("message1"),
-	}
-	ret1, err := op1.Request(msg1)
+	ret1, err := op1.Request([]byte("message1"))
 	if err != nil {
 		t.Fatal("Error during request, ", err)
 		return
 	}
 	fmt.Println("\t&&&&& Request1: OK, ", string(ret1.Body))
 
-	op2, err := consumer.NewRequestOperation(200, 1, 1, 1)
+	op2, err := consumer.NewRequestOperation(provider.Uri, 200, 1, 1, 1)
 	if err != nil {
 		t.Fatal("Error creating operation, ", err)
 		return
 	}
-	msg2 := &Message{
-		UriTo: provider.Uri,
-		Body:  []byte("message2"),
-	}
-	ret2, err := op2.Request(msg2)
+	ret2, err := op2.Request([]byte("message2"))
 	if err != nil {
 		t.Fatal("Error during request, ", err)
 		return
@@ -338,16 +314,12 @@ func TestInvoke(t *testing.T) {
 
 	provider.RegisterInvokeHandler(200, 1, 1, 1, invokeHandler)
 
-	op1, err := consumer.NewInvokeOperation(200, 1, 1, 1)
+	op1, err := consumer.NewInvokeOperation(provider.Uri, 200, 1, 1, 1)
 	if err != nil {
 		t.Fatal("Error creating operation, ", err)
 		return
 	}
-	msg1 := &Message{
-		UriTo: provider.Uri,
-		Body:  []byte("message1"),
-	}
-	_, err = op1.Invoke(msg1)
+	_, err = op1.Invoke([]byte("message1"))
 	if err != nil {
 		t.Fatal("Error during invoke, ", err)
 		return
@@ -360,16 +332,12 @@ func TestInvoke(t *testing.T) {
 	}
 	fmt.Println("\t&&&&& Invoke1: OK, ", string(r1.Body))
 
-	op2, err := consumer.NewInvokeOperation(200, 1, 1, 1)
+	op2, err := consumer.NewInvokeOperation(provider.Uri, 200, 1, 1, 1)
 	if err != nil {
 		t.Fatal("Error creating operation, ", err)
 		return
 	}
-	msg2 := &Message{
-		UriTo: provider.Uri,
-		Body:  []byte("message2"),
-	}
-	_, err = op2.Invoke(msg2)
+	_, err = op2.Invoke([]byte("message2"))
 	if err != nil {
 		t.Fatal("Error during invoke, ", err)
 		return
@@ -443,12 +411,8 @@ func TestProgress(t *testing.T) {
 	// Registers Progress handler
 	provider.RegisterProgressHandler(200, 1, 1, 1, progressHandler)
 
-	op1, err := consumer.NewProgressOperation(200, 1, 1, 1)
-	msg1 := &Message{
-		UriTo: provider.Uri,
-		Body:  []byte("message1"),
-	}
-	op1.Progress(msg1)
+	op1, err := consumer.NewProgressOperation(provider.Uri, 200, 1, 1, 1)
+	op1.Progress([]byte("message1"))
 	fmt.Println("\t&&&&& Progress1: OK")
 
 	updt, err := op1.GetUpdate()
@@ -571,16 +535,12 @@ func TestPubSub(t *testing.T) {
 	}
 
 	// Initiates Publisher operation and do register
-	op1, err := publisher.NewPublisherOperation(200, 1, 1, 1)
+	op1, err := publisher.NewPublisherOperation(broker.Uri, 200, 1, 1, 1)
 	if err != nil {
 		t.Fatal("Error creating publisher operation, ", err)
 		return
 	}
-	msg1 := &Message{
-		UriTo: broker.Uri,
-		Body:  []byte("register"),
-	}
-	err = op1.Register(msg1)
+	err = op1.Register([]byte("register"))
 	if err != nil {
 		t.Fatal("Error during publish register operation, ", err)
 		return
@@ -588,16 +548,12 @@ func TestPubSub(t *testing.T) {
 	fmt.Println("\t&&&&& Publisher registered")
 
 	// Initiates Subscriber operation and do register
-	op2, err := subscriber.NewSubscriberOperation(200, 1, 1, 1)
+	op2, err := subscriber.NewSubscriberOperation(broker.Uri, 200, 1, 1, 1)
 	if err != nil {
 		t.Fatal("Error creating subscriber operation, ", err)
 		return
 	}
-	msg2 := &Message{
-		UriTo: broker.Uri,
-		Body:  []byte("register"),
-	}
-	err = op2.Register(msg2)
+	err = op2.Register([]byte("register"))
 	if err != nil {
 		t.Fatal("Error during register operation, ", err)
 		return
@@ -605,11 +561,7 @@ func TestPubSub(t *testing.T) {
 	fmt.Println("\t&&&&& Subscriber registered")
 
 	// Do publish
-	msg3 := &Message{
-		UriTo: broker.Uri,
-		Body:  []byte("publish"),
-	}
-	err = op1.Publish(msg3)
+	err = op1.Publish([]byte("publish"))
 	if err != nil {
 		t.Fatal("Error during publish operation, ", err)
 		return
@@ -621,11 +573,7 @@ func TestPubSub(t *testing.T) {
 	fmt.Println("\t&&&&& Subscriber notified: OK, ", string(r.Body))
 
 	// Do Deregister
-	msg4 := &Message{
-		UriTo: broker.Uri,
-		Body:  []byte("deregister"),
-	}
-	err = op1.Deregister(msg4)
+	err = op1.Deregister([]byte("deregister"))
 	if err != nil {
 		t.Fatal("Error during publish deregister operation, ", err)
 		return
@@ -633,11 +581,7 @@ func TestPubSub(t *testing.T) {
 	fmt.Println("\t&&&&& Publisher deregister")
 
 	// Do Deregister
-	msg5 := &Message{
-		UriTo: broker.Uri,
-		Body:  []byte("deregister"),
-	}
-	err = op2.Deregister(msg5)
+	err = op2.Deregister([]byte("deregister"))
 	if err != nil {
 		t.Fatal("Error during deregister operation, ", err)
 		return
@@ -652,6 +596,66 @@ func TestPubSub(t *testing.T) {
 	//	if nbmsg != 11 {
 	//		t.Errorf("Receives %d messages, expect %d ", nbmsg, 2)
 	//	}
+
+	// Waits for socket close
+	time.Sleep(250 * time.Millisecond)
+}
+
+// Test reuse of operation after reset
+func TestReset(t *testing.T) {
+	provider_ctx, err := NewContext(provider_url)
+	if err != nil {
+		t.Fatal("Error creating context, ", err)
+		return
+	}
+
+	provider, err := NewHandlerContext(provider_ctx, "provider")
+	if err != nil {
+		t.Fatal("Error creating provider, ", err)
+		return
+	}
+
+	consumer_ctx, err := NewContext(consumer_url)
+	if err != nil {
+		t.Fatal("Error creating context, ", err)
+		return
+	}
+
+	consumer, err := NewOperationContext(consumer_ctx, "consumer")
+	if err != nil {
+		t.Fatal("Error creating consumer, ", err)
+		return
+	}
+
+	nbmsg := 0
+
+	// Declares Send handler function here so nbmsg local variable is accessible throught
+	// the closure.
+	sendHandler := func(msg *Message, t Transaction) error {
+		if msg != nil {
+			fmt.Println("\t$$$$$ sendHandler receive: ", string(msg.Body))
+			nbmsg += 1
+		} else {
+			fmt.Println("receive: nil")
+		}
+		return nil
+	}
+	// Registers Send handler
+	provider.RegisterSendHandler(200, 1, 1, 1, sendHandler)
+
+	op1, err := consumer.NewSendOperation(provider.Uri, 200, 1, 1, 1)
+	op1.Send([]byte("message1"))
+
+	op1.Reset()
+	op1.Send([]byte("message2"))
+
+	time.Sleep(250 * time.Millisecond)
+	provider_ctx.Close()
+	consumer_ctx.Close()
+
+	if nbmsg != 2 {
+		t.Errorf("Receives %d messages, expect %d ", nbmsg, 2)
+	}
 
 	// Waits for socket close
 	time.Sleep(250 * time.Millisecond)
