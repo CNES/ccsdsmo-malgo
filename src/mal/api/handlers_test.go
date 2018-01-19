@@ -44,11 +44,15 @@ const (
 
 // Test TCP transport Send Interaction using the high level API
 func TestSend(t *testing.T) {
+	// Waits socket closing from previous test
+	time.Sleep(250 * time.Millisecond)
+
 	provider_ctx, err := NewContext(provider_url)
 	if err != nil {
 		t.Fatal("Error creating context, ", err)
 		return
 	}
+	defer provider_ctx.Close()
 
 	provider, err := NewHandlerContext(provider_ctx, "provider")
 	if err != nil {
@@ -61,6 +65,7 @@ func TestSend(t *testing.T) {
 		t.Fatal("Error creating context, ", err)
 		return
 	}
+	defer consumer_ctx.Close()
 
 	consumer, err := NewOperationContext(consumer_ctx, "consumer")
 	if err != nil {
@@ -84,33 +89,33 @@ func TestSend(t *testing.T) {
 	// Registers Send handler
 	provider.RegisterSendHandler(200, 1, 1, 1, sendHandler)
 
-	op1, err := consumer.NewSendOperation(provider.Uri, 200, 1, 1, 1)
+	op1 := consumer.NewSendOperation(provider.Uri, 200, 1, 1, 1)
 	op1.Send([]byte("message1"))
 
-	op2, err := consumer.NewSendOperation(provider.Uri, 200, 1, 1, 1)
+	op2 := consumer.NewSendOperation(provider.Uri, 200, 1, 1, 1)
 	op2.Send([]byte("message2"))
 
+	// Waits for message reception
 	time.Sleep(250 * time.Millisecond)
-	provider_ctx.Close()
-	consumer_ctx.Close()
 
 	if nbmsg != 2 {
 		t.Errorf("Receives %d messages, expect %d ", nbmsg, 2)
 	}
-
-	// Waits for socket close
-	time.Sleep(250 * time.Millisecond)
 }
 
 // ########## ########## ########## ########## ########## ########## ########## ##########
 
 // Test TCP transport Submit Interaction using the high level API
 func TestSubmit(t *testing.T) {
+	// Waits socket closing from previous test
+	time.Sleep(250 * time.Millisecond)
+
 	provider_ctx, err := NewContext(provider_url)
 	if err != nil {
 		t.Fatal("Error creating context, ", err)
 		return
 	}
+	defer provider_ctx.Close()
 
 	provider, err := NewHandlerContext(provider_ctx, "provider")
 	if err != nil {
@@ -123,6 +128,7 @@ func TestSubmit(t *testing.T) {
 		t.Fatal("Error creating context, ", err)
 		return
 	}
+	defer consumer_ctx.Close()
 
 	consumer, err := NewOperationContext(consumer_ctx, "consumer")
 	if err != nil {
@@ -147,11 +153,7 @@ func TestSubmit(t *testing.T) {
 	// Registers Submit handler
 	provider.RegisterSubmitHandler(200, 1, 1, 1, submitHandler)
 
-	op1, err := consumer.NewSubmitOperation(provider.Uri, 200, 1, 1, 1)
-	if err != nil {
-		t.Fatal("Error creating operation, ", err)
-		return
-	}
+	op1 := consumer.NewSubmitOperation(provider.Uri, 200, 1, 1, 1)
 	_, err = op1.Submit([]byte("message1"))
 	if err != nil {
 		t.Fatal("Error during submit, ", err)
@@ -159,11 +161,7 @@ func TestSubmit(t *testing.T) {
 	}
 	fmt.Println("\t&&&&& Submit1: OK")
 
-	op2, err := consumer.NewSubmitOperation(provider.Uri, 200, 1, 1, 1)
-	if err != nil {
-		t.Fatal("Error creating operation, ", err)
-		return
-	}
+	op2 := consumer.NewSubmitOperation(provider.Uri, 200, 1, 1, 1)
 	_, err = op2.Submit([]byte("message2"))
 	if err != nil {
 		t.Fatal("Error during submit, ", err)
@@ -171,27 +169,24 @@ func TestSubmit(t *testing.T) {
 	}
 	fmt.Println("\t&&&&& Submit2: OK")
 
-	time.Sleep(250 * time.Millisecond)
-	provider_ctx.Close()
-	consumer_ctx.Close()
-
 	if nbmsg != 2 {
 		t.Errorf("Receives %d messages, expect %d ", nbmsg, 2)
 	}
-
-	// Waits for socket close
-	time.Sleep(250 * time.Millisecond)
 }
 
 // ########## ########## ########## ########## ########## ########## ########## ##########
 
 // Test TCP transport Request Interaction using the high level API
 func TestRequest(t *testing.T) {
+	// Waits socket closing from previous test
+	time.Sleep(250 * time.Millisecond)
+
 	provider_ctx, err := NewContext(provider_url)
 	if err != nil {
 		t.Fatal("Error creating context, ", err)
 		return
 	}
+	defer provider_ctx.Close()
 
 	provider, err := NewHandlerContext(provider_ctx, "provider")
 	if err != nil {
@@ -204,6 +199,7 @@ func TestRequest(t *testing.T) {
 		t.Fatal("Error creating context, ", err)
 		return
 	}
+	defer consumer_ctx.Close()
 
 	consumer, err := NewOperationContext(consumer_ctx, "consumer")
 	if err != nil {
@@ -230,11 +226,7 @@ func TestRequest(t *testing.T) {
 
 	provider.RegisterRequestHandler(200, 1, 1, 1, requestHandler)
 
-	op1, err := consumer.NewRequestOperation(provider.Uri, 200, 1, 1, 1)
-	if err != nil {
-		t.Fatal("Error creating operation, ", err)
-		return
-	}
+	op1 := consumer.NewRequestOperation(provider.Uri, 200, 1, 1, 1)
 	ret1, err := op1.Request([]byte("message1"))
 	if err != nil {
 		t.Fatal("Error during request, ", err)
@@ -242,11 +234,7 @@ func TestRequest(t *testing.T) {
 	}
 	fmt.Println("\t&&&&& Request1: OK, ", string(ret1.Body))
 
-	op2, err := consumer.NewRequestOperation(provider.Uri, 200, 1, 1, 1)
-	if err != nil {
-		t.Fatal("Error creating operation, ", err)
-		return
-	}
+	op2 := consumer.NewRequestOperation(provider.Uri, 200, 1, 1, 1)
 	ret2, err := op2.Request([]byte("message2"))
 	if err != nil {
 		t.Fatal("Error during request, ", err)
@@ -254,27 +242,24 @@ func TestRequest(t *testing.T) {
 	}
 	fmt.Println("\t&&&&& Request2: OK, ", string(ret2.Body))
 
-	time.Sleep(250 * time.Millisecond)
-	provider_ctx.Close()
-	consumer_ctx.Close()
-
 	if nbmsg != 2 {
 		t.Errorf("Receives %d messages, expect %d ", nbmsg, 2)
 	}
-
-	// Waits for socket close
-	time.Sleep(250 * time.Millisecond)
 }
 
 // ########## ########## ########## ########## ########## ########## ########## ##########
 
 // Test TCP transport Invoke Interaction using the high level API
 func TestInvoke(t *testing.T) {
+	// Waits socket closing from previous test
+	time.Sleep(250 * time.Millisecond)
+
 	provider_ctx, err := NewContext(provider_url)
 	if err != nil {
 		t.Fatal("Error creating context, ", err)
 		return
 	}
+	defer provider_ctx.Close()
 
 	provider, err := NewHandlerContext(provider_ctx, "provider")
 	if err != nil {
@@ -287,6 +272,7 @@ func TestInvoke(t *testing.T) {
 		t.Fatal("Error creating context, ", err)
 		return
 	}
+	defer consumer_ctx.Close()
 
 	consumer, err := NewOperationContext(consumer_ctx, "consumer")
 	if err != nil {
@@ -314,11 +300,7 @@ func TestInvoke(t *testing.T) {
 
 	provider.RegisterInvokeHandler(200, 1, 1, 1, invokeHandler)
 
-	op1, err := consumer.NewInvokeOperation(provider.Uri, 200, 1, 1, 1)
-	if err != nil {
-		t.Fatal("Error creating operation, ", err)
-		return
-	}
+	op1 := consumer.NewInvokeOperation(provider.Uri, 200, 1, 1, 1)
 	_, err = op1.Invoke([]byte("message1"))
 	if err != nil {
 		t.Fatal("Error during invoke, ", err)
@@ -332,11 +314,7 @@ func TestInvoke(t *testing.T) {
 	}
 	fmt.Println("\t&&&&& Invoke1: OK, ", string(r1.Body))
 
-	op2, err := consumer.NewInvokeOperation(provider.Uri, 200, 1, 1, 1)
-	if err != nil {
-		t.Fatal("Error creating operation, ", err)
-		return
-	}
+	op2 := consumer.NewInvokeOperation(provider.Uri, 200, 1, 1, 1)
 	_, err = op2.Invoke([]byte("message2"))
 	if err != nil {
 		t.Fatal("Error during invoke, ", err)
@@ -350,27 +328,24 @@ func TestInvoke(t *testing.T) {
 	}
 	fmt.Println("\t&&&&& Invoke2: OK, ", string(r2.Body))
 
-	time.Sleep(250 * time.Millisecond)
-	provider_ctx.Close()
-	consumer_ctx.Close()
-
 	if nbmsg != 2 {
 		t.Errorf("Receives %d messages, expect %d ", nbmsg, 2)
 	}
-
-	// Waits for socket close
-	time.Sleep(250 * time.Millisecond)
 }
 
 // ########## ########## ########## ########## ########## ########## ########## ##########
 
 // Test TCP transport Progress Interaction using the high level API
 func TestProgress(t *testing.T) {
+	// Waits socket closing from previous test
+	time.Sleep(250 * time.Millisecond)
+
 	provider_ctx, err := NewContext(provider_url)
 	if err != nil {
 		t.Fatal("Error creating context, ", err)
 		return
 	}
+	defer provider_ctx.Close()
 
 	provider, err := NewHandlerContext(provider_ctx, "provider")
 	if err != nil {
@@ -383,6 +358,7 @@ func TestProgress(t *testing.T) {
 		t.Fatal("Error creating context, ", err)
 		return
 	}
+	defer consumer_ctx.Close()
 
 	consumer, err := NewOperationContext(consumer_ctx, "consumer")
 	if err != nil {
@@ -411,7 +387,7 @@ func TestProgress(t *testing.T) {
 	// Registers Progress handler
 	provider.RegisterProgressHandler(200, 1, 1, 1, progressHandler)
 
-	op1, err := consumer.NewProgressOperation(provider.Uri, 200, 1, 1, 1)
+	op1 := consumer.NewProgressOperation(provider.Uri, 200, 1, 1, 1)
 	op1.Progress([]byte("message1"))
 	fmt.Println("\t&&&&& Progress1: OK")
 
@@ -434,27 +410,24 @@ func TestProgress(t *testing.T) {
 	nbmsg += 1
 	fmt.Println("\t&&&&& Progress1: Response -> ", string(rep.Body))
 
-	time.Sleep(250 * time.Millisecond)
-	provider_ctx.Close()
-	consumer_ctx.Close()
-
 	if nbmsg != 11 {
 		t.Errorf("Receives %d messages, expect %d ", nbmsg, 2)
 	}
-
-	// Waits for socket close
-	time.Sleep(250 * time.Millisecond)
 }
 
 // ########## ########## ########## ########## ########## ########## ########## ##########
 
 // Test TCP transport Pub/Sub Interaction using the high level API
 func TestPubSub(t *testing.T) {
+	// Waits socket closing from previous test
+	time.Sleep(250 * time.Millisecond)
+
 	pub_ctx, err := NewContext(publisher_url)
 	if err != nil {
 		t.Fatal("Error creating context, ", err)
 		return
 	}
+	defer pub_ctx.Close()
 
 	publisher, err := NewOperationContext(pub_ctx, "publisher")
 	if err != nil {
@@ -467,6 +440,7 @@ func TestPubSub(t *testing.T) {
 		t.Fatal("Error creating context, ", err)
 		return
 	}
+	defer sub_ctx.Close()
 
 	subscriber, err := NewOperationContext(sub_ctx, "subscriber")
 	if err != nil {
@@ -479,6 +453,7 @@ func TestPubSub(t *testing.T) {
 		t.Fatal("Error creating context, ", err)
 		return
 	}
+	defer broker_ctx.Close()
 
 	broker, err := NewHandlerContext(broker_ctx, "broker")
 	if err != nil {
@@ -535,12 +510,8 @@ func TestPubSub(t *testing.T) {
 	}
 
 	// Initiates Publisher operation and do register
-	op1, err := publisher.NewPublisherOperation(broker.Uri, 200, 1, 1, 1)
-	if err != nil {
-		t.Fatal("Error creating publisher operation, ", err)
-		return
-	}
-	err = op1.Register([]byte("register"))
+	op1 := publisher.NewPublisherOperation(broker.Uri, 200, 1, 1, 1)
+	_, err = op1.Register([]byte("register"))
 	if err != nil {
 		t.Fatal("Error during publish register operation, ", err)
 		return
@@ -548,12 +519,8 @@ func TestPubSub(t *testing.T) {
 	fmt.Println("\t&&&&& Publisher registered")
 
 	// Initiates Subscriber operation and do register
-	op2, err := subscriber.NewSubscriberOperation(broker.Uri, 200, 1, 1, 1)
-	if err != nil {
-		t.Fatal("Error creating subscriber operation, ", err)
-		return
-	}
-	err = op2.Register([]byte("register"))
+	op2 := subscriber.NewSubscriberOperation(broker.Uri, 200, 1, 1, 1)
+	_, err = op2.Register([]byte("register"))
 	if err != nil {
 		t.Fatal("Error during register operation, ", err)
 		return
@@ -573,7 +540,7 @@ func TestPubSub(t *testing.T) {
 	fmt.Println("\t&&&&& Subscriber notified: OK, ", string(r.Body))
 
 	// Do Deregister
-	err = op1.Deregister([]byte("deregister"))
+	_, err = op1.Deregister([]byte("deregister"))
 	if err != nil {
 		t.Fatal("Error during publish deregister operation, ", err)
 		return
@@ -581,17 +548,12 @@ func TestPubSub(t *testing.T) {
 	fmt.Println("\t&&&&& Publisher deregister")
 
 	// Do Deregister
-	err = op2.Deregister([]byte("deregister"))
+	_, err = op2.Deregister([]byte("deregister"))
 	if err != nil {
 		t.Fatal("Error during deregister operation, ", err)
 		return
 	}
 	fmt.Println("\t&&&&& Subscriber deregister")
-
-	time.Sleep(250 * time.Millisecond)
-	pub_ctx.Close()
-	sub_ctx.Close()
-	broker_ctx.Close()
 
 	//	if nbmsg != 11 {
 	//		t.Errorf("Receives %d messages, expect %d ", nbmsg, 2)
@@ -603,11 +565,15 @@ func TestPubSub(t *testing.T) {
 
 // Test reuse of operation after reset
 func TestReset(t *testing.T) {
+	// Waits socket closing from previous test
+	time.Sleep(250 * time.Millisecond)
+
 	provider_ctx, err := NewContext(provider_url)
 	if err != nil {
 		t.Fatal("Error creating context, ", err)
 		return
 	}
+	defer provider_ctx.Close()
 
 	provider, err := NewHandlerContext(provider_ctx, "provider")
 	if err != nil {
@@ -620,6 +586,7 @@ func TestReset(t *testing.T) {
 		t.Fatal("Error creating context, ", err)
 		return
 	}
+	defer consumer_ctx.Close()
 
 	consumer, err := NewOperationContext(consumer_ctx, "consumer")
 	if err != nil {
@@ -643,20 +610,15 @@ func TestReset(t *testing.T) {
 	// Registers Send handler
 	provider.RegisterSendHandler(200, 1, 1, 1, sendHandler)
 
-	op1, err := consumer.NewSendOperation(provider.Uri, 200, 1, 1, 1)
+	op1 := consumer.NewSendOperation(provider.Uri, 200, 1, 1, 1)
 	op1.Send([]byte("message1"))
-
 	op1.Reset()
 	op1.Send([]byte("message2"))
 
+	// Waits for message reception
 	time.Sleep(250 * time.Millisecond)
-	provider_ctx.Close()
-	consumer_ctx.Close()
 
 	if nbmsg != 2 {
 		t.Errorf("Receives %d messages, expect %d ", nbmsg, 2)
 	}
-
-	// Waits for socket close
-	time.Sleep(250 * time.Millisecond)
 }
