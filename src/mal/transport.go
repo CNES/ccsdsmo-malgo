@@ -25,7 +25,6 @@ package mal
 
 import (
 	"errors"
-	"fmt"
 	"net/url"
 )
 
@@ -51,13 +50,14 @@ type TransportFactory interface {
 var transports map[string]TransportFactory = make(map[string]TransportFactory)
 
 func RegisterTransportFactory(name string, factory TransportFactory) {
-	fmt.Println("Register: ", name)
+	logger.Infof("RegisterTransportFactory: %s", name)
 	transports[name] = factory
 }
 
 func NewTransport(cfgURL string, ctx TransportCallback) (Transport, *URI, error) {
 	u, err := url.Parse(cfgURL)
 	if err != nil {
+		logger.Warnf("NewTransport: cannot parse %s", cfgURL)
 		return nil, NULL_URI, errors.New("Bad URL: " + cfgURL)
 	}
 
@@ -65,5 +65,6 @@ func NewTransport(cfgURL string, ctx TransportCallback) (Transport, *URI, error)
 	if factory != nil {
 		return factory.NewTransport(u, ctx)
 	}
+	logger.Warnf("NewTransport: unknow transport %s", cfgURL)
 	return nil, NULL_URI, errors.New("Unknow transport: " + cfgURL)
 }

@@ -25,7 +25,6 @@ package mal
 
 import (
 	"errors"
-	"fmt"
 )
 
 type Listener interface {
@@ -62,7 +61,7 @@ func NewContext(url string) (*Context, error) {
 		return nil, err
 	}
 
-	fmt.Println("Transport created: ", uri)
+	logger.Infof("NewContext: transport created: %s", uri)
 
 	ctx.uri = *uri
 	ctx.transport = transport
@@ -80,12 +79,14 @@ func (ctx *Context) NewURI(id string) *URI {
 func (ctx *Context) RegisterEndPoint(uri *URI, listener Listener) error {
 	// TODO (AF): Verify if the context is alive
 	if listener == nil {
+		logger.Warnf("Context.RegisterEndPoint: Cannot not register nil listener for %s", *uri)
 		return errors.New("EndPoint is nil")
 	}
 	// TODO (AF): Verify the uri
 	// Verify that the URI is not already registered
 	old := ctx.listeners[*uri]
 	if old != nil {
+		logger.Warnf("Context.RegisterEndPoint: %s already registered", *uri)
 		return errors.New("EndPoint already exists: " + string(*uri))
 	}
 	// Registers the uri
@@ -96,6 +97,7 @@ func (ctx *Context) RegisterEndPoint(uri *URI, listener Listener) error {
 func (ctx *Context) GetEndPoint(uri *URI) (Listener, error) {
 	listener := ctx.listeners[*uri]
 	if listener == nil {
+		logger.Warnf("Context.GetEndPoint: %s not registered", *uri)
 		return nil, errors.New("EndPoint doesn't exist: " + string(*uri))
 	}
 	return listener, nil
@@ -104,6 +106,7 @@ func (ctx *Context) GetEndPoint(uri *URI) (Listener, error) {
 func (ctx *Context) UnregisterEndPoint(uri *URI) error {
 	listener := ctx.listeners[*uri]
 	if listener == nil {
+		logger.Warnf("Context.UnregisterEndPoint: %s not registered", *uri)
 		return errors.New("EndPoint doesn't exist: " + string(*uri))
 	}
 	delete(ctx.listeners, *uri)
@@ -115,17 +118,16 @@ func (ctx *Context) handle() {
 	for {
 		msg, more := <-ctx.ch
 		if more {
-			fmt.Println("Receive: ", msg)
+			logger.Debugf("Context.handle: receive: %+v for %s", msg, *msg.UriTo)
 			to, ok := ctx.listeners[*msg.UriTo]
 			if ok {
-				fmt.Printf("%t\n", to)
 				to.OnMessage(msg)
-				fmt.Println("Message transmitted: ", msg)
+				logger.Debugf("Context.handle: Message delivered: %s", msg)
 			} else {
-				fmt.Println("Cannot route message to: ", *msg.UriTo)
+				logger.Errorf("Context.handle: Cannot route message to: %s", *msg.UriTo)
 			}
 		} else {
-			fmt.Println("Context ends: ", msg)
+			logger.Infof("Context.handle: ends: %s", msg)
 			ctx.ends <- true
 		}
 	}
@@ -133,7 +135,7 @@ func (ctx *Context) handle() {
 
 func (ctx *Context) Close() error {
 	for uri, listener := range ctx.listeners {
-		fmt.Println("close EndPoint ", uri)
+		logger.Infof("Context.Close: %s", uri)
 		listener.OnClose()
 	}
 
