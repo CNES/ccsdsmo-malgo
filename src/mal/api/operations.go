@@ -25,7 +25,6 @@ package api
 
 import (
 	"errors"
-	"fmt"
 	. "mal"
 	"sync/atomic"
 )
@@ -214,7 +213,7 @@ func (op *SubmitOperationX) Submit(msg *Message) (*Message, error) {
 	// Waits for the SUBMIT_ACK MAL message
 	msg, more := <-op.ch
 	if !more {
-		fmt.Println("Operation ends: ", op.ictx.Uri, op.tid)
+		logger.Debugf("Operation ends: %s, %s", op.ictx.Uri, op.tid)
 		// TODO (AF): Returns an error
 		op.status = _FINAL
 		return nil, errors.New("Operation ends")
@@ -298,7 +297,7 @@ func (op *RequestOperationX) Request(msg *Message) (*Message, error) {
 	// Waits for the RESPONSE MAL message
 	msg, more := <-op.ch
 	if !more {
-		fmt.Println("Operation ends: ", op.ictx.Uri, op.tid)
+		logger.Debugf("Operation ends: %s, %s", op.ictx.Uri, op.tid)
 		// TODO (AF): Returns an error
 		op.status = _FINAL
 		return nil, errors.New("Operation ends")
@@ -387,7 +386,7 @@ func (op *InvokeOperationX) Invoke(msg *Message) (*Message, error) {
 	// Waits for the ACKNOWLEDGE MAL message
 	msg, more := <-op.ch
 	if !more {
-		fmt.Println("Operation ends: ", op.ictx.Uri, op.tid)
+		logger.Debugf("Operation ends: %s, %s", op.ictx.Uri, op.tid)
 		// TODO (AF): Returns an error
 		op.status = _FINAL
 		return nil, errors.New("Operation ends")
@@ -416,7 +415,7 @@ func (op *InvokeOperationX) GetResponse() (*Message, error) {
 	// Waits for next MAL message
 	msg, more := <-op.ch
 	if !more {
-		fmt.Println("Operation ends: ", op.ictx.Uri, op.tid)
+		logger.Debugf("Operation ends: %s, %s", op.ictx.Uri, op.tid)
 		// TODO (AF): Returns an error
 		op.status = _FINAL
 		return nil, errors.New("Operation ends")
@@ -503,7 +502,7 @@ func (op *ProgressOperationX) Progress(msg *Message) (*Message, error) {
 	// Waits for the PROGRESS_ACK MAL message
 	msg, more := <-op.ch
 	if !more {
-		fmt.Println("Operation ends: ", op.ictx.Uri, op.tid)
+		logger.Debugf("Operation ends: %s, %s", op.ictx.Uri, op.tid)
 		// TODO (AF): Returns an error
 		op.status = _FINAL
 		return nil, errors.New("Operation ends")
@@ -528,7 +527,7 @@ func (op *ProgressOperationX) GetUpdate() (*Message, error) {
 	// Waits for next MAL message
 	msg, more := <-op.ch
 	if !more {
-		fmt.Println("Operation ends: ", op.ictx.Uri, op.tid)
+		logger.Debugf("Operation ends: %s, %s", op.ictx.Uri, op.tid)
 		// TODO (AF): Returns an error
 		op.status = _FINAL
 		return nil, errors.New("Operation ends")
@@ -560,7 +559,7 @@ func (op *ProgressOperationX) GetResponse() (*Message, error) {
 	// Waits for next MAL message
 	msg, more := <-op.ch
 	if !more {
-		fmt.Println("Operation ends: ", op.ictx.Uri, op.tid)
+		logger.Debugf("Operation ends: %s, %s", op.ictx.Uri, op.tid)
 		// TODO (AF): Returns an error
 		op.status = _FINAL
 		return nil, errors.New("Operation ends")
@@ -647,7 +646,7 @@ func (op *SubscriberOperationX) Register(msg *Message) error {
 	// Waits for the REGISTER_ACK MAL message
 	msg, more := <-op.ch
 	if !more {
-		fmt.Println("Operation ends: ", op.ictx.Uri, op.tid)
+		logger.Debugf("Operation ends: %s, %s", op.ictx.Uri, op.tid)
 		// TODO (AF): Returns an error
 		op.status = _FINAL
 		return errors.New("Operation ends")
@@ -672,7 +671,7 @@ func (op *SubscriberOperationX) GetNotify() (*Message, error) {
 	// Waits for next MAL message
 	msg, more := <-op.ch
 	if !more {
-		fmt.Println("Operation ends: ", op.ictx.Uri, op.tid)
+		logger.Debugf("Operation ends: %s, %s", op.ictx.Uri, op.tid)
 		// TODO (AF): Returns an error
 		op.status = _FINAL
 		return nil, errors.New("Operation ends")
@@ -712,7 +711,7 @@ func (op *SubscriberOperationX) Deregister(msg *Message) error {
 		// Waits for the PROGRESS_ACK MAL message
 		msg, more := <-op.ch
 		if !more {
-			fmt.Println("Operation ends: ", op.ictx.Uri, op.tid)
+			logger.Debugf("Operation ends: %s, %s", op.ictx.Uri, op.tid)
 			// TODO (AF): Returns an error
 			op.status = _FINAL
 			return errors.New("Operation ends")
@@ -805,7 +804,7 @@ func (op *PublisherOperationX) Register(msg *Message) error {
 	// Waits for the PUBLISH_REGISTER_ACK MAL message
 	msg, more := <-op.ch
 	if !more {
-		fmt.Println("Operation ends: ", op.ictx.Uri, op.tid)
+		logger.Debugf("Operation ends: %s, %s", op.ictx.Uri, op.tid)
 		// TODO (AF): Returns an error
 		op.status = _FINAL
 		return errors.New("Operation ends")
@@ -869,7 +868,7 @@ func (op *PublisherOperationX) Deregister(msg *Message) error {
 	// Waits for the PUBLISH_DEREGISTER_ACK MAL message
 	msg, more := <-op.ch
 	if !more {
-		fmt.Println("Operation ends: ", op.ictx.Uri, op.tid)
+		logger.Debugf("Operation ends: %s, %s", op.ictx.Uri, op.tid)
 		// TODO (AF): Returns an error
 		op.status = _FINAL
 		return errors.New("Operation ends")
@@ -907,19 +906,19 @@ func (op *PublisherOperationX) OnClose() error {
 func (ictx *OperationContext) OnMessage(msg *Message) error {
 	to, ok := ictx.handlers[msg.TransactionId]
 	if ok {
-		fmt.Printf("%t\n", to)
+		logger.Debugf("OnMessage %t", to)
 		to.OnMessage(msg)
-		fmt.Println("Message transmitted: ", msg)
+		logger.Debugf("OnMessageMessage transmitted: %s", msg)
 	} else {
-		fmt.Println("Cannot route message to: ", msg.UriTo, "?TransactionId=", msg.TransactionId)
+		logger.Debugf("Cannot route message to: %s?TransactionId=", msg.UriTo, msg.TransactionId)
 	}
 	return nil
 }
 
 func (ictx *OperationContext) OnClose() error {
-	fmt.Println("close EndPoint: ", ictx.Uri)
+	logger.Infof("close EndPoint: %s", ictx.Uri)
 	for tid, handler := range ictx.handlers {
-		fmt.Println("close operation: ", tid)
+		logger.Debugf("close operation: %d", tid)
 		err := handler.OnClose()
 		if err != nil {
 			// TODO (AF): print an error message

@@ -25,7 +25,6 @@ package api
 
 import (
 	"errors"
-	"fmt"
 	. "mal"
 )
 
@@ -87,10 +86,10 @@ func (pctx *ProviderContext) register(stype UOctet, area UShort, areaVersion UOc
 	old := pctx.services[key]
 
 	if old != nil {
-		fmt.Println("MAL service already registered:", key)
+		logger.Errorf("MAL service already registered: %d", key)
 		return errors.New("MAL service already registered")
 	} else {
-		fmt.Println("MAL service registered:", key)
+		logger.Debugf("MAL service registered: %d", key)
 	}
 
 	var desc = &sdesc{
@@ -249,11 +248,11 @@ func (pctx *ProviderContext) getProvider(stype UOctet, area UShort, areaVersion 
 		if to.stype == stype {
 			return to.shdl, nil
 		} else {
-			fmt.Println("Bad service type:", to.stype, " should be ", stype)
+			logger.Debugf("Bad service type: %d should be %d", to.stype, stype)
 			return nil, errors.New("Bad handler type")
 		}
 	} else {
-		fmt.Println("MAL service not registered:", key)
+		logger.Debugf("MAL service not registered: %d", key)
 		return nil, errors.New("MAL service not registered")
 	}
 }
@@ -337,14 +336,14 @@ func (pctx *ProviderContext) OnMessage(msg *Message) error {
 			return errors.New("Bad interaction stage for PubSub")
 		}
 	default:
-		fmt.Println("Cannot route message to: ", *msg.UriTo)
+		logger.Warnf("Cannot route message to: %s", *msg.UriTo)
 	}
 
 	return nil
 }
 
 func (pctx *ProviderContext) OnClose() error {
-	fmt.Println("close EndPoint: ", pctx.Uri)
+	logger.Infof("close EndPoint: %s", pctx.Uri)
 	// TODO (AF): Close services ?
 	//	for key, shdl := range pctx.services {
 	//		fmt.Println("close service: ", key)

@@ -25,7 +25,6 @@ package api
 
 import (
 	"errors"
-	"fmt"
 	. "mal"
 )
 
@@ -73,10 +72,10 @@ func (hctx *HandlerContext) register(hdltype UOctet, area UShort, areaVersion UO
 	old := hctx.handlers[key]
 
 	if old != nil {
-		fmt.Println("MAL handler already registered:", key)
+		logger.Errorf("MAL handler already registered: %d", key)
 		return errors.New("MAL handler already registered")
 	} else {
-		fmt.Println("MAL handler registered:", key)
+		logger.Debugf("MAL handler registered: %d", key)
 	}
 
 	var desc = &handlerDesc{
@@ -177,11 +176,11 @@ func (hctx *HandlerContext) getHandler(hdltype UOctet, area UShort, areaVersion 
 		if to.handlerType == hdltype {
 			return to.handler, nil
 		} else {
-			fmt.Println("Bad handler type:", to.handlerType, " should be ", hdltype)
+			logger.Errorf("Bad handler type: %d should be %d", to.handlerType, hdltype)
 			return nil, errors.New("Bad handler type")
 		}
 	} else {
-		fmt.Println("MAL handler not registered:", key)
+		logger.Errorf("MAL handler not registered: %d", key)
 		return nil, errors.New("MAL handler not registered")
 	}
 }
@@ -242,19 +241,19 @@ func (hctx *HandlerContext) OnMessage(msg *Message) error {
 			(msg.InteractionStage == MAL_IP_STAGE_PUBSUB_DEREGISTER) {
 			transaction = &SubscriberTransactionX{TransactionX{hctx.Ctx, hctx.Uri, msg.UriFrom, msg.TransactionId, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation}}
 		} else {
-			// TODO (AF): Log an error, May be wa should not return this error
+			// TODO (AF): Log an error, May be we should not return this error
 			return errors.New("Bad interaction stage for PubSub")
 		}
 		// TODO (AF): use a goroutine
 		return handler(msg, transaction)
 	default:
-		fmt.Println("Cannot route message to: ", *msg.UriTo)
+		logger.Debugf("Cannot route message to: %s", *msg.UriTo)
 	}
 	return nil
 }
 
 func (hctx *HandlerContext) OnClose() error {
-	fmt.Println("close EndPoint: ", hctx.Uri)
+	logger.Infof("close EndPoint: %s", hctx.Uri)
 	// TODO (AF): Close handlers ?
 	//	for key, handler := range hctx.handlers {
 	//		fmt.Println("close handler: ", key)
