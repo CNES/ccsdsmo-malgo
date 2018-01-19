@@ -63,7 +63,7 @@ func NewSendProvider(ctx *Context, service string) (*MySendProvider, error) {
 
 func (provider *MySendProvider) OnSend(msg *Message, transaction SendTransaction) error {
 	if msg != nil {
-		fmt.Println("\n\n $$$$$ sendHandler receive: ", string(msg.Body), "\n\n")
+		fmt.Println("\t$$$$$ sendHandler receive: ", string(msg.Body))
 		provider.nbmsg += 1
 	} else {
 		fmt.Println("receive: nil")
@@ -146,7 +146,7 @@ func NewSubmitProvider(ctx *Context, service string) (*MySubmitProvider, error) 
 
 func (provider *MySubmitProvider) OnSubmit(msg *Message, transaction SubmitTransaction) error {
 	if msg != nil {
-		fmt.Println("\n\n $$$$$ submitHandler receive: ", string(msg.Body), "\n\n")
+		fmt.Println("\t$$$$$ submitHandler receive: ", string(msg.Body))
 		provider.nbmsg += 1
 		transaction.Ack(nil)
 	} else {
@@ -182,22 +182,36 @@ func TestSubmitProvider(t *testing.T) {
 	}
 
 	op1, err := consumer.NewSubmitOperation(200, 1, 1, 1)
+	if err != nil {
+		t.Fatal("Error creating operation, ", err)
+		return
+	}
 	msg1 := &Message{
 		UriTo: provider.pctx.Uri,
 		Body:  []byte("message1"),
 	}
-	op1.Submit(msg1)
-
-	fmt.Println("\n\n &&&&& Submit1: OK\n\n")
+	_, err = op1.Submit(msg1)
+	if err != nil {
+		t.Fatal("Error during submit, ", err)
+		return
+	}
+	fmt.Println("\t&&&&& Submit1: OK")
 
 	op2, err := consumer.NewSubmitOperation(200, 1, 1, 1)
+	if err != nil {
+		t.Fatal("Error creating operation, ", err)
+		return
+	}
 	msg2 := &Message{
 		UriTo: provider.pctx.Uri,
 		Body:  []byte("message2"),
 	}
-	op2.Submit(msg2)
-
-	fmt.Println("\n\n &&&&& Submit2: OK\n\n")
+	_, err = op2.Submit(msg2)
+	if err != nil {
+		t.Fatal("Error during submit, ", err)
+		return
+	}
+	fmt.Println("\t&&&&& Submit2: OK")
 
 	time.Sleep(250 * time.Millisecond)
 	provider_ctx.Close()
@@ -234,7 +248,7 @@ func NewRequestProvider(ctx *Context, service string) (*MyRequestProvider, error
 
 func (provider *MyRequestProvider) OnRequest(msg *Message, transaction RequestTransaction) error {
 	if msg != nil {
-		fmt.Println("\n\n $$$$$ requestHandler receive: ", string(msg.Body), "\n\n")
+		fmt.Println("\t$$$$$ requestHandler receive: ", string(msg.Body))
 		provider.nbmsg += 1
 		transaction.Reply([]byte("reply message"), nil)
 	} else {
@@ -270,22 +284,36 @@ func TestRequestProvider(t *testing.T) {
 	}
 
 	op1, err := consumer.NewRequestOperation(200, 1, 1, 1)
+	if err != nil {
+		t.Fatal("Error creating operation, ", err)
+		return
+	}
 	msg1 := &Message{
 		UriTo: provider.pctx.Uri,
 		Body:  []byte("message1"),
 	}
-	op1.Request(msg1)
-
-	fmt.Println("\n\n &&&&& Request1: OK\n\n")
+	ret1, err := op1.Request(msg1)
+	if err != nil {
+		t.Fatal("Error during request, ", err)
+		return
+	}
+	fmt.Println("\t&&&&& Request1: OK, ", string(ret1.Body))
 
 	op2, err := consumer.NewRequestOperation(200, 1, 1, 1)
+	if err != nil {
+		t.Fatal("Error creating operation, ", err)
+		return
+	}
 	msg2 := &Message{
 		UriTo: provider.pctx.Uri,
 		Body:  []byte("message2"),
 	}
-	op2.Request(msg2)
-
-	fmt.Println("\n\n &&&&& Request2: OK\n\n")
+	ret2, err := op2.Request(msg2)
+	if err != nil {
+		t.Fatal("Error during request, ", err)
+		return
+	}
+	fmt.Println("\t&&&&& Request2: OK, ", string(ret2.Body))
 
 	time.Sleep(250 * time.Millisecond)
 	provider_ctx.Close()
@@ -322,11 +350,12 @@ func NewInvokeProvider(ctx *Context, service string) (*MyInvokeProvider, error) 
 
 func (provider *MyInvokeProvider) OnInvoke(msg *Message, transaction InvokeTransaction) error {
 	if msg != nil {
-		fmt.Println("\n\n $$$$$ invokeHandler receive: ", string(msg.Body), "\n\n")
+		fmt.Println("\t$$$$$ invokeProvider receive: ", string(msg.Body))
 		transaction.Ack(nil)
 		provider.nbmsg += 1
 		time.Sleep(250 * time.Millisecond)
-		transaction.Reply([]byte("reply message"), nil)
+		//		transaction.Reply([]byte("reply message"), nil)
+		transaction.Reply(msg.Body, nil)
 	} else {
 		fmt.Println("receive: nil")
 	}
@@ -360,24 +389,48 @@ func TestInvokeProvider(t *testing.T) {
 	}
 
 	op1, err := consumer.NewInvokeOperation(200, 1, 1, 1)
+	if err != nil {
+		t.Fatal("Error creating operation, ", err)
+		return
+	}
 	msg1 := &Message{
 		UriTo: provider.pctx.Uri,
 		Body:  []byte("message1"),
 	}
-	op1.Invoke(msg1)
+	_, err = op1.Invoke(msg1)
+	if err != nil {
+		t.Fatal("Error during invoke, ", err)
+		return
+	}
 
 	r1, err := op1.GetResponse()
-	fmt.Println("\n\n &&&&& Invoke1: OK\n", string(r1.Body), "\n\n")
+	if err != nil {
+		t.Fatal("Error getting response, ", err)
+		return
+	}
+	fmt.Println("\t&&&&& Invoke1: OK, ", string(r1.Body))
 
 	op2, err := consumer.NewInvokeOperation(200, 1, 1, 1)
+	if err != nil {
+		t.Fatal("Error creating operation, ", err)
+		return
+	}
 	msg2 := &Message{
 		UriTo: provider.pctx.Uri,
 		Body:  []byte("message2"),
 	}
-	op2.Invoke(msg2)
+	_, err = op2.Invoke(msg2)
+	if err != nil {
+		t.Fatal("Error during invoke, ", err)
+		return
+	}
 
-	r2, err := op1.GetResponse()
-	fmt.Println("\n\n &&&&& Invoke2: OK\n", string(r2.Body), "\n\n")
+	r2, err := op2.GetResponse()
+	if err != nil {
+		t.Fatal("Error getting response, ", err)
+		return
+	}
+	fmt.Println("\t&&&&& Invoke2: OK, ", string(r2.Body))
 
 	time.Sleep(250 * time.Millisecond)
 	provider_ctx.Close()
@@ -413,7 +466,7 @@ func NewProgressProvider(ctx *Context, service string) (*MyProgressProvider, err
 
 func (provider *MyProgressProvider) OnProgress(msg *Message, transaction ProgressTransaction) error {
 	if msg != nil {
-		fmt.Println("\n\n $$$$$ progressHandler receive: ", string(msg.Body), "\n\n")
+		fmt.Println("\t$$$$$ progressHandler receive: ", string(msg.Body))
 		transaction.Ack(nil)
 		for i := 0; i < 10; i++ {
 			transaction.Update([]byte(fmt.Sprintf("messsage#%d", i)), nil)
@@ -459,7 +512,7 @@ func TestProgressProvider(t *testing.T) {
 		Body:  []byte("message1"),
 	}
 	op1.Progress(msg1)
-	fmt.Println("\n\n &&&&& Progress1: OK\n\n")
+	fmt.Println("\t&&&&& Progress1: OK")
 
 	updt, err := op1.GetUpdate()
 	if err != nil {
@@ -467,7 +520,7 @@ func TestProgressProvider(t *testing.T) {
 	}
 	for updt != nil {
 		nbmsg += 1
-		fmt.Println("\n\n &&&&& Progress1: Update -> ", string(updt.Body), "\n\n")
+		fmt.Println("\t&&&&& Progress1: Update -> ", string(updt.Body))
 		updt, err = op1.GetUpdate()
 		if err != nil {
 			t.Error(err)
@@ -478,7 +531,7 @@ func TestProgressProvider(t *testing.T) {
 		t.Error(err)
 	}
 	nbmsg += 1
-	fmt.Println("\n\n &&&&& Progress1: Response -> ", string(rep.Body), "\n\n")
+	fmt.Println("\t&&&&& Progress1: Response -> ", string(rep.Body))
 
 	time.Sleep(250 * time.Millisecond)
 	provider_ctx.Close()
@@ -496,6 +549,7 @@ func TestProgressProvider(t *testing.T) {
 
 type MyBrokerContext struct {
 	pctx *ProviderContext
+	subs SubscriberTransaction
 }
 
 func NewBroker(ctx *Context, service string) (*MyBrokerContext, error) {
@@ -510,32 +564,37 @@ func NewBroker(ctx *Context, service string) (*MyBrokerContext, error) {
 	return broker, nil
 }
 
-func (handler *MyBrokerContext) OnRegister(msg *Message, tx SubscriberTransaction) error {
-	fmt.Println("\n\n##########\n# OnRegister:\n##########\n\n")
+func (broker *MyBrokerContext) OnRegister(msg *Message, tx SubscriberTransaction) error {
+	fmt.Println("\t##########\n\t# OnRegister:")
+	broker.subs = tx
 	tx.AckRegister(nil)
 	return nil
 }
 
-func (handler *MyBrokerContext) OnDeregister(msg *Message, tx SubscriberTransaction) error {
-	fmt.Println("\n\n##########\n# OnDeregister:\n##########\n\n")
+func (broker *MyBrokerContext) OnDeregister(msg *Message, tx SubscriberTransaction) error {
+	fmt.Println("\t##########\n\t# OnDeregister:")
+	broker.subs = nil
 	tx.AckDeregister(nil)
 	return nil
 }
 
-func (handler *MyBrokerContext) OnPublishRegister(msg *Message, tx PublisherTransaction) error {
-	fmt.Println("\n\n##########\n# OnPublishRegister:\n##########\n\n")
+func (broker *MyBrokerContext) OnPublishRegister(msg *Message, tx PublisherTransaction) error {
+	fmt.Println("\t##########\n\t# OnPublishRegister:")
 	tx.AckRegister(nil)
 	return nil
 }
 
-func (handler *MyBrokerContext) OnPublishDeregister(msg *Message, tx PublisherTransaction) error {
-	fmt.Println("\n\n##########\n# OnPublishDeregister:\n##########\n\n")
+func (broker *MyBrokerContext) OnPublishDeregister(msg *Message, tx PublisherTransaction) error {
+	fmt.Println("\t##########\n\t# OnPublishDeregister:")
 	tx.AckDeregister(nil)
 	return nil
 }
 
-func (handler *MyBrokerContext) OnPublish(msg *Message, tx PublisherTransaction) error {
-	fmt.Println("\n\n##########\n# OnPublish:\n##########\n\n")
+func (broker *MyBrokerContext) OnPublish(msg *Message, tx PublisherTransaction) error {
+	fmt.Println("\t##########\n\t# OnPublish:")
+	if broker.subs != nil {
+		broker.subs.Notify(msg.Body, nil)
+	}
 	return nil
 }
 
@@ -547,7 +606,6 @@ func TestPubSubProvider(t *testing.T) {
 		return
 	}
 	broker, err := NewBroker(broker_ctx, "broker")
-	t.Log("Broker: ", broker)
 
 	// TODO (AF): Creates broker
 
@@ -602,6 +660,14 @@ func TestPubSubProvider(t *testing.T) {
 		Body:  []byte("publish #2"),
 	}
 	pubop.Publish(pubmsg2)
+
+	// Try to get Notify
+	r1, err := subop.GetNotify()
+	fmt.Println("\t&&&&& Subscriber notified: OK, ", string(r1.Body))
+
+	// Try to get Notify
+	r2, err := subop.GetNotify()
+	fmt.Println("\t&&&&& Subscriber notified: OK, ", string(r2.Body))
 
 	pubderegmsg := &Message{
 		UriTo: broker.pctx.Uri,

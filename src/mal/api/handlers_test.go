@@ -74,7 +74,7 @@ func TestSend(t *testing.T) {
 	// the closure.
 	sendHandler := func(msg *Message, t Transaction) error {
 		if msg != nil {
-			fmt.Println("\n\n $$$$$ sendHandler receive: ", string(msg.Body), "\n\n")
+			fmt.Println("\t$$$$$ sendHandler receive: ", string(msg.Body))
 			nbmsg += 1
 		} else {
 			fmt.Println("receive: nil")
@@ -144,10 +144,9 @@ func TestSubmit(t *testing.T) {
 	// the closure.
 	submitHandler := func(msg *Message, t Transaction) error {
 		if msg != nil {
-			fmt.Println("\n\n $$$$$ submitHandler receive: ", string(msg.Body), "\n\n")
+			fmt.Println("\t$$$$$ submitHandler receive: ", string(msg.Body))
 			nbmsg += 1
-			transaction := t.(SubmitTransaction)
-			transaction.Ack(nil)
+			t.(SubmitTransaction).Ack(nil)
 		} else {
 			fmt.Println("receive: nil")
 		}
@@ -157,22 +156,36 @@ func TestSubmit(t *testing.T) {
 	provider.RegisterSubmitHandler(200, 1, 1, 1, submitHandler)
 
 	op1, err := consumer.NewSubmitOperation(200, 1, 1, 1)
+	if err != nil {
+		t.Fatal("Error creating operation, ", err)
+		return
+	}
 	msg1 := &Message{
 		UriTo: provider.Uri,
 		Body:  []byte("message1"),
 	}
-	op1.Submit(msg1)
-
-	fmt.Println("\n\n &&&&& Submit1: OK\n\n")
+	_, err = op1.Submit(msg1)
+	if err != nil {
+		t.Fatal("Error during submit, ", err)
+		return
+	}
+	fmt.Println("\t&&&&& Submit1: OK")
 
 	op2, err := consumer.NewSubmitOperation(200, 1, 1, 1)
+	if err != nil {
+		t.Fatal("Error creating operation, ", err)
+		return
+	}
 	msg2 := &Message{
 		UriTo: provider.Uri,
 		Body:  []byte("message2"),
 	}
-	op2.Submit(msg2)
-
-	fmt.Println("\n\n &&&&& Submit2: OK\n\n")
+	_, err = op2.Submit(msg2)
+	if err != nil {
+		t.Fatal("Error during submit, ", err)
+		return
+	}
+	fmt.Println("\t&&&&& Submit2: OK")
 
 	time.Sleep(250 * time.Millisecond)
 	provider_ctx.Close()
@@ -221,7 +234,7 @@ func TestRequest(t *testing.T) {
 
 	requestHandler := func(msg *Message, t Transaction) error {
 		if msg != nil {
-			fmt.Println("\n\n $$$$$ requestHandler receive: ", string(msg.Body), "\n\n")
+			fmt.Println("\t$$$$$ requestHandler receive: ", string(msg.Body))
 			nbmsg += 1
 			transaction := t.(RequestTransaction)
 			transaction.Reply([]byte("reply message"), nil)
@@ -234,22 +247,36 @@ func TestRequest(t *testing.T) {
 	provider.RegisterRequestHandler(200, 1, 1, 1, requestHandler)
 
 	op1, err := consumer.NewRequestOperation(200, 1, 1, 1)
+	if err != nil {
+		t.Fatal("Error creating operation, ", err)
+		return
+	}
 	msg1 := &Message{
 		UriTo: provider.Uri,
 		Body:  []byte("message1"),
 	}
-	op1.Request(msg1)
-
-	fmt.Println("\n\n &&&&& Request1: OK\n\n")
+	ret1, err := op1.Request(msg1)
+	if err != nil {
+		t.Fatal("Error during request, ", err)
+		return
+	}
+	fmt.Println("\t&&&&& Request1: OK, ", string(ret1.Body))
 
 	op2, err := consumer.NewRequestOperation(200, 1, 1, 1)
+	if err != nil {
+		t.Fatal("Error creating operation, ", err)
+		return
+	}
 	msg2 := &Message{
 		UriTo: provider.Uri,
 		Body:  []byte("message2"),
 	}
-	op2.Request(msg2)
-
-	fmt.Println("\n\n &&&&& Request2: OK\n\n")
+	ret2, err := op2.Request(msg2)
+	if err != nil {
+		t.Fatal("Error during request, ", err)
+		return
+	}
+	fmt.Println("\t&&&&& Request2: OK, ", string(ret2.Body))
 
 	time.Sleep(250 * time.Millisecond)
 	provider_ctx.Close()
@@ -298,7 +325,7 @@ func TestInvoke(t *testing.T) {
 
 	invokeHandler := func(msg *Message, t Transaction) error {
 		if msg != nil {
-			fmt.Println("\n\n $$$$$ invokeHandler receive: ", string(msg.Body), "\n\n")
+			fmt.Println("\t$$$$$ invokeHandler receive: ", string(msg.Body))
 			nbmsg += 1
 			transaction := t.(InvokeTransaction)
 			transaction.Ack(nil)
@@ -312,24 +339,48 @@ func TestInvoke(t *testing.T) {
 	provider.RegisterInvokeHandler(200, 1, 1, 1, invokeHandler)
 
 	op1, err := consumer.NewInvokeOperation(200, 1, 1, 1)
+	if err != nil {
+		t.Fatal("Error creating operation, ", err)
+		return
+	}
 	msg1 := &Message{
 		UriTo: provider.Uri,
 		Body:  []byte("message1"),
 	}
-	op1.Invoke(msg1)
+	_, err = op1.Invoke(msg1)
+	if err != nil {
+		t.Fatal("Error during invoke, ", err)
+		return
+	}
 
 	r1, err := op1.GetResponse()
-	fmt.Println("\n\n &&&&& Invoke1: OK\n", string(r1.Body), "\n\n")
+	if err != nil {
+		t.Fatal("Error getting response, ", err)
+		return
+	}
+	fmt.Println("\t&&&&& Invoke1: OK, ", string(r1.Body))
 
 	op2, err := consumer.NewInvokeOperation(200, 1, 1, 1)
+	if err != nil {
+		t.Fatal("Error creating operation, ", err)
+		return
+	}
 	msg2 := &Message{
 		UriTo: provider.Uri,
 		Body:  []byte("message2"),
 	}
-	op2.Invoke(msg2)
+	_, err = op2.Invoke(msg2)
+	if err != nil {
+		t.Fatal("Error during invoke, ", err)
+		return
+	}
 
-	r2, err := op1.GetResponse()
-	fmt.Println("\n\n &&&&& Invoke2: OK\n", string(r2.Body), "\n\n")
+	r2, err := op2.GetResponse()
+	if err != nil {
+		t.Fatal("Error getting response, ", err)
+		return
+	}
+	fmt.Println("\t&&&&& Invoke2: OK, ", string(r2.Body))
 
 	time.Sleep(250 * time.Millisecond)
 	provider_ctx.Close()
@@ -377,7 +428,7 @@ func TestProgress(t *testing.T) {
 	// the closure.
 	progressHandler := func(msg *Message, t Transaction) error {
 		if msg != nil {
-			fmt.Println("\n\n $$$$$ progressHandler receive: ", string(msg.Body), "\n\n")
+			fmt.Println("\t$$$$$ progressHandler receive: ", string(msg.Body))
 			transaction := t.(ProgressTransaction)
 			transaction.Ack(nil)
 			for i := 0; i < 10; i++ {
@@ -398,7 +449,7 @@ func TestProgress(t *testing.T) {
 		Body:  []byte("message1"),
 	}
 	op1.Progress(msg1)
-	fmt.Println("\n\n &&&&& Progress1: OK\n\n")
+	fmt.Println("\t&&&&& Progress1: OK")
 
 	updt, err := op1.GetUpdate()
 	if err != nil {
@@ -406,7 +457,7 @@ func TestProgress(t *testing.T) {
 	}
 	for updt != nil {
 		nbmsg += 1
-		fmt.Println("\n\n &&&&& Progress1: Update -> ", string(updt.Body), "\n\n")
+		fmt.Println("\t&&&&& Progress1: Update -> ", string(updt.Body))
 		updt, err = op1.GetUpdate()
 		if err != nil {
 			t.Error(err)
@@ -417,7 +468,7 @@ func TestProgress(t *testing.T) {
 		t.Error(err)
 	}
 	nbmsg += 1
-	fmt.Println("\n\n &&&&& Progress1: Response -> ", string(rep.Body), "\n\n")
+	fmt.Println("\t&&&&& Progress1: Response -> ", string(rep.Body))
 
 	time.Sleep(250 * time.Millisecond)
 	provider_ctx.Close()
@@ -482,31 +533,31 @@ func TestPubSub(t *testing.T) {
 		if msg != nil {
 			if msg.InteractionStage == MAL_IP_STAGE_PUBSUB_PUBLISH_REGISTER {
 				transaction := t.(PublisherTransaction)
-				fmt.Println("\n\n $$$$$ publisherHandler receive: PUBLISH_REGISTER", string(msg.Body), "==> ", msg.TransactionId, "\n", "\n\n")
+				fmt.Println("\t$$$$$ publisherHandler receive: PUBLISH_REGISTER", string(msg.Body), "==> ", msg.TransactionId)
 				transaction.AckRegister(nil)
 			} else if msg.InteractionStage == MAL_IP_STAGE_PUBSUB_PUBLISH {
 				//				transaction := t.(PublisherTransaction)
-				fmt.Println("\n\n $$$$$ publisherHandler receive: PUBLISH", string(msg.Body), "==> ", msg.TransactionId, "\n", "\n\n")
+				fmt.Println("\t$$$$$ publisherHandler receive: PUBLISH", string(msg.Body), "==> ", msg.TransactionId)
 				// TODO (AF): We should verify that the publisher is registered
 				if subs != nil {
 					subs.Notify(msg.Body, nil)
 				}
 			} else if msg.InteractionStage == MAL_IP_STAGE_PUBSUB_PUBLISH_DEREGISTER {
 				transaction := t.(PublisherTransaction)
-				fmt.Println("\n\n $$$$$ publisherHandler receive: PUBLISH_DEREGISTER", string(msg.Body), "==> ", msg.TransactionId, "\n", "\n\n")
+				fmt.Println("\t$$$$$ publisherHandler receive: PUBLISH_DEREGISTER", string(msg.Body), "==> ", msg.TransactionId)
 				transaction.AckDeregister(nil)
 			} else if msg.InteractionStage == MAL_IP_STAGE_PUBSUB_REGISTER {
 				transaction := t.(SubscriberTransaction)
-				fmt.Println("\n\n $$$$$ subscriberHandler receive: REGISTER", string(msg.Body), "==> ", msg.TransactionId, "\n", "\n\n")
+				fmt.Println("\t$$$$$ subscriberHandler receive: REGISTER", string(msg.Body), "==> ", msg.TransactionId)
 				subs = transaction
 				transaction.AckRegister(nil)
 			} else if msg.InteractionStage == MAL_IP_STAGE_PUBSUB_DEREGISTER {
 				transaction := t.(SubscriberTransaction)
-				fmt.Println("\n\n $$$$$ subscriberHandler receive: DEREGISTER", string(msg.Body), "==> ", msg.TransactionId, "\n", "\n\n")
+				fmt.Println("\t$$$$$ subscriberHandler receive: DEREGISTER", string(msg.Body), "==> ", msg.TransactionId)
 				subs = nil
 				transaction.AckDeregister(nil)
 			} else {
-				fmt.Println("\n\n $$$$$ publisherHandler receive: Bad message ", msg.InteractionStage, " -> ", "==> ", msg.TransactionId, string(msg.Body), "\n\n")
+				fmt.Println("\t$$$$$ publisherHandler receive: Bad message ", msg.InteractionStage, " -> ", "==> ", msg.TransactionId, string(msg.Body))
 			}
 		} else {
 			fmt.Println("receive: nil")
@@ -534,7 +585,7 @@ func TestPubSub(t *testing.T) {
 		t.Fatal("Error during publish register operation, ", err)
 		return
 	}
-	fmt.Println("\n\n &&&&& Publisher registered\n\n")
+	fmt.Println("\t&&&&& Publisher registered")
 
 	// Initiates Subscriber operation and do register
 	op2, err := subscriber.NewSubscriberOperation(200, 1, 1, 1)
@@ -551,7 +602,7 @@ func TestPubSub(t *testing.T) {
 		t.Fatal("Error during register operation, ", err)
 		return
 	}
-	fmt.Println("\n\n &&&&& Subscriber registered\n\n")
+	fmt.Println("\t&&&&& Subscriber registered")
 
 	// Do publish
 	msg3 := &Message{
@@ -563,11 +614,11 @@ func TestPubSub(t *testing.T) {
 		t.Fatal("Error during publish operation, ", err)
 		return
 	}
-	fmt.Println("\n\n &&&&& Publisher publish: OK\n\n")
+	fmt.Println("\t&&&&& Publisher publish: OK")
 
 	// Try to get Notify
 	r, err := op2.GetNotify()
-	fmt.Println("\n\n &&&&& Subscriber notified: \n", string(r.Body), "OK\n\n")
+	fmt.Println("\t&&&&& Subscriber notified: OK, ", string(r.Body))
 
 	// Do Deregister
 	msg4 := &Message{
@@ -579,7 +630,7 @@ func TestPubSub(t *testing.T) {
 		t.Fatal("Error during publish deregister operation, ", err)
 		return
 	}
-	fmt.Println("\n\n &&&&& Publisher deregister\n\n")
+	fmt.Println("\t&&&&& Publisher deregister")
 
 	// Do Deregister
 	msg5 := &Message{
@@ -591,7 +642,7 @@ func TestPubSub(t *testing.T) {
 		t.Fatal("Error during deregister operation, ", err)
 		return
 	}
-	fmt.Println("\n\n &&&&& Subscriber deregister\n\n")
+	fmt.Println("\t&&&&& Subscriber deregister")
 
 	time.Sleep(250 * time.Millisecond)
 	pub_ctx.Close()
