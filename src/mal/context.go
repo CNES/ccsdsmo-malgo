@@ -61,7 +61,7 @@ func NewContext(url string) (*Context, error) {
 		return nil, err
 	}
 
-	logger.Infof("NewContext: transport created: %s", uri)
+	logger.Infof("NewContext: transport created: %s", *uri)
 
 	ctx.uri = *uri
 	ctx.transport = transport
