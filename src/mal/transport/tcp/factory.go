@@ -24,7 +24,6 @@
 package tcp
 
 import (
-	"fmt"
 	. "mal"
 	"net/url"
 	"strconv"
@@ -46,7 +45,7 @@ func (*TCPTransportFactory) NewTransport(u *url.URL, ctx TransportCallback) (Tra
 	base := url.URL{Scheme: u.Scheme, Host: u.Host}
 	uri := URI(base.String())
 
-	fmt.Println("Creates TCPTransport: ", uri)
+	logger.Infof("TCPTransportFactory.TCPTransportFactory: registers %s", uri)
 
 	// Gets parameters from URL
 	params := u.Query()

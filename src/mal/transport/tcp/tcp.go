@@ -24,8 +24,8 @@
 package tcp
 
 import (
-	"fmt"
 	. "mal"
+	"mal/debug"
 	"net"
 	"net/url"
 	"strconv"
@@ -36,6 +36,10 @@ const (
 
 	VARIABLE_LENGTH_OFFSET uint32 = 19
 	FIXED_HEADER_LENGTH    uint32 = 23
+)
+
+var (
+	logger debug.Logger = debug.GetLogger("mal.transport.tcp")
 )
 
 type TCPTransport struct {
@@ -156,29 +160,29 @@ func (transport *TCPTransport) handleConn(listen net.Listener) {
 			// TODO (AF): handle error
 			break
 		}
-		fmt.Println("Accept connexion from ", cnx.RemoteAddr(), " -> ", err)
+		logger.Infof("Accept connexion from %s", cnx.RemoteAddr())
 		// TODO (AF): Registers new connection
 		// transport.conns[uri] = cnx
 		go transport.handleIn(cnx)
 	}
-	fmt.Println("HandleConn exited")
+	logger.Infof("HandleConn exited")
 }
 
 func (transport *TCPTransport) handleIn(cnx net.Conn) {
 	for transport.running {
-		fmt.Println("HandleIn wait for message: ", cnx.RemoteAddr())
+		logger.Debugf("HandleIn wait for message: %s", cnx.RemoteAddr())
 		msg, err := transport.readMessage(cnx)
 
 		if err != nil {
 			// TODO (AF): handle error
 			continue
 		}
-		fmt.Println("Receives message: ", msg)
+		logger.Debugf("Receives message: %s", msg)
 		if msg != nil {
 			transport.ctx.Receive(msg)
 		}
 	}
-	fmt.Println("HandleIn exited: ", cnx.RemoteAddr())
+	logger.Infof("HandleIn exited: %s", cnx.RemoteAddr())
 }
 
 func (transport *TCPTransport) readMessage(cnx net.Conn) (*Message, error) {
@@ -199,7 +203,7 @@ func (transport *TCPTransport) readMessage(cnx net.Conn) (*Message, error) {
 	length := FIXED_HEADER_LENGTH +
 		uint32(buf[VARIABLE_LENGTH_OFFSET+3]) | uint32(buf[VARIABLE_LENGTH_OFFSET+2])<<8 |
 		uint32(buf[VARIABLE_LENGTH_OFFSET+1])<<16 | uint32(buf[VARIABLE_LENGTH_OFFSET])<<24
-	fmt.Println("Reads message header, length: ", length)
+	logger.Debugf("Reads message header, length: %d", length)
 
 	// Allocate a new buffer and copy the fixed part of MAL message header
 	var newbuf []byte = make([]byte, length)
@@ -213,13 +217,12 @@ func (transport *TCPTransport) readMessage(cnx net.Conn) (*Message, error) {
 			return nil, err
 		}
 		offset += nb
-		fmt.Println("Reads: ", offset)
+		logger.Debugf("Reads: %d", offset)
 	}
 
 	// Decodes the message
 	msg, err := transport.decode(newbuf, cnx.RemoteAddr().String())
-	// Optimized URI mapping
-	fmt.Println("&&&&& ", transport.uri)
+	// TODO (AF): Optimized URI mapping
 	//	if msg.UriTo == nil {
 	//		var urito URI = transport.uri
 	//		msg.UriTo = &urito
@@ -228,24 +231,25 @@ func (transport *TCPTransport) readMessage(cnx net.Conn) (*Message, error) {
 	//		var urifrom
 	//		msg.UriFrom = &URI("maltcp://" + cnx.RemoteAddr().String())
 	//	}
-	fmt.Println("##### Receives: ", msg, " from ", *msg.UriFrom, " to ", *msg.UriTo, " -> ", err)
 	if err != nil {
 		// TODO (AF): handle error
+		logger.Errorf("##### Errors receiving message: %s", err)
 		return nil, err
 	}
+	logger.Debugf("##### Receives: %s from %s to %s", msg, *msg.UriFrom, *msg.UriTo)
 
 	return msg, nil
 }
 
 func (transport *TCPTransport) handleOut() {
 	for {
-		fmt.Println("handleOut: wait message")
+		logger.Debugf("handleOut: wait message")
 		msg, more := <-transport.ch
 		if more {
-			fmt.Println("handleOut: ", msg)
+			logger.Debugf("handleOut: get Message%+v", *msg)
 			u, err := url.Parse(string(*msg.UriTo))
 			if err != nil {
-				fmt.Println("Cannot route message, urito=", msg.UriTo)
+				logger.Errorf("Cannot route message, urito=%s", *msg.UriTo)
 				continue
 			}
 			// TODO (AF):
@@ -253,29 +257,28 @@ func (transport *TCPTransport) handleOut() {
 			urito := u.Host
 
 			cnx, ok := transport.conns[urito]
-			fmt.Println("handleOut: ", *msg.UriTo, ", ", cnx, ", ", err)
 			if !ok {
-				fmt.Println("Creates connection to: ", urito)
+				logger.Debugf("Creates connection to %s", urito)
 				cnx, err = net.Dial("tcp", urito)
 				if err != nil {
 					// TODO (AF): handles error
-					fmt.Println("HandleOut: ", err)
+					logger.Errorf("HandleOut: %s", err)
 					continue
 				}
 				transport.conns[urito] = cnx
 			}
-			fmt.Println(*msg.UriFrom, ", ", *msg.UriTo)
+			logger.Debugf("%s, %s", *msg.UriFrom, *msg.UriTo)
 			err = transport.writeMessage(cnx, msg)
 			if err != nil {
 				// TODO (AF): handle error
-				fmt.Println("HandleOut: ", err)
+				logger.Debugf("HandleOut: %s", err)
 			}
 		} else {
-			fmt.Println("MALTCP Context ends: ", msg)
+			logger.Infof("MALTCP Context ends: %+v", msg)
 			transport.ends <- true
 		}
 	}
-	fmt.Println("HandleOut exited")
+	logger.Debugf("HandleOut exited")
 }
 
 func write32(value uint32, buf []byte) {
@@ -291,9 +294,9 @@ func (transport *TCPTransport) writeMessage(cnx net.Conn, msg *Message) error {
 		// TODO (AF): Logging
 		return err
 	}
-	fmt.Println("Writes message:", len(buf))
+	logger.Debugf("Writes message: %d", len(buf))
 	write32(uint32(len(buf))-FIXED_HEADER_LENGTH, buf[VARIABLE_LENGTH_OFFSET:VARIABLE_LENGTH_OFFSET+4])
-	fmt.Println("Message transmitted: ", buf)
+	logger.Debugf("Message transmitted: ", buf)
 	_, err = cnx.Write(buf)
 	if err != nil {
 		// TODO (AF): Logging
@@ -303,9 +306,9 @@ func (transport *TCPTransport) writeMessage(cnx net.Conn, msg *Message) error {
 }
 
 func (transport *TCPTransport) Transmit(msg *Message) error {
-	fmt.Println("Transmit: ", msg)
+	logger.Debugf("Transmit: %+v", *msg)
 	transport.ch <- msg
-	fmt.Println("Transmited")
+	logger.Debugf("Transmited")
 	return nil
 }
 
