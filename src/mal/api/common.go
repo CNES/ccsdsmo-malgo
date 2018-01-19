@@ -25,6 +25,11 @@ package api
 
 import (
 	. "mal"
+	"mal/debug"
+)
+
+var (
+	logger debug.Logger = debug.GetLogger("mal.api")
 )
 
 func key(area UShort, areaVersion UOctet, service UShort, operation UShort) uint64 {
