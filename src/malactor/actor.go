@@ -25,7 +25,7 @@ func NewActor(ctx *Context, service string, routing *Routing) (Actor, error) {
 	actor.routing = routing
 
 	ch := make(chan *Message, 10)
-	endpoint, err := ctx.NewEndPoint(service, ch)
+	endpoint, err := NewEndPoint(ctx, service, ch)
 	if err != nil {
 		fmt.Println("Error creating handler, ", err)
 		return nil, err

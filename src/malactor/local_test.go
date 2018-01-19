@@ -20,7 +20,7 @@ func TestLocal(t *testing.T) {
 		t.Fatal("Error creating context, ", err)
 	}
 
-	consumer, err := ctx.NewEndPoint("consumer", nil)
+	consumer, err := NewEndPoint(ctx, "consumer", nil)
 	if err != nil {
 		t.Fatal("Error creating consumer, ", err)
 	}
