@@ -49,10 +49,10 @@ func (*InVMTransport) Transmit(msg *Message) error {
 	urito := url.URL{Scheme: u.Scheme, Host: u.Host}
 	transport, ok := contexts[urito.String()]
 	if ok {
-		logger.Debugf("Forward %+v to %s", msg, urito)
+		logger.Debugf("Forward Message%+v to %s", *msg, *msg.UriTo)
 		return transport.ctx.Receive(msg)
 	}
-	logger.Errorf("Cannot route %+v to %s", msg, *msg.UriTo)
+	logger.Errorf("Cannot route Message%+v to %s", msg, *msg.UriTo)
 	return errors.New("Cannot route message to" + string(*msg.UriTo))
 }
 

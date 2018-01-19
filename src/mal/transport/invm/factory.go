@@ -43,7 +43,7 @@ func (*InVMTransportFactory) NewTransport(u *url.URL, ctx TransportCallback) (Tr
 	base := url.URL{Scheme: u.Scheme, Host: u.Host}
 	uri := URI(base.String())
 
-	logger.Infof("InVMTransportFactory.InVMTransportFactory: registers ", uri)
+	logger.Infof("InVMTransportFactory.InVMTransportFactory: registers %s", uri)
 
 	// Gets parameters from URL
 	params := u.Query()
