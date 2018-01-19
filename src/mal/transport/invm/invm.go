@@ -25,9 +25,13 @@ package invm
 
 import (
 	"errors"
-	"fmt"
 	. "mal"
+	"mal/debug"
 	"net/url"
+)
+
+var (
+	logger debug.Logger = debug.GetLogger("mal.transport.invm")
 )
 
 type InVMTransport struct {
@@ -39,17 +43,17 @@ type InVMTransport struct {
 func (*InVMTransport) Transmit(msg *Message) error {
 	u, err := url.Parse(string(*msg.UriTo))
 	if err != nil {
-		fmt.Println("Cannot route message, urito=", msg.UriTo)
+		logger.Errorf("Cannot parse urito=%s, %s", *msg.UriTo, err)
 		return err
 	}
 	urito := url.URL{Scheme: u.Scheme, Host: u.Host}
-	fmt.Println("Forward to: ", urito)
 	transport, ok := contexts[urito.String()]
 	if ok {
-		fmt.Println("Transmit: ", msg)
+		logger.Debugf("Forward %+v to %s", msg, urito)
 		return transport.ctx.Receive(msg)
 	}
-	return errors.New("Cannot route message, urito=" + string(*msg.UriTo))
+	logger.Errorf("Cannot route %+v to %s", msg, *msg.UriTo)
+	return errors.New("Cannot route message to" + string(*msg.UriTo))
 }
 
 func (transport *InVMTransport) TransmitMultiple(msgs ...*Message) error {
@@ -57,7 +61,7 @@ func (transport *InVMTransport) TransmitMultiple(msgs ...*Message) error {
 }
 
 func (transport *InVMTransport) Close() error {
-	fmt.Println("close transport", transport.uri)
+	logger.Infof("InVMTransport.Close: %s", transport.uri)
 	delete(contexts, string(transport.uri))
 	return nil
 }

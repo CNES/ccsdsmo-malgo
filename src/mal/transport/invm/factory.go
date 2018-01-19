@@ -25,7 +25,6 @@ package invm
 
 import (
 	"errors"
-	"fmt"
 	. "mal"
 	"net/url"
 )
@@ -44,7 +43,7 @@ func (*InVMTransportFactory) NewTransport(u *url.URL, ctx TransportCallback) (Tr
 	base := url.URL{Scheme: u.Scheme, Host: u.Host}
 	uri := URI(base.String())
 
-	fmt.Println("Creates InVMTransport: ", uri)
+	logger.Infof("InVMTransportFactory.InVMTransportFactory: registers ", uri)
 
 	// Gets parameters from URL
 	params := u.Query()
@@ -57,6 +56,7 @@ func (*InVMTransportFactory) NewTransport(u *url.URL, ctx TransportCallback) (Tr
 
 	// Registers the MAL context
 	if contexts[string(uri)] != nil {
+		logger.Warnf("InVMTransportFactory.InVMTransportFactory: MAL context already registered ", uri)
 		return nil, NullURI, errors.New("MAL context already registered")
 	}
 	contexts[string(uri)] = transport
