@@ -5,7 +5,7 @@ import (
 )
 
 func init() {
-	Init("<root>=ERROR;mal=WARNING")
+	Init("<root>=ERROR;mal=WARNING;mal.transport=WARNING")
 }
 
 type Logger interface {
@@ -45,21 +45,22 @@ func (l *LoggerX) IsWarnEnabled() bool {
 }
 
 func (l *LoggerX) Fatalf(message string, args ...interface{}) {
-	l.logger.Criticalf(message, args...)
+	l.logger.Logf(log.CRITICAL, message, args...)
+
 }
 
 func (l *LoggerX) Errorf(message string, args ...interface{}) {
-	l.logger.Errorf(message, args...)
+	l.logger.Logf(log.ERROR, message, args...)
 }
 
 func (l *LoggerX) Warnf(message string, args ...interface{}) {
-	l.logger.Warningf(message, args...)
+	l.logger.Logf(log.WARNING, message, args...)
 }
 
 func (l *LoggerX) Infof(message string, args ...interface{}) {
-	l.logger.Infof(message, args...)
+	l.logger.Logf(log.INFO, message, args...)
 }
 
 func (l *LoggerX) Debugf(message string, args ...interface{}) {
-	l.logger.Debugf(message, args...)
+	l.logger.Logf(log.DEBUG, message, args...)
 }
