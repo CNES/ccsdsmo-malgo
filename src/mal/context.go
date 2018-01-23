@@ -42,6 +42,8 @@ type Context struct {
 	listeners map[URI]Listener
 	ch        chan *Message
 	ends      chan bool
+	achdlr    AccessControl
+	errch     chan *MessageError
 	transport Transport
 }
 
@@ -68,6 +70,19 @@ func NewContext(url string) (*Context, error) {
 
 	go ctx.handle()
 	return ctx, nil
+}
+
+// Note (AF): May be we should provide a non programmatic way to fix the AccessControl handler
+// in the MAL context (using a factory as in MAL Java API for example).
+func (ctx *Context) SetAccessControl(achdlr AccessControl) {
+	ctx.achdlr = achdlr
+}
+
+func (ctx *Context) SetErrorChannel(errch chan *MessageError) {
+	if ctx.errch != nil {
+		close(ctx.errch)
+	}
+	ctx.errch = errch
 }
 
 func (ctx *Context) NewURI(id string) *URI {
@@ -149,6 +164,13 @@ func (ctx *Context) Close() error {
 // TransportCallback interface
 
 func (ctx *Context) Send(msg *Message) error {
+	// TODO (AF): May be we should handle errors internally using the error channel.
+	if ctx.achdlr != nil {
+		err := ctx.achdlr.check(msg)
+		if err != nil {
+			return err
+		}
+	}
 	return ctx.transport.Transmit(msg)
 }
 
@@ -161,6 +183,14 @@ func (ctx *Context) Send(msg *Message) error {
 //}
 
 func (ctx *Context) Receive(msg *Message) error {
+	// TODO (AF): This method should not returned errors. Errors should be handled
+	// internally using the error channel.
+	if ctx.achdlr != nil {
+		err := ctx.achdlr.check(msg)
+		if err != nil {
+			return err
+		}
+	}
 	ctx.ch <- msg
 	return nil
 }
