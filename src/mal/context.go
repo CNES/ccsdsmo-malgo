@@ -1,7 +1,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2017 CNES
+ * Copyright (c) 2017 - 2018 CNES
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -91,6 +91,7 @@ func (ctx *Context) NewURI(id string) *URI {
 	return &uri
 }
 
+// Registers an End-Point with the specified MAL URI.
 func (ctx *Context) RegisterEndPoint(uri *URI, listener Listener) error {
 	// TODO (AF): Verify if the context is alive
 	if listener == nil {
@@ -109,6 +110,7 @@ func (ctx *Context) RegisterEndPoint(uri *URI, listener Listener) error {
 	return nil
 }
 
+// Gets the End-Point asssociated with the specified MAL URI.
 func (ctx *Context) GetEndPoint(uri *URI) (Listener, error) {
 	listener := ctx.listeners[*uri]
 	if listener == nil {
@@ -118,6 +120,7 @@ func (ctx *Context) GetEndPoint(uri *URI) (Listener, error) {
 	return listener, nil
 }
 
+// Removes the End-Point asssociated with the specified MAL URI.
 func (ctx *Context) UnregisterEndPoint(uri *URI) error {
 	listener := ctx.listeners[*uri]
 	if listener == nil {
@@ -148,6 +151,7 @@ func (ctx *Context) handle() {
 	}
 }
 
+// Close the MAL context, closing all registered listeners (end-point, etc.) and transport.
 func (ctx *Context) Close() error {
 	for uri, listener := range ctx.listeners {
 		logger.Infof("Context.Close: %s", uri)
@@ -163,6 +167,7 @@ func (ctx *Context) Close() error {
 // ================================================================================
 // TransportCallback interface
 
+// Method implementing SEND request to the transport layer.
 func (ctx *Context) Send(msg *Message) error {
 	// TODO (AF): May be we should handle errors internally using the error channel.
 	if ctx.achdlr != nil {
@@ -174,14 +179,7 @@ func (ctx *Context) Send(msg *Message) error {
 	return ctx.transport.Transmit(msg)
 }
 
-//func (ctx *Context) Send(msg *Message) error {
-//	if ctx.ch != nil {
-//		ctx.ch <- *msg
-//		return nil
-//	}
-//	return errors.New("MAL context closed")
-//}
-
+// Method implementing RECEIVE indication from transport layer.
 func (ctx *Context) Receive(msg *Message) error {
 	// TODO (AF): This method should not returned errors. Errors should be handled
 	// internally using the error channel.
@@ -195,6 +193,7 @@ func (ctx *Context) Receive(msg *Message) error {
 	return nil
 }
 
+// Method implementing RECEIVEMULTIPLE indication from transport layer.
 func (ctx *Context) ReceiveMultiple(msgs ...*Message) error {
 	for _, msg := range msgs {
 		ctx.Receive(msg)

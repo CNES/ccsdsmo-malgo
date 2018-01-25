@@ -1,7 +1,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2017 CNES
+ * Copyright (c) 2017 - 2018 CNES
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -51,6 +51,7 @@ const (
 //	MAL_URI_ATTRIBUTE_TAG
 )
 
+// The Attribute interface represents the MAL Attribute type.
 type Attribute interface {
 	Element
 	attribute() Attribute
