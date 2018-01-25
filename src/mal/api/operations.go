@@ -1024,6 +1024,9 @@ func (op *PublisherOperationX) onClose() {
 // Defines Listener interface used by context to route MAL messages
 
 func (ictx *OperationContext) OnMessage(msg *Message) error {
+	// Note (AF): The generated TransactionId is unique for this requesting URI so we
+	// can use it as key to retrieve the Operation (This is more restrictive than the
+	// MAL API (see section 3.2).
 	to, ok := ictx.handlers[msg.TransactionId]
 	if ok {
 		logger.Debugf("onMessage %t", to)

@@ -259,7 +259,7 @@ func (pctx *ProviderContext) getProvider(stype UOctet, area UShort, areaVersion 
 
 func (pctx *ProviderContext) OnMessage(msg *Message) error {
 	switch msg.InteractionType {
-	// TODO (AF): May be we have to test for each interaction if the stage is valid
+	// TODO (AF): We can use msg.InteractionType as selector
 	case MAL_INTERACTIONTYPE_SEND:
 		provider, err := pctx.getProvider(_SEND_PROVIDER, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation)
 		if err != nil {

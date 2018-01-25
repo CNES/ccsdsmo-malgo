@@ -186,6 +186,7 @@ func (hctx *HandlerContext) getHandler(hdltype UOctet, area UShort, areaVersion 
 }
 
 func (hctx *HandlerContext) OnMessage(msg *Message) error {
+	// TODO (AF): We can use msg.InteractionType as selector
 	switch msg.InteractionType {
 	case MAL_INTERACTIONTYPE_SEND:
 		handler, err := hctx.getHandler(_SEND_HANDLER, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation)
