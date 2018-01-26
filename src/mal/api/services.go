@@ -42,24 +42,6 @@ type consumer interface {
 	service
 }
 
-type ProviderContext struct {
-	HandlerContext
-}
-
-// TODO (AF): Merge with NewHandlerContext
-func NewProviderContext(ctx *Context, service string) (*ProviderContext, error) {
-	// TODO (AF): Verify the uri
-	uri := ctx.NewURI(service)
-	// TODO (AF): Fix length of channel?
-	handlers := make(map[uint64](*handlerDesc))
-	pctx := &ProviderContext{HandlerContext{ctx, uri, handlers}}
-	err := ctx.RegisterEndPoint(uri, pctx)
-	if err != nil {
-		return nil, err
-	}
-	return pctx, nil
-}
-
 // ================================================================================
 // MAL Send interaction provider
 
@@ -69,13 +51,13 @@ type SendProvider interface {
 }
 
 // Registers a SendProvider
-func (pctx *ProviderContext) RegisterSendProvider(area UShort, areaVersion UOctet, service UShort, operation UShort, provider SendProvider) error {
+func (cctx *ClientContext) RegisterSendProvider(area UShort, areaVersion UOctet, service UShort, operation UShort, provider SendProvider) error {
 
 	handler := func(msg *Message, tx Transaction) error {
 		return provider.OnSend(msg, tx.(SendTransaction))
 	}
 
-	return pctx.register(MAL_INTERACTIONTYPE_SEND, area, areaVersion, service, operation, handler)
+	return cctx.registerHdl(MAL_INTERACTIONTYPE_SEND, area, areaVersion, service, operation, handler)
 }
 
 // ================================================================================
@@ -87,13 +69,13 @@ type SubmitProvider interface {
 }
 
 // Registers a SubmitProvider
-func (pctx *ProviderContext) RegisterSubmitProvider(area UShort, areaVersion UOctet, service UShort, operation UShort, provider SubmitProvider) error {
+func (cctx *ClientContext) RegisterSubmitProvider(area UShort, areaVersion UOctet, service UShort, operation UShort, provider SubmitProvider) error {
 
 	handler := func(msg *Message, tx Transaction) error {
 		return provider.OnSubmit(msg, tx.(SubmitTransaction))
 	}
 
-	return pctx.register(MAL_INTERACTIONTYPE_SUBMIT, area, areaVersion, service, operation, handler)
+	return cctx.registerHdl(MAL_INTERACTIONTYPE_SUBMIT, area, areaVersion, service, operation, handler)
 }
 
 //type ConsumerSubmit interface {
@@ -110,13 +92,13 @@ type RequestProvider interface {
 }
 
 // Registers a RequestProvider
-func (pctx *ProviderContext) RegisterRequestProvider(area UShort, areaVersion UOctet, service UShort, operation UShort, provider RequestProvider) error {
+func (cctx *ClientContext) RegisterRequestProvider(area UShort, areaVersion UOctet, service UShort, operation UShort, provider RequestProvider) error {
 
 	handler := func(msg *Message, tx Transaction) error {
 		return provider.OnRequest(msg, tx.(RequestTransaction))
 	}
 
-	return pctx.register(MAL_INTERACTIONTYPE_REQUEST, area, areaVersion, service, operation, handler)
+	return cctx.registerHdl(MAL_INTERACTIONTYPE_REQUEST, area, areaVersion, service, operation, handler)
 }
 
 //type ConsumerRequest interface {
@@ -133,13 +115,13 @@ type InvokeProvider interface {
 }
 
 // Registers an InvokeProvider
-func (pctx *ProviderContext) RegisterInvokeProvider(area UShort, areaVersion UOctet, service UShort, operation UShort, provider InvokeProvider) error {
+func (cctx *ClientContext) RegisterInvokeProvider(area UShort, areaVersion UOctet, service UShort, operation UShort, provider InvokeProvider) error {
 
 	handler := func(msg *Message, tx Transaction) error {
 		return provider.OnInvoke(msg, tx.(InvokeTransaction))
 	}
 
-	return pctx.register(MAL_INTERACTIONTYPE_INVOKE, area, areaVersion, service, operation, handler)
+	return cctx.registerHdl(MAL_INTERACTIONTYPE_INVOKE, area, areaVersion, service, operation, handler)
 }
 
 //type ConsumerInvoke interface {
@@ -157,13 +139,13 @@ type ProgressProvider interface {
 }
 
 // Registers a ProgressProvider
-func (pctx *ProviderContext) RegisterProgressProvider(area UShort, areaVersion UOctet, service UShort, operation UShort, provider ProgressProvider) error {
+func (cctx *ClientContext) RegisterProgressProvider(area UShort, areaVersion UOctet, service UShort, operation UShort, provider ProgressProvider) error {
 
 	handler := func(msg *Message, tx Transaction) error {
 		return provider.OnProgress(msg, tx.(ProgressTransaction))
 	}
 
-	return pctx.register(MAL_INTERACTIONTYPE_PROGRESS, area, areaVersion, service, operation, handler)
+	return cctx.registerHdl(MAL_INTERACTIONTYPE_PROGRESS, area, areaVersion, service, operation, handler)
 }
 
 // TODO (AF): May it makes sense to implements such an interface for Progress interaction
@@ -188,7 +170,7 @@ type Broker interface {
 }
 
 // Registers a broker
-func (pctx *ProviderContext) RegisterBroker(area UShort, areaVersion UOctet, service UShort, operation UShort, broker Broker) error {
+func (cctx *ClientContext) RegisterBroker(area UShort, areaVersion UOctet, service UShort, operation UShort, broker Broker) error {
 
 	handler := func(msg *Message, tx Transaction) error {
 		switch msg.InteractionStage {
@@ -213,5 +195,5 @@ func (pctx *ProviderContext) RegisterBroker(area UShort, areaVersion UOctet, ser
 		}
 	}
 
-	return pctx.register(MAL_INTERACTIONTYPE_PUBSUB, area, areaVersion, service, operation, handler)
+	return cctx.registerHdl(MAL_INTERACTIONTYPE_PUBSUB, area, areaVersion, service, operation, handler)
 }

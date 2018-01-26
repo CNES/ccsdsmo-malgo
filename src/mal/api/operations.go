@@ -26,61 +26,7 @@ package api
 import (
 	"errors"
 	. "mal"
-	"sync/atomic"
 )
-
-type OperationHandler interface {
-	onMessage(msg *Message)
-	onClose()
-}
-
-type OperationContext struct {
-	Ctx       *Context
-	Uri       *URI
-	handlers  map[ULong]OperationHandler
-	txcounter uint64
-}
-
-func NewOperationContext(ctx *Context, service string) (*OperationContext, error) {
-	// TODO (AF): Verify the uri
-	uri := ctx.NewURI(service)
-	handlers := make(map[ULong]OperationHandler)
-	ictx := &OperationContext{ctx, uri, handlers, 0}
-	err := ctx.RegisterEndPoint(uri, ictx)
-	if err != nil {
-		return nil, err
-	}
-	return ictx, nil
-}
-
-func (ictx *OperationContext) register(tid ULong, handler OperationHandler) error {
-	// TODO (AF): Synchronization
-	old := ictx.handlers[tid]
-	if old != nil {
-		logger.Warnf("Handler already registered for this transaction: %d", tid)
-		return errors.New("Handler already registered for this transaction")
-	}
-	ictx.handlers[tid] = handler
-	return nil
-}
-
-func (ictx *OperationContext) deregister(tid ULong) error {
-	// TODO (AF): Synchronization
-	if ictx.handlers[tid] == nil {
-		logger.Warnf("No handler registered for this transaction: %d", tid)
-		return errors.New("No handler registered for this transaction")
-	}
-	delete(ictx.handlers, tid)
-	return nil
-}
-
-func (ictx *OperationContext) TransactionId() ULong {
-	return ULong(atomic.AddUint64(&ictx.txcounter, 1))
-}
-
-func (ictx *OperationContext) Close() error {
-	return ictx.Ctx.UnregisterEndPoint(ictx.Uri)
-}
 
 const (
 	_CREATED byte = iota
@@ -104,7 +50,7 @@ type Operation interface {
 }
 
 type OperationX struct {
-	ictx        *OperationContext
+	cctx        *ClientContext
 	tid         ULong
 	ch          chan *Message
 	urito       *URI
@@ -130,7 +76,7 @@ func (op *OperationX) finalize() {
 	if op.ch != nil {
 		// This operation should not received anymore messages, unregisters it
 		// in OperationContext
-		op.ictx.deregister(op.tid)
+		op.cctx.deregisterOp(op.tid)
 	}
 }
 
@@ -148,7 +94,7 @@ func (op *OperationX) Close() error {
 	if op.ch != nil {
 		var err error = nil
 		if (op.status != _CREATED) && (op.status != _FINAL) {
-			err = op.ictx.deregister(op.tid)
+			err = op.cctx.deregisterOp(op.tid)
 		}
 		close(op.ch)
 		op.ch = nil
@@ -164,7 +110,7 @@ func (op *OperationX) Reset() error {
 		return errors.New("Bad operation status")
 	}
 	// Gets a new TransactionId for operation
-	op.tid = op.ictx.TransactionId()
+	op.tid = op.cctx.TransactionId()
 	op.status = _CREATED
 	return nil
 }
@@ -181,10 +127,10 @@ type SendOperationX struct {
 	OperationX
 }
 
-func (ictx *OperationContext) NewSendOperation(urito *URI, area UShort, areaVersion UOctet, service UShort, operation UShort) SendOperation {
+func (cctx *ClientContext) NewSendOperation(urito *URI, area UShort, areaVersion UOctet, service UShort, operation UShort) SendOperation {
 	// Gets a new TransactionId for operation
-	tid := ictx.TransactionId()
-	op := &SendOperationX{OperationX: OperationX{ictx, tid, nil, urito, area, areaVersion, service, operation, _CREATED}}
+	tid := cctx.TransactionId()
+	op := &SendOperationX{OperationX: OperationX{cctx, tid, nil, urito, area, areaVersion, service, operation, _CREATED}}
 	return op
 }
 
@@ -195,7 +141,7 @@ func (op *SendOperationX) Send(body []byte) error {
 	op.status = _INITIATED
 
 	msg := &Message{
-		UriFrom:          op.ictx.Uri,
+		UriFrom:          op.cctx.Uri,
 		UriTo:            op.urito,
 		InteractionType:  MAL_INTERACTIONTYPE_SEND,
 		InteractionStage: MAL_IP_STAGE_SEND,
@@ -208,7 +154,7 @@ func (op *SendOperationX) Send(body []byte) error {
 	}
 	// This operation doesn't wait any reply, so we don't need to register it.
 	// Send the SEND MAL message
-	err := op.ictx.Ctx.Send(msg)
+	err := op.cctx.Ctx.Send(msg)
 	op.status = _FINAL
 	return err
 }
@@ -233,12 +179,12 @@ type SubmitOperationX struct {
 	OperationX
 }
 
-func (ictx *OperationContext) NewSubmitOperation(urito *URI, area UShort, areaVersion UOctet, service UShort, operation UShort) SubmitOperation {
+func (cctx *ClientContext) NewSubmitOperation(urito *URI, area UShort, areaVersion UOctet, service UShort, operation UShort) SubmitOperation {
 	// Gets a new TransactionId for operation
-	tid := ictx.TransactionId()
+	tid := cctx.TransactionId()
 	// TODO (AF): Fix length of channel
 	ch := make(chan *Message, 10)
-	op := &SubmitOperationX{OperationX: OperationX{ictx, tid, ch, urito, area, areaVersion, service, operation, _CREATED}}
+	op := &SubmitOperationX{OperationX: OperationX{cctx, tid, ch, urito, area, areaVersion, service, operation, _CREATED}}
 	return op
 }
 
@@ -249,7 +195,7 @@ func (op *SubmitOperationX) Submit(body []byte) (*Message, error) {
 	op.status = _INITIATED
 
 	msg := &Message{
-		UriFrom:          op.ictx.Uri,
+		UriFrom:          op.cctx.Uri,
 		UriTo:            op.urito,
 		InteractionType:  MAL_INTERACTIONTYPE_SUBMIT,
 		InteractionStage: MAL_IP_STAGE_SUBMIT,
@@ -261,13 +207,13 @@ func (op *SubmitOperationX) Submit(body []byte) (*Message, error) {
 		Body:             body,
 	}
 	// Registers this Submit Operation in OperationContext
-	err := op.ictx.register(op.tid, op)
+	err := op.cctx.registerOp(op.tid, op)
 	if err != nil {
 		op.finalize()
 		return nil, err
 	}
 	// Send the SUBMIT MAL message
-	err = op.ictx.Ctx.Send(msg)
+	err = op.cctx.Ctx.Send(msg)
 	if err != nil {
 		op.finalize()
 		return nil, err
@@ -277,12 +223,12 @@ func (op *SubmitOperationX) Submit(body []byte) (*Message, error) {
 	msg, more := <-op.ch
 	if !more {
 		op.finalize()
-		logger.Errorf("Operation ends: %s, %s", op.ictx.Uri, op.tid)
+		logger.Errorf("Operation ends: %s, %s", op.cctx.Uri, op.tid)
 		return nil, errors.New("Operation ends")
 	}
 	if msg.InteractionStage != MAL_IP_STAGE_SUBMIT_ACK {
 		op.finalize()
-		logger.Errorf("Bad return message, operation (%s, %s), stage %d", op.ictx.Uri, op.tid, msg.InteractionStage)
+		logger.Errorf("Bad return message, operation (%s, %s), stage %d", op.cctx.Uri, op.tid, msg.InteractionStage)
 		return nil, errors.New("Bad return message")
 	}
 	op.finalize()
@@ -319,12 +265,12 @@ type RequestOperationX struct {
 	OperationX
 }
 
-func (ictx *OperationContext) NewRequestOperation(urito *URI, area UShort, areaVersion UOctet, service UShort, operation UShort) RequestOperation {
+func (cctx *ClientContext) NewRequestOperation(urito *URI, area UShort, areaVersion UOctet, service UShort, operation UShort) RequestOperation {
 	// Gets a new TransactionId for operation
-	tid := ictx.TransactionId()
+	tid := cctx.TransactionId()
 	// TODO (AF): Fix length of channel
 	ch := make(chan *Message, 10)
-	op := &RequestOperationX{OperationX: OperationX{ictx, tid, ch, urito, area, areaVersion, service, operation, _CREATED}}
+	op := &RequestOperationX{OperationX: OperationX{cctx, tid, ch, urito, area, areaVersion, service, operation, _CREATED}}
 	return op
 }
 
@@ -335,7 +281,7 @@ func (op *RequestOperationX) Request(body []byte) (*Message, error) {
 	op.status = _INITIATED
 
 	msg := &Message{
-		UriFrom:          op.ictx.Uri,
+		UriFrom:          op.cctx.Uri,
 		UriTo:            op.urito,
 		InteractionType:  MAL_INTERACTIONTYPE_REQUEST,
 		InteractionStage: MAL_IP_STAGE_REQUEST,
@@ -347,13 +293,13 @@ func (op *RequestOperationX) Request(body []byte) (*Message, error) {
 		Body:             body,
 	}
 	// Registers this Request Operation in OperationContext
-	err := op.ictx.register(op.tid, op)
+	err := op.cctx.registerOp(op.tid, op)
 	if err != nil {
 		op.finalize()
 		return nil, err
 	}
 	// Send the REQUEST MAL message
-	err = op.ictx.Ctx.Send(msg)
+	err = op.cctx.Ctx.Send(msg)
 	if err != nil {
 		op.finalize()
 		return nil, err
@@ -363,13 +309,13 @@ func (op *RequestOperationX) Request(body []byte) (*Message, error) {
 	msg, more := <-op.ch
 	if !more {
 		op.finalize()
-		logger.Debugf("Operation ends: %s, %s", op.ictx.Uri, op.tid)
+		logger.Debugf("Operation ends: %s, %s", op.cctx.Uri, op.tid)
 		return nil, errors.New("Operation ends")
 	}
 	// Verify the message stage
 	if msg.InteractionStage != MAL_IP_STAGE_REQUEST_RESPONSE {
 		op.finalize()
-		logger.Errorf("Bad return message, operation (%s, %s), stage %d", op.ictx.Uri, op.tid, msg.InteractionStage)
+		logger.Errorf("Bad return message, operation (%s, %s), stage %d", op.cctx.Uri, op.tid, msg.InteractionStage)
 		return nil, errors.New("Bad return message")
 	}
 	op.finalize()
@@ -409,12 +355,12 @@ type InvokeOperationX struct {
 	response *Message
 }
 
-func (ictx *OperationContext) NewInvokeOperation(urito *URI, area UShort, areaVersion UOctet, service UShort, operation UShort) InvokeOperation {
+func (cctx *ClientContext) NewInvokeOperation(urito *URI, area UShort, areaVersion UOctet, service UShort, operation UShort) InvokeOperation {
 	// Gets a new TransactionId for operation
-	tid := ictx.TransactionId()
+	tid := cctx.TransactionId()
 	// TODO (AF): Fix length of channel
 	ch := make(chan *Message, 10)
-	op := &InvokeOperationX{OperationX: OperationX{ictx, tid, ch, urito, area, areaVersion, service, operation, _CREATED}}
+	op := &InvokeOperationX{OperationX: OperationX{cctx, tid, ch, urito, area, areaVersion, service, operation, _CREATED}}
 	return op
 }
 
@@ -425,7 +371,7 @@ func (op *InvokeOperationX) Invoke(body []byte) (*Message, error) {
 	op.status = _INITIATED
 
 	msg := &Message{
-		UriFrom:          op.ictx.Uri,
+		UriFrom:          op.cctx.Uri,
 		UriTo:            op.urito,
 		InteractionType:  MAL_INTERACTIONTYPE_INVOKE,
 		InteractionStage: MAL_IP_STAGE_INVOKE,
@@ -437,13 +383,13 @@ func (op *InvokeOperationX) Invoke(body []byte) (*Message, error) {
 		Body:             body,
 	}
 	// Registers this Invoke Operation in OperationContext
-	err := op.ictx.register(op.tid, op)
+	err := op.cctx.registerOp(op.tid, op)
 	if err != nil {
 		op.finalize()
 		return nil, err
 	}
 	// Send the INVOKE MAL message
-	err = op.ictx.Ctx.Send(msg)
+	err = op.cctx.Ctx.Send(msg)
 	if err != nil {
 		op.finalize()
 		return nil, err
@@ -453,13 +399,13 @@ func (op *InvokeOperationX) Invoke(body []byte) (*Message, error) {
 	msg, more := <-op.ch
 	if !more {
 		op.finalize()
-		logger.Debugf("Operation ends: %s, %s", op.ictx.Uri, op.tid)
+		logger.Debugf("Operation ends: %s, %s", op.cctx.Uri, op.tid)
 		return nil, errors.New("Operation ends")
 	}
 	// Verify the message stage
 	if msg.InteractionStage != MAL_IP_STAGE_INVOKE_ACK {
 		op.finalize()
-		logger.Errorf("Bad return message, operation (%s, %s), stage %d", op.ictx.Uri, op.tid, msg.InteractionStage)
+		logger.Errorf("Bad return message, operation (%s, %s), stage %d", op.cctx.Uri, op.tid, msg.InteractionStage)
 		return nil, errors.New("Bad return message")
 	}
 	op.status = _ACKNOWLEDGED
@@ -489,13 +435,13 @@ func (op *InvokeOperationX) GetResponse() (*Message, error) {
 	msg, more := <-op.ch
 	if !more {
 		op.finalize()
-		logger.Debugf("Operation ends: %s, %s", op.ictx.Uri, op.tid)
+		logger.Debugf("Operation ends: %s, %s", op.cctx.Uri, op.tid)
 		return nil, errors.New("Operation ends")
 	}
 	// Verify the message stage
 	if msg.InteractionStage != MAL_IP_STAGE_INVOKE_RESPONSE {
 		op.finalize()
-		logger.Errorf("Bad return message, operation (%s, %s), stage %d", op.ictx.Uri, op.tid, msg.InteractionStage)
+		logger.Errorf("Bad return message, operation (%s, %s), stage %d", op.cctx.Uri, op.tid, msg.InteractionStage)
 		return nil, errors.New("Bad return message")
 	}
 	op.finalize()
@@ -536,12 +482,12 @@ type ProgressOperationX struct {
 	response *Message
 }
 
-func (ictx *OperationContext) NewProgressOperation(urito *URI, area UShort, areaVersion UOctet, service UShort, operation UShort) ProgressOperation {
+func (cctx *ClientContext) NewProgressOperation(urito *URI, area UShort, areaVersion UOctet, service UShort, operation UShort) ProgressOperation {
 	// Gets a new TransactionId for operation
-	tid := ictx.TransactionId()
+	tid := cctx.TransactionId()
 	// TODO (AF): Fix length of channel
 	ch := make(chan *Message, 10)
-	op := &ProgressOperationX{OperationX: OperationX{ictx, tid, ch, urito, area, areaVersion, service, operation, _CREATED}}
+	op := &ProgressOperationX{OperationX: OperationX{cctx, tid, ch, urito, area, areaVersion, service, operation, _CREATED}}
 	return op
 }
 
@@ -552,7 +498,7 @@ func (op *ProgressOperationX) Progress(body []byte) (*Message, error) {
 	op.status = _INITIATED
 
 	msg := &Message{
-		UriFrom:          op.ictx.Uri,
+		UriFrom:          op.cctx.Uri,
 		UriTo:            op.urito,
 		InteractionType:  MAL_INTERACTIONTYPE_PROGRESS,
 		InteractionStage: MAL_IP_STAGE_PROGRESS,
@@ -564,13 +510,13 @@ func (op *ProgressOperationX) Progress(body []byte) (*Message, error) {
 		Body:             body,
 	}
 	// Registers this Submit Operation in OperationContext
-	err := op.ictx.register(op.tid, op)
+	err := op.cctx.registerOp(op.tid, op)
 	if err != nil {
 		op.finalize()
 		return nil, err
 	}
 	// Send the SUBMIT MAL message
-	err = op.ictx.Ctx.Send(msg)
+	err = op.cctx.Ctx.Send(msg)
 	if err != nil {
 		op.finalize()
 		return nil, err
@@ -580,13 +526,13 @@ func (op *ProgressOperationX) Progress(body []byte) (*Message, error) {
 	msg, more := <-op.ch
 	if !more {
 		op.finalize()
-		logger.Debugf("Operation ends: %s, %s", op.ictx.Uri, op.tid)
+		logger.Debugf("Operation ends: %s, %s", op.cctx.Uri, op.tid)
 		return nil, errors.New("Operation ends")
 	}
 	// Verify the message stage
 	if msg.InteractionStage != MAL_IP_STAGE_PROGRESS_ACK {
 		op.finalize()
-		logger.Errorf("Bad return message, operation (%s, %s), stage %d", op.ictx.Uri, op.tid, msg.InteractionStage)
+		logger.Errorf("Bad return message, operation (%s, %s), stage %d", op.cctx.Uri, op.tid, msg.InteractionStage)
 		return nil, errors.New("Bad return message")
 	}
 	op.status = _ACKNOWLEDGED
@@ -609,14 +555,14 @@ func (op *ProgressOperationX) GetUpdate() (*Message, error) {
 	msg, more := <-op.ch
 	if !more {
 		op.finalize()
-		logger.Debugf("Operation ends: %s, %s", op.ictx.Uri, op.tid)
+		logger.Debugf("Operation ends: %s, %s", op.cctx.Uri, op.tid)
 		return nil, errors.New("Operation ends")
 	}
 
 	if (msg.InteractionStage != MAL_IP_STAGE_PROGRESS_UPDATE) &&
 		(msg.InteractionStage != MAL_IP_STAGE_PROGRESS_RESPONSE) {
 		op.finalize()
-		logger.Errorf("Bad return message, operation (%s, %s), stage %d", op.ictx.Uri, op.tid, msg.InteractionStage)
+		logger.Errorf("Bad return message, operation (%s, %s), stage %d", op.cctx.Uri, op.tid, msg.InteractionStage)
 		return nil, errors.New("Bad return message")
 	}
 
@@ -653,13 +599,13 @@ func (op *ProgressOperationX) GetResponse() (*Message, error) {
 	msg, more := <-op.ch
 	if !more {
 		op.finalize()
-		logger.Debugf("Operation ends: %s, %s", op.ictx.Uri, op.tid)
+		logger.Debugf("Operation ends: %s, %s", op.cctx.Uri, op.tid)
 		return nil, errors.New("Operation ends")
 	}
 
 	if msg.InteractionStage != MAL_IP_STAGE_PROGRESS_RESPONSE {
 		op.finalize()
-		logger.Errorf("Bad return message, operation (%s, %s), stage %d", op.ictx.Uri, op.tid, msg.InteractionStage)
+		logger.Errorf("Bad return message, operation (%s, %s), stage %d", op.cctx.Uri, op.tid, msg.InteractionStage)
 		return nil, errors.New("Bad return message")
 	}
 	op.finalize()
@@ -699,12 +645,12 @@ type SubscriberOperationX struct {
 	OperationX
 }
 
-func (ictx *OperationContext) NewSubscriberOperation(urito *URI, area UShort, areaVersion UOctet, service UShort, operation UShort) SubscriberOperation {
+func (cctx *ClientContext) NewSubscriberOperation(urito *URI, area UShort, areaVersion UOctet, service UShort, operation UShort) SubscriberOperation {
 	// Gets a new TransactionId for operation
-	tid := ictx.TransactionId()
+	tid := cctx.TransactionId()
 	// TODO (AF): Fix length of channel
 	ch := make(chan *Message, 10)
-	op := &SubscriberOperationX{OperationX: OperationX{ictx, tid, ch, urito, area, areaVersion, service, operation, _CREATED}}
+	op := &SubscriberOperationX{OperationX: OperationX{cctx, tid, ch, urito, area, areaVersion, service, operation, _CREATED}}
 	return op
 }
 
@@ -716,7 +662,7 @@ func (op *SubscriberOperationX) Register(body []byte) (*Message, error) {
 	op.status = _REGISTER_INITIATED
 
 	msg := &Message{
-		UriFrom:          op.ictx.Uri,
+		UriFrom:          op.cctx.Uri,
 		UriTo:            op.urito,
 		InteractionType:  MAL_INTERACTIONTYPE_PUBSUB,
 		InteractionStage: MAL_IP_STAGE_PUBSUB_REGISTER,
@@ -728,13 +674,13 @@ func (op *SubscriberOperationX) Register(body []byte) (*Message, error) {
 		Body:             body,
 	}
 	// Registers this Operation in OperationContext
-	err := op.ictx.register(op.tid, op)
+	err := op.cctx.registerOp(op.tid, op)
 	if err != nil {
 		op.finalize()
 		return nil, err
 	}
 	// Send the REGISTER MAL message
-	err = op.ictx.Ctx.Send(msg)
+	err = op.cctx.Ctx.Send(msg)
 	if err != nil {
 		op.finalize()
 		return nil, err
@@ -744,13 +690,13 @@ func (op *SubscriberOperationX) Register(body []byte) (*Message, error) {
 	msg, more := <-op.ch
 	if !more {
 		op.finalize()
-		logger.Debugf("Operation ends: %s, %s", op.ictx.Uri, op.tid)
+		logger.Debugf("Operation ends: %s, %s", op.cctx.Uri, op.tid)
 		return nil, errors.New("Operation ends")
 	}
 	// Verify the message stage
 	if msg.InteractionStage != MAL_IP_STAGE_PUBSUB_REGISTER_ACK {
 		op.finalize()
-		logger.Errorf("Bad return message, operation (%s, %s), stage %d", op.ictx.Uri, op.tid, msg.InteractionStage)
+		logger.Errorf("Bad return message, operation (%s, %s), stage %d", op.cctx.Uri, op.tid, msg.InteractionStage)
 		return nil, errors.New("Bad return message")
 	}
 	// Verify that the message is ok (ack or error)
@@ -774,13 +720,13 @@ func (op *SubscriberOperationX) GetNotify() (*Message, error) {
 	msg, more := <-op.ch
 	if !more {
 		op.finalize()
-		logger.Debugf("Operation ends: %s, %s", op.ictx.Uri, op.tid)
+		logger.Debugf("Operation ends: %s, %s", op.cctx.Uri, op.tid)
 		return nil, errors.New("Operation ends")
 	}
 	// Verify the message stage
 	if msg.InteractionStage != MAL_IP_STAGE_PUBSUB_NOTIFY {
 		op.finalize()
-		logger.Errorf("Bad return message, operation (%s, %s), stage %d", op.ictx.Uri, op.tid, msg.InteractionStage)
+		logger.Errorf("Bad return message, operation (%s, %s), stage %d", op.cctx.Uri, op.tid, msg.InteractionStage)
 		return nil, errors.New("Bad return message")
 	}
 	// Verify that the message is ok (ack or error)
@@ -799,7 +745,7 @@ func (op *SubscriberOperationX) Deregister(body []byte) (*Message, error) {
 	op.status = _DEREGISTER_INITIATED
 
 	msg := &Message{
-		UriFrom:          op.ictx.Uri,
+		UriFrom:          op.cctx.Uri,
 		UriTo:            op.urito,
 		InteractionType:  MAL_INTERACTIONTYPE_PUBSUB,
 		InteractionStage: MAL_IP_STAGE_PUBSUB_DEREGISTER,
@@ -811,7 +757,7 @@ func (op *SubscriberOperationX) Deregister(body []byte) (*Message, error) {
 		Body:             body,
 	}
 	// Send the DEREGISTER MAL message
-	err := op.ictx.Ctx.Send(msg)
+	err := op.cctx.Ctx.Send(msg)
 	if err != nil {
 		op.finalize()
 		return nil, err
@@ -822,7 +768,7 @@ func (op *SubscriberOperationX) Deregister(body []byte) (*Message, error) {
 		msg, more := <-op.ch
 		if !more {
 			op.finalize()
-			logger.Debugf("Operation ends: %s, %s", op.ictx.Uri, op.tid)
+			logger.Debugf("Operation ends: %s, %s", op.cctx.Uri, op.tid)
 			return nil, errors.New("Operation ends")
 		}
 		if msg.InteractionStage == MAL_IP_STAGE_PUBSUB_NOTIFY {
@@ -831,7 +777,7 @@ func (op *SubscriberOperationX) Deregister(body []byte) (*Message, error) {
 		// Verify the message stage
 		if msg.InteractionStage != MAL_IP_STAGE_PUBSUB_DEREGISTER_ACK {
 			op.finalize()
-			logger.Errorf("Bad return message, operation (%s, %s), stage %d", op.ictx.Uri, op.tid, msg.InteractionStage)
+			logger.Errorf("Bad return message, operation (%s, %s), stage %d", op.cctx.Uri, op.tid, msg.InteractionStage)
 			return nil, errors.New("Bad return message")
 		}
 		op.finalize()
@@ -870,12 +816,12 @@ type PublisherOperationX struct {
 	OperationX
 }
 
-func (ictx *OperationContext) NewPublisherOperation(urito *URI, area UShort, areaVersion UOctet, service UShort, operation UShort) PublisherOperation {
+func (cctx *ClientContext) NewPublisherOperation(urito *URI, area UShort, areaVersion UOctet, service UShort, operation UShort) PublisherOperation {
 	// Gets a new TransactionId for operation
-	tid := ictx.TransactionId()
+	tid := cctx.TransactionId()
 	// TODO (AF): Fix length of channel
 	ch := make(chan *Message, 10)
-	op := &PublisherOperationX{OperationX: OperationX{ictx, tid, ch, urito, area, areaVersion, service, operation, _CREATED}}
+	op := &PublisherOperationX{OperationX: OperationX{cctx, tid, ch, urito, area, areaVersion, service, operation, _CREATED}}
 	return op
 }
 
@@ -887,7 +833,7 @@ func (op *PublisherOperationX) Register(body []byte) (*Message, error) {
 	op.status = _REGISTER_INITIATED
 
 	msg := &Message{
-		UriFrom:          op.ictx.Uri,
+		UriFrom:          op.cctx.Uri,
 		UriTo:            op.urito,
 		InteractionType:  MAL_INTERACTIONTYPE_PUBSUB,
 		InteractionStage: MAL_IP_STAGE_PUBSUB_PUBLISH_REGISTER,
@@ -899,13 +845,13 @@ func (op *PublisherOperationX) Register(body []byte) (*Message, error) {
 		Body:             body,
 	}
 	// Registers this Operation in OperationContext
-	err := op.ictx.register(op.tid, op)
+	err := op.cctx.registerOp(op.tid, op)
 	if err != nil {
 		op.finalize()
 		return nil, err
 	}
 	// Send the PUBLISH_REGISTER MAL message
-	err = op.ictx.Ctx.Send(msg)
+	err = op.cctx.Ctx.Send(msg)
 	if err != nil {
 		op.finalize()
 		return nil, err
@@ -915,13 +861,13 @@ func (op *PublisherOperationX) Register(body []byte) (*Message, error) {
 	msg, more := <-op.ch
 	if !more {
 		op.finalize()
-		logger.Debugf("Operation ends: %s, %s", op.ictx.Uri, op.tid)
+		logger.Debugf("Operation ends: %s, %s", op.cctx.Uri, op.tid)
 		return nil, errors.New("Operation ends")
 	}
 	// Verify the message stage
 	if msg.InteractionStage != MAL_IP_STAGE_PUBSUB_PUBLISH_REGISTER_ACK {
 		op.finalize()
-		logger.Errorf("Bad return message, operation (%s, %s), stage %d", op.ictx.Uri, op.tid, msg.InteractionStage)
+		logger.Errorf("Bad return message, operation (%s, %s), stage %d", op.cctx.Uri, op.tid, msg.InteractionStage)
 		return nil, errors.New("Bad return message")
 	}
 	// Verify that the message is ok (ack or error)
@@ -940,7 +886,7 @@ func (op *PublisherOperationX) Publish(body []byte) error {
 	}
 
 	msg := &Message{
-		UriFrom:          op.ictx.Uri,
+		UriFrom:          op.cctx.Uri,
 		UriTo:            op.urito,
 		InteractionType:  MAL_INTERACTIONTYPE_PUBSUB,
 		InteractionStage: MAL_IP_STAGE_PUBSUB_PUBLISH,
@@ -952,7 +898,7 @@ func (op *PublisherOperationX) Publish(body []byte) error {
 		Body:             body,
 	}
 	// Send the MAL message
-	err := op.ictx.Ctx.Send(msg)
+	err := op.cctx.Ctx.Send(msg)
 	if err != nil {
 		op.finalize()
 		return err
@@ -968,7 +914,7 @@ func (op *PublisherOperationX) Deregister(body []byte) (*Message, error) {
 	op.status = _DEREGISTER_INITIATED
 
 	msg := &Message{
-		UriFrom:          op.ictx.Uri,
+		UriFrom:          op.cctx.Uri,
 		UriTo:            op.urito,
 		InteractionType:  MAL_INTERACTIONTYPE_PUBSUB,
 		InteractionStage: MAL_IP_STAGE_PUBSUB_PUBLISH_DEREGISTER,
@@ -980,7 +926,7 @@ func (op *PublisherOperationX) Deregister(body []byte) (*Message, error) {
 		Body:             body,
 	}
 	// Send the PUBLISH_DEREGISTER MAL message
-	err := op.ictx.Ctx.Send(msg)
+	err := op.cctx.Ctx.Send(msg)
 	if err != nil {
 		op.finalize()
 		return nil, err
@@ -990,13 +936,13 @@ func (op *PublisherOperationX) Deregister(body []byte) (*Message, error) {
 	msg, more := <-op.ch
 	if !more {
 		op.finalize()
-		logger.Debugf("Operation ends: %s, %s", op.ictx.Uri, op.tid)
+		logger.Debugf("Operation ends: %s, %s", op.cctx.Uri, op.tid)
 		return nil, errors.New("Operation ends")
 	}
 	// Verify the message stage
 	if msg.InteractionStage != MAL_IP_STAGE_PUBSUB_PUBLISH_DEREGISTER_ACK {
 		op.finalize()
-		logger.Errorf("Bad return message, operation (%s, %s), stage %d", op.ictx.Uri, op.tid, msg.InteractionStage)
+		logger.Errorf("Bad return message, operation (%s, %s), stage %d", op.cctx.Uri, op.tid, msg.InteractionStage)
 		return nil, errors.New("Bad return message")
 	}
 	op.finalize()
@@ -1018,31 +964,4 @@ func (op *PublisherOperationX) onMessage(msg *Message) {
 
 func (op *PublisherOperationX) onClose() {
 	// TODO (AF):
-}
-
-// ================================================================================
-// Defines Listener interface used by context to route MAL messages
-
-func (ictx *OperationContext) OnMessage(msg *Message) error {
-	// Note (AF): The generated TransactionId is unique for this requesting URI so we
-	// can use it as key to retrieve the Operation (This is more restrictive than the
-	// MAL API (see section 3.2).
-	to, ok := ictx.handlers[msg.TransactionId]
-	if ok {
-		logger.Debugf("onMessage %t", to)
-		to.onMessage(msg)
-		logger.Debugf("OnMessageMessage transmitted: %s", msg)
-	} else {
-		logger.Debugf("Cannot route message to: %s?TransactionId=", msg.UriTo, msg.TransactionId)
-	}
-	return nil
-}
-
-func (ictx *OperationContext) OnClose() error {
-	logger.Infof("close EndPoint: %s", ictx.Uri)
-	for tid, handler := range ictx.handlers {
-		logger.Debugf("close operation: %d", tid)
-		handler.onClose()
-	}
-	return nil
 }
