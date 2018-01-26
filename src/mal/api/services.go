@@ -28,15 +28,6 @@ import (
 	. "mal"
 )
 
-const (
-	_SEND_PROVIDER UOctet = iota
-	_SUBMIT_PROVIDER
-	_REQUEST_PROVIDER
-	_INVOKE_PROVIDER
-	_PROGRESS_PROVIDER
-	_PUBSUB_PROVIDER
-)
-
 // TODO (AF): Is this interface useful?
 type service interface {
 }
@@ -51,29 +42,18 @@ type consumer interface {
 	service
 }
 
-type sdesc struct {
-	stype       UOctet
-	area        UShort
-	areaVersion UOctet
-	service     UShort
-	operation   UShort
-	shdl        service
-}
-
 type ProviderContext struct {
-	Ctx      *Context
-	Uri      *URI
-	ch       chan *Message
-	services map[uint64](*sdesc)
+	HandlerContext
 }
 
+// TODO (AF): Merge with NewHandlerContext
 func NewProviderContext(ctx *Context, service string) (*ProviderContext, error) {
 	// TODO (AF): Verify the uri
 	uri := ctx.NewURI(service)
 	// TODO (AF): Fix length of channel?
 	ch := make(chan *Message, 10)
-	services := make(map[uint64](*sdesc))
-	pctx := &ProviderContext{ctx, uri, ch, services}
+	handlers := make(map[uint64](*handlerDesc))
+	pctx := &ProviderContext{HandlerContext{ctx, uri, ch, handlers}}
 	err := ctx.RegisterEndPoint(uri, pctx)
 	if err != nil {
 		return nil, err
@@ -81,9 +61,9 @@ func NewProviderContext(ctx *Context, service string) (*ProviderContext, error) 
 	return pctx, nil
 }
 
-func (pctx *ProviderContext) register(stype UOctet, area UShort, areaVersion UOctet, service UShort, operation UShort, shdl service) error {
+func (pctx *ProviderContext) register(stype InteractionType, area UShort, areaVersion UOctet, service UShort, operation UShort, handler Handler) error {
 	key := key(area, areaVersion, service, operation)
-	old := pctx.services[key]
+	old := pctx.handlers[key]
 
 	if old != nil {
 		logger.Errorf("MAL service already registered: %d", key)
@@ -92,16 +72,16 @@ func (pctx *ProviderContext) register(stype UOctet, area UShort, areaVersion UOc
 		logger.Debugf("MAL service registered: %d", key)
 	}
 
-	var desc = &sdesc{
-		stype:       stype,
+	var desc = &handlerDesc{
+		handlerType: stype,
 		area:        area,
 		areaVersion: areaVersion,
 		service:     service,
 		operation:   operation,
-		shdl:        shdl,
+		handler:     handler,
 	}
 
-	pctx.services[key] = desc
+	pctx.handlers[key] = desc
 	return nil
 }
 
@@ -117,9 +97,14 @@ type SendProvider interface {
 	OnSend(msg *Message, transaction SendTransaction) error
 }
 
-// Re<gisters a SendProvider
+// Registers a SendProvider
 func (pctx *ProviderContext) RegisterSendProvider(area UShort, areaVersion UOctet, service UShort, operation UShort, provider SendProvider) error {
-	return pctx.register(_SEND_PROVIDER, area, areaVersion, service, operation, provider)
+
+	handler := func(msg *Message, tx Transaction) error {
+		return provider.OnSend(msg, tx.(SendTransaction))
+	}
+
+	return pctx.register(MAL_INTERACTIONTYPE_SEND, area, areaVersion, service, operation, handler)
 }
 
 // ================================================================================
@@ -132,7 +117,12 @@ type SubmitProvider interface {
 
 // Registers a SubmitProvider
 func (pctx *ProviderContext) RegisterSubmitProvider(area UShort, areaVersion UOctet, service UShort, operation UShort, provider SubmitProvider) error {
-	return pctx.register(_SUBMIT_PROVIDER, area, areaVersion, service, operation, provider)
+
+	handler := func(msg *Message, tx Transaction) error {
+		return provider.OnSubmit(msg, tx.(SubmitTransaction))
+	}
+
+	return pctx.register(MAL_INTERACTIONTYPE_SUBMIT, area, areaVersion, service, operation, handler)
 }
 
 //type ConsumerSubmit interface {
@@ -150,7 +140,12 @@ type RequestProvider interface {
 
 // Registers a RequestProvider
 func (pctx *ProviderContext) RegisterRequestProvider(area UShort, areaVersion UOctet, service UShort, operation UShort, provider RequestProvider) error {
-	return pctx.register(_REQUEST_PROVIDER, area, areaVersion, service, operation, provider)
+
+	handler := func(msg *Message, tx Transaction) error {
+		return provider.OnRequest(msg, tx.(RequestTransaction))
+	}
+
+	return pctx.register(MAL_INTERACTIONTYPE_REQUEST, area, areaVersion, service, operation, handler)
 }
 
 //type ConsumerRequest interface {
@@ -168,7 +163,12 @@ type InvokeProvider interface {
 
 // Registers an InvokeProvider
 func (pctx *ProviderContext) RegisterInvokeProvider(area UShort, areaVersion UOctet, service UShort, operation UShort, provider InvokeProvider) error {
-	return pctx.register(_INVOKE_PROVIDER, area, areaVersion, service, operation, provider)
+
+	handler := func(msg *Message, tx Transaction) error {
+		return provider.OnInvoke(msg, tx.(InvokeTransaction))
+	}
+
+	return pctx.register(MAL_INTERACTIONTYPE_INVOKE, area, areaVersion, service, operation, handler)
 }
 
 //type ConsumerInvoke interface {
@@ -187,7 +187,12 @@ type ProgressProvider interface {
 
 // Registers a ProgressProvider
 func (pctx *ProviderContext) RegisterProgressProvider(area UShort, areaVersion UOctet, service UShort, operation UShort, provider ProgressProvider) error {
-	return pctx.register(_PROGRESS_PROVIDER, area, areaVersion, service, operation, provider)
+
+	handler := func(msg *Message, tx Transaction) error {
+		return provider.OnProgress(msg, tx.(ProgressTransaction))
+	}
+
+	return pctx.register(MAL_INTERACTIONTYPE_PROGRESS, area, areaVersion, service, operation, handler)
 }
 
 // TODO (AF): May it makes sense to implements such an interface for Progress interaction
@@ -213,144 +218,29 @@ type Broker interface {
 
 // Registers a broker
 func (pctx *ProviderContext) RegisterBroker(area UShort, areaVersion UOctet, service UShort, operation UShort, broker Broker) error {
-	return pctx.register(_PUBSUB_PROVIDER, area, areaVersion, service, operation, broker)
-}
 
-//type Publisher interface {
-//	provider
-//	OnPublishRegisterAck(msg *Message)
-//	OnPublishDeregisterAck(msg *Message)
-//	OnPublishError(msg *Message)
-//}
-
-// TODO (AF): May it makes sense to implements such an interface for Progress interaction
-
-//type Subscriber interface {
-//	consumer
-//	OnRegisterAck(msg *Message)
-//	OnDeregister(msg *Message)
-//	OnNotify(msg *Message)
-//}
-
-// Registers a subscriber
-//func (pctx *ProviderContext) RegisterSubscriber(area UShort, areaVersion UOctet, service UShort, operation UShort, subscriber Subscriber) error {
-//	return pctx.register(_PUBSUB_PROVIDER, area, areaVersion, service, operation, subscriber)
-//}
-
-// ================================================================================
-// Defines Listener interface used by context to route MAL messages
-
-func (pctx *ProviderContext) getProvider(stype UOctet, area UShort, areaVersion UOctet, service UShort, operation UShort) (service, error) {
-	key := key(area, areaVersion, service, operation)
-
-	to, ok := pctx.services[key]
-	if ok {
-		if to.stype == stype {
-			return to.shdl, nil
-		} else {
-			logger.Debugf("Bad service type: %d should be %d", to.stype, stype)
-			return nil, errors.New("Bad handler type")
-		}
-	} else {
-		logger.Debugf("MAL service not registered: %d", key)
-		return nil, errors.New("MAL service not registered")
-	}
-}
-
-func (pctx *ProviderContext) OnMessage(msg *Message) error {
-	switch msg.InteractionType {
-	// TODO (AF): We can use msg.InteractionType as selector
-	case MAL_INTERACTIONTYPE_SEND:
-		provider, err := pctx.getProvider(_SEND_PROVIDER, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation)
-		if err != nil {
-			return err
-		}
-		sendProvider := provider.(SendProvider)
-		transaction := &SendTransactionX{TransactionX{pctx.Ctx, pctx.Uri, msg.UriFrom, msg.TransactionId, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation}}
-		// TODO (AF): use a goroutine
-		return sendProvider.OnSend(msg, transaction)
-	case MAL_INTERACTIONTYPE_SUBMIT:
-		provider, err := pctx.getProvider(_SUBMIT_PROVIDER, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation)
-		if err != nil {
-			return err
-		}
-		submitProvider := provider.(SubmitProvider)
-		transaction := &SubmitTransactionX{TransactionX{pctx.Ctx, pctx.Uri, msg.UriFrom, msg.TransactionId, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation}}
-		// TODO (AF): use a goroutine
-		return submitProvider.OnSubmit(msg, transaction)
-	case MAL_INTERACTIONTYPE_REQUEST:
-		provider, err := pctx.getProvider(_REQUEST_PROVIDER, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation)
-		if err != nil {
-			return err
-		}
-		requestProvider := provider.(RequestProvider)
-		transaction := &RequestTransactionX{TransactionX{pctx.Ctx, pctx.Uri, msg.UriFrom, msg.TransactionId, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation}}
-		// TODO (AF): use a goroutine
-		return requestProvider.OnRequest(msg, transaction)
-	case MAL_INTERACTIONTYPE_INVOKE:
-		provider, err := pctx.getProvider(_INVOKE_PROVIDER, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation)
-		if err != nil {
-			return err
-		}
-		invokeProvider := provider.(InvokeProvider)
-		transaction := &InvokeTransactionX{TransactionX{pctx.Ctx, pctx.Uri, msg.UriFrom, msg.TransactionId, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation}}
-		// TODO (AF): use a goroutine
-		return invokeProvider.OnInvoke(msg, transaction)
-	case MAL_INTERACTIONTYPE_PROGRESS:
-		provider, err := pctx.getProvider(_PROGRESS_PROVIDER, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation)
-		if err != nil {
-			return err
-		}
-		progressProvider := provider.(ProgressProvider)
-		transaction := &ProgressTransactionX{TransactionX{pctx.Ctx, pctx.Uri, msg.UriFrom, msg.TransactionId, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation}}
-		// TODO (AF): use a goroutine
-		return progressProvider.OnProgress(msg, transaction)
-	case MAL_INTERACTIONTYPE_PUBSUB:
-		provider, err := pctx.getProvider(_PUBSUB_PROVIDER, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation)
-		if err != nil {
-			return err
-		}
-		broker := provider.(Broker)
-		if msg.InteractionStage == MAL_IP_STAGE_PUBSUB_PUBLISH_REGISTER {
-			transaction := &PublisherTransactionX{TransactionX{pctx.Ctx, pctx.Uri, msg.UriFrom, msg.TransactionId, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation}}
+	handler := func(msg *Message, tx Transaction) error {
+		switch msg.InteractionStage {
+		case MAL_IP_STAGE_PUBSUB_PUBLISH_REGISTER:
 			// TODO (AF): use a goroutine
-			return broker.OnPublishRegister(msg, transaction)
-		} else if msg.InteractionStage == MAL_IP_STAGE_PUBSUB_PUBLISH {
-			transaction := &PublisherTransactionX{TransactionX{pctx.Ctx, pctx.Uri, msg.UriFrom, msg.TransactionId, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation}}
+			return broker.OnPublishRegister(msg, tx.(PublisherTransaction))
+		case MAL_IP_STAGE_PUBSUB_PUBLISH:
 			// TODO (AF): use a goroutine
-			return broker.OnPublish(msg, transaction)
-		} else if msg.InteractionStage == MAL_IP_STAGE_PUBSUB_PUBLISH_DEREGISTER {
-			transaction := &PublisherTransactionX{TransactionX{pctx.Ctx, pctx.Uri, msg.UriFrom, msg.TransactionId, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation}}
+			return broker.OnPublish(msg, tx.(PublisherTransaction))
+		case MAL_IP_STAGE_PUBSUB_PUBLISH_DEREGISTER:
 			// TODO (AF): use a goroutine
-			return broker.OnPublishDeregister(msg, transaction)
-		} else if msg.InteractionStage == MAL_IP_STAGE_PUBSUB_REGISTER {
-			transaction := &SubscriberTransactionX{TransactionX{pctx.Ctx, pctx.Uri, msg.UriFrom, msg.TransactionId, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation}}
+			return broker.OnPublishDeregister(msg, tx.(PublisherTransaction))
+		case MAL_IP_STAGE_PUBSUB_REGISTER:
 			// TODO (AF): use a goroutine
-			return broker.OnRegister(msg, transaction)
-		} else if msg.InteractionStage == MAL_IP_STAGE_PUBSUB_DEREGISTER {
-			transaction := &SubscriberTransactionX{TransactionX{pctx.Ctx, pctx.Uri, msg.UriFrom, msg.TransactionId, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation}}
+			return broker.OnRegister(msg, tx.(SubscriberTransaction))
+		case MAL_IP_STAGE_PUBSUB_DEREGISTER:
 			// TODO (AF): use a goroutine
-			return broker.OnDeregister(msg, transaction)
-		} else {
+			return broker.OnDeregister(msg, tx.(SubscriberTransaction))
+		default:
 			// TODO (AF): Log an error, May be wa should not return this error
 			return errors.New("Bad interaction stage for PubSub")
 		}
-	default:
-		logger.Warnf("Cannot route message to: %s", *msg.UriTo)
 	}
 
-	return nil
-}
-
-func (pctx *ProviderContext) OnClose() error {
-	logger.Infof("close EndPoint: %s", pctx.Uri)
-	// TODO (AF): Close services ?
-	//	for key, shdl := range pctx.services {
-	//		fmt.Println("close service: ", key)
-	//		err := shdl.OnClose()
-	//		if err != nil {
-	//			// TODO (AF): print an error message
-	//		}
-	//	}
-	return nil
+	return pctx.register(MAL_INTERACTIONTYPE_PUBSUB, area, areaVersion, service, operation, handler)
 }

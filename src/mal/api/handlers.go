@@ -28,17 +28,8 @@ import (
 	. "mal"
 )
 
-const (
-	_SEND_HANDLER UOctet = iota
-	_SUBMIT_HANDLER
-	_REQUEST_HANDLER
-	_INVOKE_HANDLER
-	_PROGRESS_HANDLER
-	_BROKER_HANDLER
-)
-
 type handlerDesc struct {
-	handlerType UOctet
+	handlerType InteractionType
 	area        UShort
 	areaVersion UOctet
 	service     UShort
@@ -67,7 +58,7 @@ func NewHandlerContext(ctx *Context, service string) (*HandlerContext, error) {
 	return hctx, nil
 }
 
-func (hctx *HandlerContext) register(hdltype UOctet, area UShort, areaVersion UOctet, service UShort, operation UShort, handler Handler) error {
+func (hctx *HandlerContext) register(hdltype InteractionType, area UShort, areaVersion UOctet, service UShort, operation UShort, handler Handler) error {
 	key := key(area, areaVersion, service, operation)
 	old := hctx.handlers[key]
 
@@ -101,74 +92,74 @@ type Handler func(*Message, Transaction) error
 // ================================================================================
 // SendHandler
 
-type SendHandler func(*Message, SendTransaction) error
-
 // TODO (AF):
+//type SendHandler func(*Message, SendTransaction) error
+
 //func (hctx *ProviderContext) RegisterSendHandler(area UShort, areaVersion UOctet, service UShort, operation UShort, handler SendHandler) error {
 func (hctx *HandlerContext) RegisterSendHandler(area UShort, areaVersion UOctet, service UShort, operation UShort, handler Handler) error {
-	return hctx.register(_SEND_HANDLER, area, areaVersion, service, operation, handler)
+	return hctx.register(MAL_INTERACTIONTYPE_SEND, area, areaVersion, service, operation, handler)
 }
 
 // ================================================================================
 // SubmitHandler
 
-type SubmitHandler func(*Message, SubmitTransaction) error
-
 // TODO (AF):
+//type SubmitHandler func(*Message, SubmitTransaction) error
+
 //func (hctx *ProviderContext) RegisterSendHandler(area UShort, areaVersion UOctet, service UShort, operation UShort, handler SendHandler) error {
 func (hctx *HandlerContext) RegisterSubmitHandler(area UShort, areaVersion UOctet, service UShort, operation UShort, handler Handler) error {
-	return hctx.register(_SUBMIT_HANDLER, area, areaVersion, service, operation, handler)
+	return hctx.register(MAL_INTERACTIONTYPE_SUBMIT, area, areaVersion, service, operation, handler)
 }
 
 // ================================================================================
 // RequestHandler
 
-type RequestHandler func(*Message, RequestTransaction) error
-
 // TODO (AF):
+//type RequestHandler func(*Message, RequestTransaction) error
+
 //func (hctx *ProviderContext) RegisterRequestHandler(area UShort, areaVersion UOctet, service UShort, operation UShort, handler RequestHandler) error {
 func (hctx *HandlerContext) RegisterRequestHandler(area UShort, areaVersion UOctet, service UShort, operation UShort, handler Handler) error {
-	return hctx.register(_REQUEST_HANDLER, area, areaVersion, service, operation, handler)
+	return hctx.register(MAL_INTERACTIONTYPE_REQUEST, area, areaVersion, service, operation, handler)
 }
 
 // ================================================================================
 // InvokeHandler
 
-type InvokeHandler func(*Message, InvokeTransaction) error
-
 // TODO (AF):
+//type InvokeHandler func(*Message, InvokeTransaction) error
+
 //func (hctx *ProviderContext) RegisterInvokeHandler(area UShort, areaVersion UOctet, service UShort, operation UShort, handler InvokeHandler) error {
 func (hctx *HandlerContext) RegisterInvokeHandler(area UShort, areaVersion UOctet, service UShort, operation UShort, handler Handler) error {
-	return hctx.register(_INVOKE_HANDLER, area, areaVersion, service, operation, handler)
+	return hctx.register(MAL_INTERACTIONTYPE_INVOKE, area, areaVersion, service, operation, handler)
 }
 
 // ================================================================================
 // ProgressHandler
 
-type ProgressHandler func(*Message, ProgressTransaction) error
-
 // TODO (AF):
+//type ProgressHandler func(*Message, ProgressTransaction) error
+
 //func (hctx *ProviderContext) RegisterSendHandler(area UShort, areaVersion UOctet, service UShort, operation UShort, handler SendHandler) error {
 func (hctx *HandlerContext) RegisterProgressHandler(area UShort, areaVersion UOctet, service UShort, operation UShort, handler Handler) error {
-	return hctx.register(_PROGRESS_HANDLER, area, areaVersion, service, operation, handler)
+	return hctx.register(MAL_INTERACTIONTYPE_PROGRESS, area, areaVersion, service, operation, handler)
 }
 
 // ================================================================================
 // BrokerHandler: There is only one handler but 2 transactions type depending of the
 // incoming interaction.
 
-type BrokerHandler func(*Message, BrokerTransaction) error
-
 // TODO (AF):
+//type BrokerHandler func(*Message, BrokerTransaction) error
+
 //func (hctx *ProviderContext) RegisterBrokerHandler(area UShort, areaVersion UOctet, service UShort, operation UShort, handler BrokerHandler) error {
 func (hctx *HandlerContext) RegisterBrokerHandler(area UShort, areaVersion UOctet, service UShort, operation UShort, handler Handler) error {
-	return hctx.register(_BROKER_HANDLER, area, areaVersion, service, operation, handler)
+	return hctx.register(MAL_INTERACTIONTYPE_PUBSUB, area, areaVersion, service, operation, handler)
 }
 
 // ================================================================================
 // Defines Listener interface used by context to route MAL messages
 
-func (hctx *HandlerContext) getHandler(hdltype UOctet, area UShort, areaVersion UOctet, service UShort, operation UShort) (Handler, error) {
+func (hctx *HandlerContext) getHandler(hdltype InteractionType, area UShort, areaVersion UOctet, service UShort, operation UShort) (Handler, error) {
 	key := key(area, areaVersion, service, operation)
 
 	to, ok := hctx.handlers[key]
@@ -186,54 +177,23 @@ func (hctx *HandlerContext) getHandler(hdltype UOctet, area UShort, areaVersion 
 }
 
 func (hctx *HandlerContext) OnMessage(msg *Message) error {
-	// TODO (AF): We can use msg.InteractionType as selector
+	handler, err := hctx.getHandler(msg.InteractionType, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation)
+	if err != nil {
+		return err
+	}
+	var transaction Transaction
 	switch msg.InteractionType {
 	case MAL_INTERACTIONTYPE_SEND:
-		handler, err := hctx.getHandler(_SEND_HANDLER, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation)
-		if err != nil {
-			return err
-		}
-		transaction := &SendTransactionX{TransactionX{hctx.Ctx, hctx.Uri, msg.UriFrom, msg.TransactionId, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation}}
-		// TODO (AF): use a goroutine
-		return handler(msg, transaction)
+		transaction = &SendTransactionX{TransactionX{hctx.Ctx, hctx.Uri, msg.UriFrom, msg.TransactionId, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation}}
 	case MAL_INTERACTIONTYPE_SUBMIT:
-		handler, err := hctx.getHandler(_SUBMIT_HANDLER, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation)
-		if err != nil {
-			return err
-		}
-		transaction := &SubmitTransactionX{TransactionX{hctx.Ctx, hctx.Uri, msg.UriFrom, msg.TransactionId, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation}}
-		// TODO (AF): use a goroutine
-		return handler(msg, transaction)
+		transaction = &SubmitTransactionX{TransactionX{hctx.Ctx, hctx.Uri, msg.UriFrom, msg.TransactionId, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation}}
 	case MAL_INTERACTIONTYPE_REQUEST:
-		handler, err := hctx.getHandler(_REQUEST_HANDLER, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation)
-		if err != nil {
-			return err
-		}
-		transaction := &RequestTransactionX{TransactionX{hctx.Ctx, hctx.Uri, msg.UriFrom, msg.TransactionId, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation}}
-		// TODO (AF): use a goroutine
-		return handler(msg, transaction)
+		transaction = &RequestTransactionX{TransactionX{hctx.Ctx, hctx.Uri, msg.UriFrom, msg.TransactionId, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation}}
 	case MAL_INTERACTIONTYPE_INVOKE:
-		handler, err := hctx.getHandler(_INVOKE_HANDLER, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation)
-		if err != nil {
-			return err
-		}
-		transaction := &InvokeTransactionX{TransactionX{hctx.Ctx, hctx.Uri, msg.UriFrom, msg.TransactionId, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation}}
-		// TODO (AF): use a goroutine
-		return handler(msg, transaction)
+		transaction = &InvokeTransactionX{TransactionX{hctx.Ctx, hctx.Uri, msg.UriFrom, msg.TransactionId, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation}}
 	case MAL_INTERACTIONTYPE_PROGRESS:
-		handler, err := hctx.getHandler(_PROGRESS_HANDLER, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation)
-		if err != nil {
-			return err
-		}
-		transaction := &ProgressTransactionX{TransactionX{hctx.Ctx, hctx.Uri, msg.UriFrom, msg.TransactionId, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation}}
-		// TODO (AF): use a goroutine
-		return handler(msg, transaction)
+		transaction = &ProgressTransactionX{TransactionX{hctx.Ctx, hctx.Uri, msg.UriFrom, msg.TransactionId, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation}}
 	case MAL_INTERACTIONTYPE_PUBSUB:
-		handler, err := hctx.getHandler(_BROKER_HANDLER, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation)
-		if err != nil {
-			return err
-		}
-		var transaction Transaction
 		if (msg.InteractionStage == MAL_IP_STAGE_PUBSUB_PUBLISH_REGISTER) ||
 			(msg.InteractionStage == MAL_IP_STAGE_PUBSUB_PUBLISH) ||
 			(msg.InteractionStage == MAL_IP_STAGE_PUBSUB_PUBLISH_DEREGISTER) {
@@ -245,12 +205,13 @@ func (hctx *HandlerContext) OnMessage(msg *Message) error {
 			// TODO (AF): Log an error, May be we should not return this error
 			return errors.New("Bad interaction stage for PubSub")
 		}
-		// TODO (AF): use a goroutine
-		return handler(msg, transaction)
 	default:
 		logger.Debugf("Cannot route message to: %s", *msg.UriTo)
+		return nil
 	}
-	return nil
+
+	// TODO (AF): use a goroutine
+	return handler(msg, transaction)
 }
 
 func (hctx *HandlerContext) OnClose() error {
