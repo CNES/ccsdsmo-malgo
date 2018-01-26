@@ -31,19 +31,20 @@ import ()
 type InteractionStage UOctet
 
 const (
-	MAL_IP_STAGE_SEND                          InteractionStage = 1
-	MAL_IP_STAGE_SUBMIT                        InteractionStage = 1
+	MAL_IP_STAGE_INIT                          InteractionStage = 1
+	MAL_IP_STAGE_SEND                          InteractionStage = MAL_IP_STAGE_INIT
+	MAL_IP_STAGE_SUBMIT                        InteractionStage = MAL_IP_STAGE_INIT
 	MAL_IP_STAGE_SUBMIT_ACK                    InteractionStage = 2
-	MAL_IP_STAGE_REQUEST                       InteractionStage = 1
+	MAL_IP_STAGE_REQUEST                       InteractionStage = MAL_IP_STAGE_INIT
 	MAL_IP_STAGE_REQUEST_RESPONSE              InteractionStage = 2
-	MAL_IP_STAGE_INVOKE                        InteractionStage = 1
+	MAL_IP_STAGE_INVOKE                        InteractionStage = MAL_IP_STAGE_INIT
 	MAL_IP_STAGE_INVOKE_ACK                    InteractionStage = 2
 	MAL_IP_STAGE_INVOKE_RESPONSE               InteractionStage = 3
-	MAL_IP_STAGE_PROGRESS                      InteractionStage = 1
+	MAL_IP_STAGE_PROGRESS                      InteractionStage = MAL_IP_STAGE_INIT
 	MAL_IP_STAGE_PROGRESS_ACK                  InteractionStage = 2
 	MAL_IP_STAGE_PROGRESS_UPDATE               InteractionStage = 3
 	MAL_IP_STAGE_PROGRESS_RESPONSE             InteractionStage = 4
-	MAL_IP_STAGE_PUBSUB_REGISTER               InteractionStage = 1
+	MAL_IP_STAGE_PUBSUB_REGISTER               InteractionStage = MAL_IP_STAGE_INIT
 	MAL_IP_STAGE_PUBSUB_REGISTER_ACK           InteractionStage = 2
 	MAL_IP_STAGE_PUBSUB_PUBLISH_REGISTER       InteractionStage = 3
 	MAL_IP_STAGE_PUBSUB_PUBLISH_REGISTER_ACK   InteractionStage = 4
