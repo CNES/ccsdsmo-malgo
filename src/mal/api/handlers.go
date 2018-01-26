@@ -38,19 +38,16 @@ type handlerDesc struct {
 }
 
 type HandlerContext struct {
-	Ctx      *Context
-	Uri      *URI
-	ch       chan *Message
+	Ctx *Context
+	Uri *URI
 	handlers map[uint64](*handlerDesc)
 }
 
 func NewHandlerContext(ctx *Context, service string) (*HandlerContext, error) {
 	// TODO (AF): Verify the uri
 	uri := ctx.NewURI(service)
-	// TODO (AF): Fix length of channel?
-	ch := make(chan *Message, 10)
 	handlers := make(map[uint64](*handlerDesc))
-	hctx := &HandlerContext{ctx, uri, ch, handlers}
+	hctx := &HandlerContext{ctx, uri, handlers}
 	err := ctx.RegisterEndPoint(uri, hctx)
 	if err != nil {
 		return nil, err
