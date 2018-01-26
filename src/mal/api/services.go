@@ -51,42 +51,13 @@ func NewProviderContext(ctx *Context, service string) (*ProviderContext, error) 
 	// TODO (AF): Verify the uri
 	uri := ctx.NewURI(service)
 	// TODO (AF): Fix length of channel?
-	ch := make(chan *Message, 10)
 	handlers := make(map[uint64](*handlerDesc))
-	pctx := &ProviderContext{HandlerContext{ctx, uri, ch, handlers}}
+	pctx := &ProviderContext{HandlerContext{ctx, uri, handlers}}
 	err := ctx.RegisterEndPoint(uri, pctx)
 	if err != nil {
 		return nil, err
 	}
 	return pctx, nil
-}
-
-func (pctx *ProviderContext) register(stype InteractionType, area UShort, areaVersion UOctet, service UShort, operation UShort, handler Handler) error {
-	key := key(area, areaVersion, service, operation)
-	old := pctx.handlers[key]
-
-	if old != nil {
-		logger.Errorf("MAL service already registered: %d", key)
-		return errors.New("MAL service already registered")
-	} else {
-		logger.Debugf("MAL service registered: %d", key)
-	}
-
-	var desc = &handlerDesc{
-		handlerType: stype,
-		area:        area,
-		areaVersion: areaVersion,
-		service:     service,
-		operation:   operation,
-		handler:     handler,
-	}
-
-	pctx.handlers[key] = desc
-	return nil
-}
-
-func (pctx *ProviderContext) Close() error {
-	return pctx.Ctx.UnregisterEndPoint(pctx.Uri)
 }
 
 // ================================================================================
