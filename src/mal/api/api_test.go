@@ -32,13 +32,13 @@ import (
 	"time"
 )
 
-//const (
-//	provider_url = "maltcp://127.0.0.1:16001"
-//	consumer_url = "maltcp://127.0.0.1:16002"
-//	subscriber_url = "maltcp://127.0.0.1:16001"
-//	publisher_url  = "maltcp://127.0.0.1:16002"
-//	broker_url     = "maltcp://127.0.0.1:16003"
-//)
+const (
+	provider_url   = "maltcp://127.0.0.1:16001"
+	consumer_url   = "maltcp://127.0.0.1:16002"
+	subscriber_url = "maltcp://127.0.0.1:16001"
+	publisher_url  = "maltcp://127.0.0.1:16002"
+	broker_url     = "maltcp://127.0.0.1:16003"
+)
 
 // ########## ########## ########## ########## ########## ########## ########## ##########
 // Test Send interaction

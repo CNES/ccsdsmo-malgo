@@ -24,13 +24,8 @@
 package api
 
 import (
-	"errors"
 	. "mal"
 )
-
-// TODO (AF): Is this interface useful?
-type service interface {
-}
 
 // TODO (AF): Is this interface useful?
 type provider interface {
@@ -52,12 +47,7 @@ type SendProvider interface {
 
 // Registers a SendProvider
 func (cctx *ClientContext) RegisterSendProvider(area UShort, areaVersion UOctet, service UShort, operation UShort, provider SendProvider) error {
-
-	handler := func(msg *Message, tx Transaction) error {
-		return provider.OnSend(msg, tx.(SendTransaction))
-	}
-
-	return cctx.registerHdl(MAL_INTERACTIONTYPE_SEND, area, areaVersion, service, operation, handler)
+	return cctx.registerService(MAL_INTERACTIONTYPE_SEND, area, areaVersion, service, operation, provider)
 }
 
 // ================================================================================
@@ -70,12 +60,7 @@ type SubmitProvider interface {
 
 // Registers a SubmitProvider
 func (cctx *ClientContext) RegisterSubmitProvider(area UShort, areaVersion UOctet, service UShort, operation UShort, provider SubmitProvider) error {
-
-	handler := func(msg *Message, tx Transaction) error {
-		return provider.OnSubmit(msg, tx.(SubmitTransaction))
-	}
-
-	return cctx.registerHdl(MAL_INTERACTIONTYPE_SUBMIT, area, areaVersion, service, operation, handler)
+	return cctx.registerService(MAL_INTERACTIONTYPE_SUBMIT, area, areaVersion, service, operation, provider)
 }
 
 //type ConsumerSubmit interface {
@@ -93,12 +78,7 @@ type RequestProvider interface {
 
 // Registers a RequestProvider
 func (cctx *ClientContext) RegisterRequestProvider(area UShort, areaVersion UOctet, service UShort, operation UShort, provider RequestProvider) error {
-
-	handler := func(msg *Message, tx Transaction) error {
-		return provider.OnRequest(msg, tx.(RequestTransaction))
-	}
-
-	return cctx.registerHdl(MAL_INTERACTIONTYPE_REQUEST, area, areaVersion, service, operation, handler)
+	return cctx.registerService(MAL_INTERACTIONTYPE_REQUEST, area, areaVersion, service, operation, provider)
 }
 
 //type ConsumerRequest interface {
@@ -116,12 +96,7 @@ type InvokeProvider interface {
 
 // Registers an InvokeProvider
 func (cctx *ClientContext) RegisterInvokeProvider(area UShort, areaVersion UOctet, service UShort, operation UShort, provider InvokeProvider) error {
-
-	handler := func(msg *Message, tx Transaction) error {
-		return provider.OnInvoke(msg, tx.(InvokeTransaction))
-	}
-
-	return cctx.registerHdl(MAL_INTERACTIONTYPE_INVOKE, area, areaVersion, service, operation, handler)
+	return cctx.registerService(MAL_INTERACTIONTYPE_INVOKE, area, areaVersion, service, operation, provider)
 }
 
 //type ConsumerInvoke interface {
@@ -140,12 +115,7 @@ type ProgressProvider interface {
 
 // Registers a ProgressProvider
 func (cctx *ClientContext) RegisterProgressProvider(area UShort, areaVersion UOctet, service UShort, operation UShort, provider ProgressProvider) error {
-
-	handler := func(msg *Message, tx Transaction) error {
-		return provider.OnProgress(msg, tx.(ProgressTransaction))
-	}
-
-	return cctx.registerHdl(MAL_INTERACTIONTYPE_PROGRESS, area, areaVersion, service, operation, handler)
+	return cctx.registerService(MAL_INTERACTIONTYPE_PROGRESS, area, areaVersion, service, operation, provider)
 }
 
 // TODO (AF): May it makes sense to implements such an interface for Progress interaction
@@ -171,29 +141,5 @@ type Broker interface {
 
 // Registers a broker
 func (cctx *ClientContext) RegisterBroker(area UShort, areaVersion UOctet, service UShort, operation UShort, broker Broker) error {
-
-	handler := func(msg *Message, tx Transaction) error {
-		switch msg.InteractionStage {
-		case MAL_IP_STAGE_PUBSUB_PUBLISH_REGISTER:
-			// TODO (AF): use a goroutine
-			return broker.OnPublishRegister(msg, tx.(PublisherTransaction))
-		case MAL_IP_STAGE_PUBSUB_PUBLISH:
-			// TODO (AF): use a goroutine
-			return broker.OnPublish(msg, tx.(PublisherTransaction))
-		case MAL_IP_STAGE_PUBSUB_PUBLISH_DEREGISTER:
-			// TODO (AF): use a goroutine
-			return broker.OnPublishDeregister(msg, tx.(PublisherTransaction))
-		case MAL_IP_STAGE_PUBSUB_REGISTER:
-			// TODO (AF): use a goroutine
-			return broker.OnRegister(msg, tx.(SubscriberTransaction))
-		case MAL_IP_STAGE_PUBSUB_DEREGISTER:
-			// TODO (AF): use a goroutine
-			return broker.OnDeregister(msg, tx.(SubscriberTransaction))
-		default:
-			// TODO (AF): Log an error, May be wa should not return this error
-			return errors.New("Bad interaction stage for PubSub")
-		}
-	}
-
-	return cctx.registerHdl(MAL_INTERACTIONTYPE_PUBSUB, area, areaVersion, service, operation, handler)
+	return cctx.registerService(MAL_INTERACTIONTYPE_PUBSUB, area, areaVersion, service, operation, broker)
 }
