@@ -46,17 +46,17 @@ import (
 // Define SendProvider
 
 type MySendProvider struct {
-	pctx  *ProviderContext
+	cctx  *ClientContext
 	nbmsg int
 }
 
 func NewSendProvider(ctx *Context, service string) (*MySendProvider, error) {
-	pctx, err := NewProviderContext(ctx, service)
+	cctx, err := NewClientContext(ctx, service)
 	if err != nil {
 		return nil, err
 	}
-	sendProvider := &MySendProvider{pctx: pctx}
-	pctx.RegisterSendProvider(200, 1, 1, 1, sendProvider)
+	sendProvider := &MySendProvider{cctx: cctx}
+	cctx.RegisterSendProvider(200, 1, 1, 1, sendProvider)
 
 	return sendProvider, nil
 }
@@ -96,16 +96,16 @@ func TestSendProvider(t *testing.T) {
 	}
 	defer consumer_ctx.Close()
 
-	consumer, err := NewOperationContext(consumer_ctx, "consumer")
+	consumer, err := NewClientContext(consumer_ctx, "consumer")
 	if err != nil {
 		t.Fatal("Error creating consumer, ", err)
 		return
 	}
 
-	op1 := consumer.NewSendOperation(provider.pctx.Uri, 200, 1, 1, 1)
+	op1 := consumer.NewSendOperation(provider.cctx.Uri, 200, 1, 1, 1)
 	op1.Send([]byte("message1"))
 
-	op2 := consumer.NewSendOperation(provider.pctx.Uri, 200, 1, 1, 1)
+	op2 := consumer.NewSendOperation(provider.cctx.Uri, 200, 1, 1, 1)
 	op2.Send([]byte("message2"))
 
 	// Waits for message reception
@@ -122,17 +122,17 @@ func TestSendProvider(t *testing.T) {
 // Define SubmitProvider
 
 type MySubmitProvider struct {
-	pctx  *ProviderContext
+	cctx  *ClientContext
 	nbmsg int
 }
 
 func NewSubmitProvider(ctx *Context, service string) (*MySubmitProvider, error) {
-	pctx, err := NewProviderContext(ctx, service)
+	cctx, err := NewClientContext(ctx, service)
 	if err != nil {
 		return nil, err
 	}
-	submitProvider := &MySubmitProvider{pctx: pctx}
-	pctx.RegisterSubmitProvider(200, 1, 1, 1, submitProvider)
+	submitProvider := &MySubmitProvider{cctx: cctx}
+	cctx.RegisterSubmitProvider(200, 1, 1, 1, submitProvider)
 
 	return submitProvider, nil
 }
@@ -173,13 +173,13 @@ func TestSubmitProvider(t *testing.T) {
 	}
 	defer consumer_ctx.Close()
 
-	consumer, err := NewOperationContext(consumer_ctx, "consumer")
+	consumer, err := NewClientContext(consumer_ctx, "consumer")
 	if err != nil {
 		t.Fatal("Error creating consumer, ", err)
 		return
 	}
 
-	op1 := consumer.NewSubmitOperation(provider.pctx.Uri, 200, 1, 1, 1)
+	op1 := consumer.NewSubmitOperation(provider.cctx.Uri, 200, 1, 1, 1)
 	_, err = op1.Submit([]byte("message1"))
 	if err != nil {
 		t.Fatal("Error during submit, ", err)
@@ -187,7 +187,7 @@ func TestSubmitProvider(t *testing.T) {
 	}
 	fmt.Println("\t&&&&& Submit1: OK")
 
-	op2 := consumer.NewSubmitOperation(provider.pctx.Uri, 200, 1, 1, 1)
+	op2 := consumer.NewSubmitOperation(provider.cctx.Uri, 200, 1, 1, 1)
 	_, err = op2.Submit([]byte("message2"))
 	if err != nil {
 		t.Fatal("Error during submit, ", err)
@@ -206,17 +206,17 @@ func TestSubmitProvider(t *testing.T) {
 // Define RequestProvider
 
 type MyRequestProvider struct {
-	pctx  *ProviderContext
+	cctx  *ClientContext
 	nbmsg int
 }
 
 func NewRequestProvider(ctx *Context, service string) (*MyRequestProvider, error) {
-	pctx, err := NewProviderContext(ctx, service)
+	cctx, err := NewClientContext(ctx, service)
 	if err != nil {
 		return nil, err
 	}
-	requestProvider := &MyRequestProvider{pctx: pctx}
-	pctx.RegisterRequestProvider(200, 1, 1, 1, requestProvider)
+	requestProvider := &MyRequestProvider{cctx: cctx}
+	cctx.RegisterRequestProvider(200, 1, 1, 1, requestProvider)
 
 	return requestProvider, nil
 }
@@ -257,13 +257,13 @@ func TestRequestProvider(t *testing.T) {
 	}
 	defer consumer_ctx.Close()
 
-	consumer, err := NewOperationContext(consumer_ctx, "consumer")
+	consumer, err := NewClientContext(consumer_ctx, "consumer")
 	if err != nil {
 		t.Fatal("Error creating consumer, ", err)
 		return
 	}
 
-	op1 := consumer.NewRequestOperation(provider.pctx.Uri, 200, 1, 1, 1)
+	op1 := consumer.NewRequestOperation(provider.cctx.Uri, 200, 1, 1, 1)
 	ret1, err := op1.Request([]byte("message1"))
 	if err != nil {
 		t.Fatal("Error during request, ", err)
@@ -271,7 +271,7 @@ func TestRequestProvider(t *testing.T) {
 	}
 	fmt.Println("\t&&&&& Request1: OK, ", string(ret1.Body))
 
-	op2 := consumer.NewRequestOperation(provider.pctx.Uri, 200, 1, 1, 1)
+	op2 := consumer.NewRequestOperation(provider.cctx.Uri, 200, 1, 1, 1)
 	ret2, err := op2.Request([]byte("message2"))
 	if err != nil {
 		t.Fatal("Error during request, ", err)
@@ -290,17 +290,17 @@ func TestRequestProvider(t *testing.T) {
 // Define InvokeProvider
 
 type MyInvokeProvider struct {
-	pctx  *ProviderContext
+	cctx  *ClientContext
 	nbmsg int
 }
 
 func NewInvokeProvider(ctx *Context, service string) (*MyInvokeProvider, error) {
-	pctx, err := NewProviderContext(ctx, service)
+	cctx, err := NewClientContext(ctx, service)
 	if err != nil {
 		return nil, err
 	}
-	invokeProvider := &MyInvokeProvider{pctx: pctx}
-	pctx.RegisterInvokeProvider(200, 1, 1, 1, invokeProvider)
+	invokeProvider := &MyInvokeProvider{cctx: cctx}
+	cctx.RegisterInvokeProvider(200, 1, 1, 1, invokeProvider)
 
 	return invokeProvider, nil
 }
@@ -344,13 +344,13 @@ func TestInvokeProvider(t *testing.T) {
 	}
 	defer consumer_ctx.Close()
 
-	consumer, err := NewOperationContext(consumer_ctx, "consumer")
+	consumer, err := NewClientContext(consumer_ctx, "consumer")
 	if err != nil {
 		t.Fatal("Error creating consumer, ", err)
 		return
 	}
 
-	op1 := consumer.NewInvokeOperation(provider.pctx.Uri, 200, 1, 1, 1)
+	op1 := consumer.NewInvokeOperation(provider.cctx.Uri, 200, 1, 1, 1)
 	_, err = op1.Invoke([]byte("message1"))
 	if err != nil {
 		t.Fatal("Error during invoke, ", err)
@@ -364,7 +364,7 @@ func TestInvokeProvider(t *testing.T) {
 	}
 	fmt.Println("\t&&&&& Invoke1: OK, ", string(r1.Body))
 
-	op2 := consumer.NewInvokeOperation(provider.pctx.Uri, 200, 1, 1, 1)
+	op2 := consumer.NewInvokeOperation(provider.cctx.Uri, 200, 1, 1, 1)
 	_, err = op2.Invoke([]byte("message2"))
 	if err != nil {
 		t.Fatal("Error during invoke, ", err)
@@ -389,16 +389,16 @@ func TestInvokeProvider(t *testing.T) {
 // Define ProgressProvider
 
 type MyProgressProvider struct {
-	pctx *ProviderContext
+	cctx *ClientContext
 }
 
 func NewProgressProvider(ctx *Context, service string) (*MyProgressProvider, error) {
-	pctx, err := NewProviderContext(ctx, service)
+	cctx, err := NewClientContext(ctx, service)
 	if err != nil {
 		return nil, err
 	}
-	progressProvider := &MyProgressProvider{pctx: pctx}
-	pctx.RegisterProgressProvider(200, 1, 1, 1, progressProvider)
+	progressProvider := &MyProgressProvider{cctx: cctx}
+	cctx.RegisterProgressProvider(200, 1, 1, 1, progressProvider)
 
 	return progressProvider, nil
 }
@@ -442,7 +442,7 @@ func TestProgressProvider(t *testing.T) {
 	}
 	defer consumer_ctx.Close()
 
-	consumer, err := NewOperationContext(consumer_ctx, "consumer")
+	consumer, err := NewClientContext(consumer_ctx, "consumer")
 	if err != nil {
 		t.Fatal("Error creating consumer, ", err)
 		return
@@ -450,7 +450,7 @@ func TestProgressProvider(t *testing.T) {
 
 	nbmsg := 0
 
-	op1 := consumer.NewProgressOperation(provider.pctx.Uri, 200, 1, 1, 1)
+	op1 := consumer.NewProgressOperation(provider.cctx.Uri, 200, 1, 1, 1)
 	op1.Progress([]byte("message1"))
 	fmt.Println("\t&&&&& Progress1: OK")
 
@@ -481,18 +481,18 @@ func TestProgressProvider(t *testing.T) {
 // ########## ########## ########## ########## ########## ########## ########## ##########
 
 type MyBrokerContext struct {
-	pctx *ProviderContext
+	cctx *ClientContext
 	subs SubscriberTransaction
 }
 
 func NewBroker(ctx *Context, service string) (*MyBrokerContext, error) {
-	pctx, err := NewProviderContext(ctx, service)
+	cctx, err := NewClientContext(ctx, service)
 	if err != nil {
 		return nil, err
 	}
-	broker := &MyBrokerContext{pctx: pctx}
+	broker := &MyBrokerContext{cctx: cctx}
 	// Registers the broker handler
-	pctx.RegisterBroker(200, 1, 1, 1, broker)
+	cctx.RegisterBroker(200, 1, 1, 1, broker)
 
 	return broker, nil
 }
@@ -553,12 +553,12 @@ func TestPubSubProvider(t *testing.T) {
 	}
 	defer pub_ctx.Close()
 
-	publisher, err := NewOperationContext(pub_ctx, "publisher")
+	publisher, err := NewClientContext(pub_ctx, "publisher")
 	if err != nil {
 		t.Fatal("Error creating publisher, ", err)
 		return
 	}
-	pubop := publisher.NewPublisherOperation(broker.pctx.Uri, 200, 1, 1, 1)
+	pubop := publisher.NewPublisherOperation(broker.cctx.Uri, 200, 1, 1, 1)
 	// TODO (AF): Build PublishRegister message
 	pubop.Register([]byte("register"))
 
@@ -569,12 +569,12 @@ func TestPubSubProvider(t *testing.T) {
 	}
 	defer sub_ctx.Close()
 
-	subscriber, err := NewOperationContext(sub_ctx, "subscriber")
+	subscriber, err := NewClientContext(sub_ctx, "subscriber")
 	if err != nil {
 		t.Fatal("Error creating subscriber, ", err)
 		return
 	}
-	subop := subscriber.NewSubscriberOperation(broker.pctx.Uri, 200, 1, 1, 1)
+	subop := subscriber.NewSubscriberOperation(broker.cctx.Uri, 200, 1, 1, 1)
 	// TODO (AF): Build Register message
 	subop.Register([]byte("register"))
 

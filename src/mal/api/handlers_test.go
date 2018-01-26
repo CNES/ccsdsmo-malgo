@@ -54,7 +54,7 @@ func TestSend(t *testing.T) {
 	}
 	defer provider_ctx.Close()
 
-	provider, err := NewHandlerContext(provider_ctx, "provider")
+	provider, err := NewClientContext(provider_ctx, "provider")
 	if err != nil {
 		t.Fatal("Error creating provider, ", err)
 		return
@@ -67,7 +67,7 @@ func TestSend(t *testing.T) {
 	}
 	defer consumer_ctx.Close()
 
-	consumer, err := NewOperationContext(consumer_ctx, "consumer")
+	consumer, err := NewClientContext(consumer_ctx, "consumer")
 	if err != nil {
 		t.Fatal("Error creating consumer, ", err)
 		return
@@ -117,7 +117,7 @@ func TestSubmit(t *testing.T) {
 	}
 	defer provider_ctx.Close()
 
-	provider, err := NewHandlerContext(provider_ctx, "provider")
+	provider, err := NewClientContext(provider_ctx, "provider")
 	if err != nil {
 		t.Fatal("Error creating provider, ", err)
 		return
@@ -130,7 +130,7 @@ func TestSubmit(t *testing.T) {
 	}
 	defer consumer_ctx.Close()
 
-	consumer, err := NewOperationContext(consumer_ctx, "consumer")
+	consumer, err := NewClientContext(consumer_ctx, "consumer")
 	if err != nil {
 		t.Fatal("Error creating consumer, ", err)
 		return
@@ -188,7 +188,7 @@ func TestRequest(t *testing.T) {
 	}
 	defer provider_ctx.Close()
 
-	provider, err := NewHandlerContext(provider_ctx, "provider")
+	provider, err := NewClientContext(provider_ctx, "provider")
 	if err != nil {
 		t.Fatal("Error creating provider, ", err)
 		return
@@ -201,7 +201,7 @@ func TestRequest(t *testing.T) {
 	}
 	defer consumer_ctx.Close()
 
-	consumer, err := NewOperationContext(consumer_ctx, "consumer")
+	consumer, err := NewClientContext(consumer_ctx, "consumer")
 	if err != nil {
 		t.Fatal("Error creating consumer, ", err)
 		return
@@ -261,7 +261,7 @@ func TestInvoke(t *testing.T) {
 	}
 	defer provider_ctx.Close()
 
-	provider, err := NewHandlerContext(provider_ctx, "provider")
+	provider, err := NewClientContext(provider_ctx, "provider")
 	if err != nil {
 		t.Fatal("Error creating provider, ", err)
 		return
@@ -274,7 +274,7 @@ func TestInvoke(t *testing.T) {
 	}
 	defer consumer_ctx.Close()
 
-	consumer, err := NewOperationContext(consumer_ctx, "consumer")
+	consumer, err := NewClientContext(consumer_ctx, "consumer")
 	if err != nil {
 		t.Fatal("Error creating consumer, ", err)
 		return
@@ -347,7 +347,7 @@ func TestProgress(t *testing.T) {
 	}
 	defer provider_ctx.Close()
 
-	provider, err := NewHandlerContext(provider_ctx, "provider")
+	provider, err := NewClientContext(provider_ctx, "provider")
 	if err != nil {
 		t.Fatal("Error creating provider, ", err)
 		return
@@ -360,7 +360,7 @@ func TestProgress(t *testing.T) {
 	}
 	defer consumer_ctx.Close()
 
-	consumer, err := NewOperationContext(consumer_ctx, "consumer")
+	consumer, err := NewClientContext(consumer_ctx, "consumer")
 	if err != nil {
 		t.Fatal("Error creating consumer, ", err)
 		return
@@ -429,7 +429,7 @@ func TestPubSub(t *testing.T) {
 	}
 	defer pub_ctx.Close()
 
-	publisher, err := NewOperationContext(pub_ctx, "publisher")
+	publisher, err := NewClientContext(pub_ctx, "publisher")
 	if err != nil {
 		t.Fatal("Error creating provider, ", err)
 		return
@@ -442,7 +442,7 @@ func TestPubSub(t *testing.T) {
 	}
 	defer sub_ctx.Close()
 
-	subscriber, err := NewOperationContext(sub_ctx, "subscriber")
+	subscriber, err := NewClientContext(sub_ctx, "subscriber")
 	if err != nil {
 		t.Fatal("Error creating consumer, ", err)
 		return
@@ -455,7 +455,7 @@ func TestPubSub(t *testing.T) {
 	}
 	defer broker_ctx.Close()
 
-	broker, err := NewHandlerContext(broker_ctx, "broker")
+	broker, err := NewClientContext(broker_ctx, "broker")
 	if err != nil {
 		t.Fatal("Error creating consumer, ", err)
 		return
@@ -575,7 +575,7 @@ func TestReset(t *testing.T) {
 	}
 	defer provider_ctx.Close()
 
-	provider, err := NewHandlerContext(provider_ctx, "provider")
+	provider, err := NewClientContext(provider_ctx, "provider")
 	if err != nil {
 		t.Fatal("Error creating provider, ", err)
 		return
@@ -588,7 +588,7 @@ func TestReset(t *testing.T) {
 	}
 	defer consumer_ctx.Close()
 
-	consumer, err := NewOperationContext(consumer_ctx, "consumer")
+	consumer, err := NewClientContext(consumer_ctx, "consumer")
 	if err != nil {
 		t.Fatal("Error creating consumer, ", err)
 		return
