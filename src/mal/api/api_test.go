@@ -595,3 +595,59 @@ func TestPubSubProvider(t *testing.T) {
 	// Waits for socket close
 	time.Sleep(250 * time.Millisecond)
 }
+
+// ########## ########## ########## ########## ########## ########## ########## ##########
+// Test reuse of operation after reset
+
+func TestReset(t *testing.T) {
+	// Waits socket closing from previous test
+	time.Sleep(250 * time.Millisecond)
+
+	provider_ctx, err := NewContext(provider_url)
+	if err != nil {
+		t.Fatal("Error creating context, ", err)
+		return
+	}
+	defer provider_ctx.Close()
+
+	provider, err := NewSubmitProvider(provider_ctx, "provider")
+	if err != nil {
+		t.Fatal("Error creating provider, ", err)
+		return
+	}
+
+	consumer_ctx, err := NewContext(consumer_url)
+	if err != nil {
+		t.Fatal("Error creating context, ", err)
+		return
+	}
+	defer consumer_ctx.Close()
+
+	consumer, err := NewClientContext(consumer_ctx, "consumer")
+	if err != nil {
+		t.Fatal("Error creating consumer, ", err)
+		return
+	}
+
+	op1 := consumer.NewSubmitOperation(provider.cctx.Uri, 200, 1, 1, 1)
+	_, err = op1.Submit([]byte("message1"))
+	if err != nil {
+		t.Fatal("Error during submit, ", err)
+		return
+	}
+	fmt.Println("\t&&&&& Submit1: OK")
+	op1.Reset()
+	_, err = op1.Submit([]byte("message2"))
+	if err != nil {
+		t.Fatal("Error during submit, ", err)
+		return
+	}
+	fmt.Println("\t&&&&& Submit2: OK")
+
+	// Waits for message reception
+	time.Sleep(250 * time.Millisecond)
+
+	if provider.nbmsg != 2 {
+		t.Errorf("Receives %d messages, expect %d ", provider.nbmsg, 2)
+	}
+}
