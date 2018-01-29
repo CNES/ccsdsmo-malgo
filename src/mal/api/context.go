@@ -174,69 +174,59 @@ func (cctx *ClientContext) getProvider(stype InteractionType, area UShort, areaV
 }
 
 // TODO (AF): Take in account operations and handlers!!
-func (cctx *ClientContext) OnMessage(msg *Message) error {
+func (cctx *ClientContext) OnMessage(msg *Message) {
 	if ((msg.InteractionType != MAL_INTERACTIONTYPE_PUBSUB) && (msg.InteractionStage == MAL_IP_STAGE_INIT)) ||
 		((msg.InteractionType == MAL_INTERACTIONTYPE_PUBSUB) && ((msg.InteractionStage & 0x1) != 0)) {
 		provider, err := cctx.getProvider(msg.InteractionType, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation)
 		if err != nil {
-			return err
+			// TODO (AF): Log an error? Adds an error listener?
+			logger.Errorf("Cannot route message: %tv", msg)
 		}
 		switch msg.InteractionType {
-		// TODO (AF): We can use msg.InteractionType as selector
 		case MAL_INTERACTIONTYPE_SEND:
 			sendProvider := provider.(SendProvider)
 			transaction := &SendTransactionX{TransactionX{cctx.Ctx, cctx.Uri, msg.UriFrom, msg.TransactionId, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation}}
-			// TODO (AF): use a goroutine
-			return sendProvider.OnSend(msg, transaction)
+			go sendProvider.OnSend(msg, transaction)
 		case MAL_INTERACTIONTYPE_SUBMIT:
 			submitProvider := provider.(SubmitProvider)
 			transaction := &SubmitTransactionX{TransactionX{cctx.Ctx, cctx.Uri, msg.UriFrom, msg.TransactionId, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation}}
-			// TODO (AF): use a goroutine
-			return submitProvider.OnSubmit(msg, transaction)
+			go submitProvider.OnSubmit(msg, transaction)
 		case MAL_INTERACTIONTYPE_REQUEST:
 			requestProvider := provider.(RequestProvider)
 			transaction := &RequestTransactionX{TransactionX{cctx.Ctx, cctx.Uri, msg.UriFrom, msg.TransactionId, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation}}
-			// TODO (AF): use a goroutine
-			return requestProvider.OnRequest(msg, transaction)
+			go requestProvider.OnRequest(msg, transaction)
 		case MAL_INTERACTIONTYPE_INVOKE:
 			invokeProvider := provider.(InvokeProvider)
 			transaction := &InvokeTransactionX{TransactionX{cctx.Ctx, cctx.Uri, msg.UriFrom, msg.TransactionId, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation}}
-			// TODO (AF): use a goroutine
-			return invokeProvider.OnInvoke(msg, transaction)
+			go invokeProvider.OnInvoke(msg, transaction)
 		case MAL_INTERACTIONTYPE_PROGRESS:
 			progressProvider := provider.(ProgressProvider)
 			transaction := &ProgressTransactionX{TransactionX{cctx.Ctx, cctx.Uri, msg.UriFrom, msg.TransactionId, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation}}
-			// TODO (AF): use a goroutine
-			return progressProvider.OnProgress(msg, transaction)
+			go progressProvider.OnProgress(msg, transaction)
 		case MAL_INTERACTIONTYPE_PUBSUB:
 			broker := provider.(Broker)
 			if msg.InteractionStage == MAL_IP_STAGE_PUBSUB_PUBLISH_REGISTER {
 				transaction := &PublisherTransactionX{TransactionX{cctx.Ctx, cctx.Uri, msg.UriFrom, msg.TransactionId, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation}}
-				// TODO (AF): use a goroutine
-				return broker.OnPublishRegister(msg, transaction)
+				go broker.OnPublishRegister(msg, transaction)
 			} else if msg.InteractionStage == MAL_IP_STAGE_PUBSUB_PUBLISH {
 				transaction := &PublisherTransactionX{TransactionX{cctx.Ctx, cctx.Uri, msg.UriFrom, msg.TransactionId, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation}}
-				// TODO (AF): use a goroutine
-				return broker.OnPublish(msg, transaction)
+				go broker.OnPublish(msg, transaction)
 			} else if msg.InteractionStage == MAL_IP_STAGE_PUBSUB_PUBLISH_DEREGISTER {
 				transaction := &PublisherTransactionX{TransactionX{cctx.Ctx, cctx.Uri, msg.UriFrom, msg.TransactionId, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation}}
-				// TODO (AF): use a goroutine
-				return broker.OnPublishDeregister(msg, transaction)
+				go broker.OnPublishDeregister(msg, transaction)
 			} else if msg.InteractionStage == MAL_IP_STAGE_PUBSUB_REGISTER {
 				transaction := &SubscriberTransactionX{TransactionX{cctx.Ctx, cctx.Uri, msg.UriFrom, msg.TransactionId, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation}}
-				// TODO (AF): use a goroutine
-				return broker.OnRegister(msg, transaction)
+				go broker.OnRegister(msg, transaction)
 			} else if msg.InteractionStage == MAL_IP_STAGE_PUBSUB_DEREGISTER {
 				transaction := &SubscriberTransactionX{TransactionX{cctx.Ctx, cctx.Uri, msg.UriFrom, msg.TransactionId, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation}}
-				// TODO (AF): use a goroutine
-				return broker.OnDeregister(msg, transaction)
+				go broker.OnDeregister(msg, transaction)
 			} else {
-				// TODO (AF): Log an error, May be wa should not return this error
-				return errors.New("Bad interaction stage for PubSub")
+				// TODO (AF): Log an error? Adds an error listener?
+				logger.Errorf("Unknown interaction stage for PubSub: %tv", msg)
 			}
 		default:
-			logger.Warnf("Cannot route message to: %s", *msg.UriTo)
-			return nil
+			// TODO (AF): Log an error? Adds an error listener?
+			logger.Errorf("Unknown interaction type: %s", msg)
 		}
 	} else {
 		// Note (AF): The generated TransactionId is unique for this requesting URI so we
@@ -244,13 +234,13 @@ func (cctx *ClientContext) OnMessage(msg *Message) error {
 		// MAL API (see section 3.2).
 		to, ok := cctx.operations[msg.TransactionId]
 		if ok {
-			logger.Debugf("onMessage %t", to)
+			logger.Debugf("Operation.onMessage %t", to)
+			// There is no need to call a go routine as this code is not blocking.
 			to.onMessage(msg)
-			logger.Debugf("OnMessageMessage transmitted: %s", msg)
+			logger.Debugf("OnMessageMessage handled: %s", msg)
 		} else {
-			logger.Debugf("Cannot route message to: %s?TransactionId=", msg.UriTo, msg.TransactionId)
+			logger.Errorf("Unknown TransactionID, cannot route message: %tv", msg)
 		}
-		return nil
 	}
 }
 
