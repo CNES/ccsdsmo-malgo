@@ -84,9 +84,8 @@ func (endpoint *EndPoint) Close() error {
 // ================================================================================
 // Defines Listener interface used by context to route MAL messages
 
-func (endpoint *EndPoint) OnMessage(msg *Message) error {
+func (endpoint *EndPoint) OnMessage(msg *Message) {
 	endpoint.ch <- msg
-	return nil
 }
 
 func (endpoint *EndPoint) OnClose() error {

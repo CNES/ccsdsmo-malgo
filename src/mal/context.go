@@ -28,7 +28,8 @@ import (
 )
 
 type Listener interface {
-	OnMessage(msg *Message) error
+	// TODO (AF): We should remove error return (useless and unused)
+	OnMessage(msg *Message)
 	OnClose() error
 }
 
