@@ -9,9 +9,9 @@ Complete MAL specification can be found on the [CCSDS website](http://public.ccs
 
 In particular:
 
-	- [CCSDS 521.0-B-2, Mission Operations Message Abstraction Layer](https://public.ccsds.org/Pubs/521x0b2e1.pdf)
-	- [CCSDS 524.1-B-1, Mission Operations--MAL Space Packet Transport Binding and Binary Encoding](https://public.ccsds.org/Pubs/524x1b1.pdf)
-	- [CCSDS 524.2-B-1, Mission Operations--MAL Binding to TCP/IP Transport and Split Binary Encoding](https://public.ccsds.org/Pubs/524x2b1.pdf)
+- [CCSDS 521.0-B-2, Mission Operations Message Abstraction Layer](https://public.ccsds.org/Pubs/521x0b2e1.pdf)
+- [CCSDS 524.1-B-1, Mission Operations--MAL Space Packet Transport Binding and Binary Encoding](https://public.ccsds.org/Pubs/524x1b1.pdf)
+- [CCSDS 524.2-B-1, Mission Operations--MAL Binding to TCP/IP Transport and Split Binary Encoding](https://public.ccsds.org/Pubs/524x2b1.pdf)
 
 ## ABOUT
 
