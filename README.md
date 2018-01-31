@@ -19,6 +19,17 @@ This CCSDS MO MAL Go API was originally developed for the [CNES](http://cnes.fr)
 
 ## PROJECT DOCUMENTATION
 
+A MAL/GO description and user's guide is available in the doc directory.
+
+### MAL/GO Description
+
+This GO API basically includes 4 packages:
+
+  - **mal** package defines all MAL Concepts: message, data types, etc.
+  - **mal/encoding** package includes encoding technologies.
+  - **mal/transport** package includes transport technologies.
+  - **mal/api** defines the high level consumer and provider APIs.
+
 ### MAL/GO QUICK INSTALLATION
 
 ### MAL/GO TEST
