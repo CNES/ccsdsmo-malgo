@@ -34,25 +34,30 @@ import (
 )
 
 const (
-	nested2_consumer_url = "maltcp://127.0.0.1:16002"
-	nested2_provider_url = "maltcp://127.0.0.1:16001"
+	nested3_consumer_url = "maltcp://127.0.0.1:16002"
+	nested3_provider_url = "maltcp://127.0.0.1:16001"
 )
 
 // ########## ########## ########## ########## ########## ########## ########## ##########
-// Test Invoke interaction in a nested scenario: Ctx1.C -> ctx2.P1 -> ctx2.P2
+// Test Invoke interaction in a nested scenario: Ctx1.C -> ctx2.P -> ctx2.P2
 // Invoke a method in same service (same MAL context).
 
-// Define Provider (Invoke interaction with nested invoke)
+// Define Provider1 (Invoke interaction with nested invoke)
 
-type TestNested2Provider1 struct {
+type TestNested3Provider1 struct {
+	ctx   *Context
 	cctx  *ClientContext
 	uri   *URI
 	p2uri *URI
 	nbmsg int
 }
 
-func newTestNested2Provider1(cctx *ClientContext, p2uri *URI) (*TestNested2Provider1, error) {
-	provider := &TestNested2Provider1{cctx, cctx.Uri, p2uri, 0}
+func newTestNested3Provider1(ctx *Context, p2uri *URI) (*TestNested3Provider1, error) {
+	cctx, err := NewClientContext(ctx, "provider1")
+	if err != nil {
+		return nil, err
+	}
+	provider := &TestNested3Provider1{ctx, cctx, cctx.Uri, p2uri, 0}
 
 	// Register handler
 	invokeHandler := func(msg *Message, t Transaction) error {
@@ -89,15 +94,19 @@ func newTestNested2Provider1(cctx *ClientContext, p2uri *URI) (*TestNested2Provi
 
 // Define Provider2 (Invoke interaction)
 
-type TestNested2Provider2 struct {
+type TestNested3Provider2 struct {
+	ctx   *Context
 	cctx  *ClientContext
 	uri   *URI
 	nbmsg int
 }
 
-func newTestNested2Provider2(cctx *ClientContext) (*TestNested2Provider2, error) {
-	provider := &TestNested2Provider2{cctx, cctx.Uri, 0}
-
+func newTestNested3Provider2(ctx *Context) (*TestNested3Provider2, error) {
+	cctx, err := NewClientContext(ctx, "provider2")
+	if err != nil {
+		return nil, err
+	}
+	provider := &TestNested3Provider2{ctx, cctx, cctx.Uri, 0}
 	// Register handler
 	invokeHandler := func(msg *Message, t Transaction) error {
 		if msg != nil {
@@ -121,36 +130,37 @@ func newTestNested2Provider2(cctx *ClientContext) (*TestNested2Provider2, error)
 }
 
 // Test TCP transport Invoke Interaction using the high level API
-func TestNested2(t *testing.T) {
+func TestNested3Provider(t *testing.T) {
 	// Waits socket closing from previous test
 	time.Sleep(250 * time.Millisecond)
 
-	provider_ctx, err := NewContext(nested2_provider_url)
+	provider_ctx, err := NewContext(nested3_provider_url)
 	if err != nil {
 		t.Fatal("Error creating context, ", err)
 		return
 	}
 	defer provider_ctx.Close()
 
-	cctx, err := NewClientContext(provider_ctx, "provider")
-	if err != nil {
-		t.Fatal("Error creating client context, ", err)
-		return
-	}
-
-	provider2, err := newTestNested2Provider2(cctx)
+	provider2, err := newTestNested3Provider2(provider_ctx)
 	if err != nil {
 		t.Fatal("Error creating provider, ", err)
 		return
 	}
 
-	provider1, err := newTestNested2Provider1(cctx, provider2.cctx.Uri)
+	//	provider1_ctx, err := NewContext(nested3_provider1_url)
+	//	if err != nil {
+	//		t.Fatal("Error creating context, ", err)
+	//		return
+	//	}
+	//	defer provider1_ctx.Close()
+
+	provider1, err := newTestNested3Provider1(provider_ctx, provider2.cctx.Uri)
 	if err != nil {
 		t.Fatal("Error creating provider, ", err)
 		return
 	}
 
-	consumer_ctx, err := NewContext(nested2_consumer_url)
+	consumer_ctx, err := NewContext(nested3_consumer_url)
 	if err != nil {
 		t.Fatal("Error creating context, ", err)
 		return

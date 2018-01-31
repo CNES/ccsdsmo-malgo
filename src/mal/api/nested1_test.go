@@ -45,114 +45,126 @@ const (
 
 // Define Provider1 (Invoke interaction with nested invoke)
 
-type Nested1Provider1 struct {
+type TestNested1Provider1 struct {
+	ctx   *Context
 	cctx  *ClientContext
+	uri   *URI
 	p2uri *URI
 	nbmsg int
 }
 
-func NewNested1Provider1(ctx *Context, service string, p2uri *URI) (*Nested1Provider1, error) {
-	cctx, err := NewClientContext(ctx, service)
+func newTestNested1Provider1(p2uri *URI) (*TestNested1Provider1, error) {
+	ctx, err := NewContext(nested1_provider1_url)
 	if err != nil {
 		return nil, err
 	}
-	provider := &Nested1Provider1{cctx: cctx, p2uri: p2uri}
-	cctx.RegisterInvokeProvider(200, 1, 1, 1, provider)
+	cctx, err := NewClientContext(ctx, "provider1")
+	if err != nil {
+		return nil, err
+	}
+	provider := &TestNested1Provider1{ctx, cctx, cctx.Uri, p2uri, 0}
+
+	// Register handler
+	invokeHandler := func(msg *Message, t Transaction) error {
+		if msg != nil {
+			transaction := t.(InvokeTransaction)
+			fmt.Println("\t$$$$$ Provider1 receive: ", string(msg.Body))
+			transaction.Ack(nil)
+			provider.nbmsg += 1
+
+			op := provider.cctx.NewInvokeOperation(provider.p2uri, 200, 1, 2, 2)
+			_, err := op.Invoke([]byte("message from provider1"))
+			if err != nil {
+				//			t.Fatal("Error during invoke, ", err)
+				return errors.New("Error during invoke")
+			}
+
+			reply, err := op.GetResponse()
+			if err != nil {
+				//			t.Fatal("Error getting response, ", err)
+				return errors.New("Error getting response")
+			}
+			fmt.Println("\t&&&&& Nested Invoke1: OK, ", string(reply.Body))
+
+			transaction.Reply(msg.Body, nil)
+		} else {
+			fmt.Println("receive: nil")
+		}
+		return nil
+	}
+	cctx.RegisterInvokeHandler(200, 1, 1, 1, invokeHandler)
 
 	return provider, nil
 }
 
-func (provider *Nested1Provider1) OnInvoke(msg *Message, transaction InvokeTransaction) error {
-	if msg != nil {
-		fmt.Println("\t$$$$$ Provider1 receive: ", string(msg.Body))
-		transaction.Ack(nil)
-		provider.nbmsg += 1
-
-		op := provider.cctx.NewInvokeOperation(provider.p2uri, 200, 1, 2, 2)
-		_, err := op.Invoke([]byte("message from provider1"))
-		if err != nil {
-			//			t.Fatal("Error during invoke, ", err)
-			return errors.New("Error during invoke")
-		}
-
-		reply, err := op.GetResponse()
-		if err != nil {
-			//			t.Fatal("Error getting response, ", err)
-			return errors.New("Error getting response")
-		}
-		fmt.Println("\t&&&&& Nested Invoke1: OK, ", string(reply.Body))
-
-		transaction.Reply(msg.Body, nil)
-	} else {
-		fmt.Println("receive: nil")
-	}
-	return nil
+func (provider *TestNested1Provider1) closeTestNested1Provider1() {
+	provider.ctx.Close()
 }
 
 // Define Provider2 (Invoke interaction)
 
-type Nested1Provider2 struct {
+type TestNested1Provider2 struct {
+	ctx   *Context
 	cctx  *ClientContext
+	uri   *URI
 	nbmsg int
 }
 
-func NewNested1Provider2(ctx *Context, service string) (*Nested1Provider2, error) {
-	cctx, err := NewClientContext(ctx, service)
+func newTestNested1Provider2() (*TestNested1Provider2, error) {
+	ctx, err := NewContext(nested1_provider2_url)
 	if err != nil {
 		return nil, err
 	}
-	provider := &Nested1Provider2{cctx: cctx}
-	cctx.RegisterInvokeProvider(200, 1, 2, 2, provider)
+	cctx, err := NewClientContext(ctx, "provider2")
+	if err != nil {
+		return nil, err
+	}
+	provider := &TestNested1Provider2{ctx, cctx, cctx.Uri, 0}
+
+	// Register handler
+	invokeHandler := func(msg *Message, t Transaction) error {
+		if msg != nil {
+			transaction := t.(InvokeTransaction)
+			fmt.Println("\t$$$$$ Provider2 receive: ", string(msg.Body))
+			transaction.Ack(nil)
+			fmt.Println("\t$$$$$ Provider2 ack sent: OK")
+			provider.nbmsg += 1
+			time.Sleep(250 * time.Millisecond)
+			//		transaction.Reply([]byte("reply message"), nil)
+			transaction.Reply(msg.Body, nil)
+			fmt.Println("\t$$$$$ Provider2 reply sent: OK")
+		} else {
+			fmt.Println("receive: nil")
+		}
+		return nil
+	}
+	cctx.RegisterInvokeHandler(200, 1, 2, 2, invokeHandler)
 
 	return provider, nil
 }
 
-func (provider *Nested1Provider2) OnInvoke(msg *Message, transaction InvokeTransaction) error {
-	if msg != nil {
-		fmt.Println("\t$$$$$ Provider2 receive: ", string(msg.Body))
-		transaction.Ack(nil)
-		fmt.Println("\t$$$$$ Provider2 ack sent: OK")
-		provider.nbmsg += 1
-		time.Sleep(250 * time.Millisecond)
-		//		transaction.Reply([]byte("reply message"), nil)
-		transaction.Reply(msg.Body, nil)
-		fmt.Println("\t$$$$$ Provider2 reply sent: OK")
-	} else {
-		fmt.Println("receive: nil")
-	}
-	return nil
+func (provider *TestNested1Provider2) closeTestNested1Provider2() {
+	provider.ctx.Close()
 }
 
 // Test TCP transport Invoke Interaction using the high level API
-func TestNested1Provider(t *testing.T) {
+func TestNested1(t *testing.T) {
 	// Waits socket closing from previous test
 	time.Sleep(250 * time.Millisecond)
 
-	provider2_ctx, err := NewContext(nested1_provider2_url)
-	if err != nil {
-		t.Fatal("Error creating context, ", err)
-		return
-	}
-	defer provider2_ctx.Close()
-
-	provider2, err := NewNested1Provider2(provider2_ctx, "provider2")
+	provider2, err := newTestNested1Provider2()
 	if err != nil {
 		t.Fatal("Error creating provider, ", err)
 		return
 	}
+	defer provider2.closeTestNested1Provider2()
 
-	provider1_ctx, err := NewContext(nested1_provider1_url)
-	if err != nil {
-		t.Fatal("Error creating context, ", err)
-		return
-	}
-	defer provider1_ctx.Close()
-
-	provider1, err := NewNested1Provider1(provider1_ctx, "provider", provider2.cctx.Uri)
+	provider1, err := newTestNested1Provider1(provider2.uri)
 	if err != nil {
 		t.Fatal("Error creating provider, ", err)
 		return
 	}
+	defer provider1.closeTestNested1Provider1()
 
 	consumer_ctx, err := NewContext(nested1_consumer_url)
 	if err != nil {

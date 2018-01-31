@@ -34,32 +34,29 @@ var (
 	logger debug.Logger = debug.GetLogger("mal.api")
 )
 
-// TODO (AF): Is this interface useful? provider/consumer?
-type service interface {
-}
+// Defines a generic handler interface for providers
+type ProviderHandler func(*Message, Transaction) error
 
 type OperationHandler interface {
 	onMessage(msg *Message)
 	onClose()
 }
 
-type sDesc struct {
-	// TODO (AF): Not really needed, implicit with handler interface.
+type pDesc struct {
 	stype InteractionType
 	// TODO (AF): Not really needed, these fields are included in the correponding key.
 	area        UShort
 	areaVersion UOctet
 	service     UShort
 	operation   UShort
-	// TODO (AF): Could be directly referenced in map.
-	shdl service
+	handler     ProviderHandler
 }
 
 type ClientContext struct {
 	Ctx        *Context
 	Uri        *URI
 	operations map[ULong]OperationHandler
-	services   map[uint64](*sDesc)
+	handlers   map[uint64](*pDesc)
 	txcounter  uint64
 }
 
@@ -67,8 +64,8 @@ func NewClientContext(ctx *Context, service string) (*ClientContext, error) {
 	// TODO (AF): Verify the uri
 	uri := ctx.NewURI(service)
 	operations := make(map[ULong]OperationHandler)
-	services := make(map[uint64](*sDesc))
-	cctx := &ClientContext{ctx, uri, operations, services, 0}
+	handlers := make(map[uint64](*pDesc))
+	cctx := &ClientContext{ctx, uri, operations, handlers, 0}
 	err := ctx.RegisterEndPoint(uri, cctx)
 	if err != nil {
 		return nil, err
@@ -112,10 +109,10 @@ func key(area UShort, areaVersion UOctet, service UShort, operation UShort) uint
 	return key
 }
 
-func (cctx *ClientContext) registerService(hdltype InteractionType, area UShort, areaVersion UOctet, service UShort, operation UShort, shdl service) error {
+func (cctx *ClientContext) registerProviderHandler(hdltype InteractionType, area UShort, areaVersion UOctet, service UShort, operation UShort, handler ProviderHandler) error {
 	// TODO (AF): Synchronization
 	key := key(area, areaVersion, service, operation)
-	old := cctx.services[key]
+	old := cctx.handlers[key]
 
 	if old != nil {
 		logger.Errorf("MAL handler already registered: %d", key)
@@ -124,27 +121,27 @@ func (cctx *ClientContext) registerService(hdltype InteractionType, area UShort,
 		logger.Debugf("MAL handler registered: %d", key)
 	}
 
-	var desc = &sDesc{
+	var desc = &pDesc{
 		stype:       hdltype,
 		area:        area,
 		areaVersion: areaVersion,
 		service:     service,
 		operation:   operation,
-		shdl:        shdl,
+		handler:     handler,
 	}
 
-	cctx.services[key] = desc
+	cctx.handlers[key] = desc
 	return nil
 }
 
-func (cctx *ClientContext) deregisterService(hdltype InteractionType, area UShort, areaVersion UOctet, service UShort, operation UShort) error {
+func (cctx *ClientContext) deregisterProviderHandler(hdltype InteractionType, area UShort, areaVersion UOctet, service UShort, operation UShort) error {
 	// TODO (AF): Synchronization
 	key := key(area, areaVersion, service, operation)
-	if cctx.services[key] == nil {
+	if cctx.handlers[key] == nil {
 		logger.Warnf("No interface registered for this operation: %d", key)
 		return errors.New("No interface registered for this operation")
 	}
-	delete(cctx.services, key)
+	delete(cctx.handlers, key)
 	return nil
 }
 
@@ -156,13 +153,13 @@ func (cctx *ClientContext) Close() error {
 // ================================================================================
 // Defines Listener interface used by context to route MAL messages
 
-func (cctx *ClientContext) getProvider(stype InteractionType, area UShort, areaVersion UOctet, service UShort, operation UShort) (service, error) {
+func (cctx *ClientContext) getProviderHandler(stype InteractionType, area UShort, areaVersion UOctet, service UShort, operation UShort) (ProviderHandler, error) {
 	key := key(area, areaVersion, service, operation)
 
-	to, ok := cctx.services[key]
+	to, ok := cctx.handlers[key]
 	if ok {
 		if to.stype == stype {
-			return to.shdl, nil
+			return to.handler, nil
 		} else {
 			logger.Debugf("Bad service type: %d should be %d", to.stype, stype)
 			return nil, errors.New("Bad handler type")
@@ -177,49 +174,34 @@ func (cctx *ClientContext) getProvider(stype InteractionType, area UShort, areaV
 func (cctx *ClientContext) OnMessage(msg *Message) {
 	if ((msg.InteractionType != MAL_INTERACTIONTYPE_PUBSUB) && (msg.InteractionStage == MAL_IP_STAGE_INIT)) ||
 		((msg.InteractionType == MAL_INTERACTIONTYPE_PUBSUB) && ((msg.InteractionStage & 0x1) != 0)) {
-		provider, err := cctx.getProvider(msg.InteractionType, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation)
+		handler, err := cctx.getProviderHandler(msg.InteractionType, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation)
 		if err != nil {
 			// TODO (AF): Log an error? Adds an error listener?
 			logger.Errorf("Cannot route message: %tv", msg)
 		}
+		var transaction Transaction
 		switch msg.InteractionType {
 		case MAL_INTERACTIONTYPE_SEND:
-			sendProvider := provider.(SendProvider)
-			transaction := &SendTransactionX{TransactionX{cctx.Ctx, cctx.Uri, msg.UriFrom, msg.TransactionId, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation}}
-			go sendProvider.OnSend(msg, transaction)
+			transaction = &SendTransactionX{TransactionX{cctx.Ctx, cctx.Uri, msg.UriFrom, msg.TransactionId, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation}}
 		case MAL_INTERACTIONTYPE_SUBMIT:
-			submitProvider := provider.(SubmitProvider)
-			transaction := &SubmitTransactionX{TransactionX{cctx.Ctx, cctx.Uri, msg.UriFrom, msg.TransactionId, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation}}
-			go submitProvider.OnSubmit(msg, transaction)
+			transaction = &SubmitTransactionX{TransactionX{cctx.Ctx, cctx.Uri, msg.UriFrom, msg.TransactionId, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation}}
 		case MAL_INTERACTIONTYPE_REQUEST:
-			requestProvider := provider.(RequestProvider)
-			transaction := &RequestTransactionX{TransactionX{cctx.Ctx, cctx.Uri, msg.UriFrom, msg.TransactionId, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation}}
-			go requestProvider.OnRequest(msg, transaction)
+			transaction = &RequestTransactionX{TransactionX{cctx.Ctx, cctx.Uri, msg.UriFrom, msg.TransactionId, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation}}
 		case MAL_INTERACTIONTYPE_INVOKE:
-			invokeProvider := provider.(InvokeProvider)
-			transaction := &InvokeTransactionX{TransactionX{cctx.Ctx, cctx.Uri, msg.UriFrom, msg.TransactionId, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation}}
-			go invokeProvider.OnInvoke(msg, transaction)
+			transaction = &InvokeTransactionX{TransactionX{cctx.Ctx, cctx.Uri, msg.UriFrom, msg.TransactionId, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation}}
 		case MAL_INTERACTIONTYPE_PROGRESS:
-			progressProvider := provider.(ProgressProvider)
-			transaction := &ProgressTransactionX{TransactionX{cctx.Ctx, cctx.Uri, msg.UriFrom, msg.TransactionId, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation}}
-			go progressProvider.OnProgress(msg, transaction)
+			transaction = &ProgressTransactionX{TransactionX{cctx.Ctx, cctx.Uri, msg.UriFrom, msg.TransactionId, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation}}
 		case MAL_INTERACTIONTYPE_PUBSUB:
-			broker := provider.(Broker)
 			if msg.InteractionStage == MAL_IP_STAGE_PUBSUB_PUBLISH_REGISTER {
-				transaction := &PublisherTransactionX{TransactionX{cctx.Ctx, cctx.Uri, msg.UriFrom, msg.TransactionId, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation}}
-				go broker.OnPublishRegister(msg, transaction)
+				transaction = &PublisherTransactionX{TransactionX{cctx.Ctx, cctx.Uri, msg.UriFrom, msg.TransactionId, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation}}
 			} else if msg.InteractionStage == MAL_IP_STAGE_PUBSUB_PUBLISH {
-				transaction := &PublisherTransactionX{TransactionX{cctx.Ctx, cctx.Uri, msg.UriFrom, msg.TransactionId, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation}}
-				go broker.OnPublish(msg, transaction)
+				transaction = &PublisherTransactionX{TransactionX{cctx.Ctx, cctx.Uri, msg.UriFrom, msg.TransactionId, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation}}
 			} else if msg.InteractionStage == MAL_IP_STAGE_PUBSUB_PUBLISH_DEREGISTER {
-				transaction := &PublisherTransactionX{TransactionX{cctx.Ctx, cctx.Uri, msg.UriFrom, msg.TransactionId, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation}}
-				go broker.OnPublishDeregister(msg, transaction)
+				transaction = &PublisherTransactionX{TransactionX{cctx.Ctx, cctx.Uri, msg.UriFrom, msg.TransactionId, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation}}
 			} else if msg.InteractionStage == MAL_IP_STAGE_PUBSUB_REGISTER {
-				transaction := &SubscriberTransactionX{TransactionX{cctx.Ctx, cctx.Uri, msg.UriFrom, msg.TransactionId, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation}}
-				go broker.OnRegister(msg, transaction)
+				transaction = &SubscriberTransactionX{TransactionX{cctx.Ctx, cctx.Uri, msg.UriFrom, msg.TransactionId, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation}}
 			} else if msg.InteractionStage == MAL_IP_STAGE_PUBSUB_DEREGISTER {
-				transaction := &SubscriberTransactionX{TransactionX{cctx.Ctx, cctx.Uri, msg.UriFrom, msg.TransactionId, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation}}
-				go broker.OnDeregister(msg, transaction)
+				transaction = &SubscriberTransactionX{TransactionX{cctx.Ctx, cctx.Uri, msg.UriFrom, msg.TransactionId, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation}}
 			} else {
 				// TODO (AF): Log an error? Adds an error listener?
 				logger.Errorf("Unknown interaction stage for PubSub: %tv", msg)
@@ -227,7 +209,9 @@ func (cctx *ClientContext) OnMessage(msg *Message) {
 		default:
 			// TODO (AF): Log an error? Adds an error listener?
 			logger.Errorf("Unknown interaction type: %s", msg)
+			return
 		}
+		go handler(msg, transaction)
 	} else {
 		// Note (AF): The generated TransactionId is unique for this requesting URI so we
 		// can use it as key to retrieve the Operation (This is more restrictive than the
