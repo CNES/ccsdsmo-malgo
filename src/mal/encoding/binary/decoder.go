@@ -124,21 +124,50 @@ func (decoder *BinaryDecoder) DecodeBoolean() (*Boolean, error) {
 // Decodes a Float.
 // @return The decoded Float.
 func (decoder *BinaryDecoder) DecodeFloat() (*Float, error) {
-	f, err := decoder.In.Read32()
-	if err != nil {
-		return nil, err
+	if decoder.Varint {
+		value, err := decoder.In.ReadUVarInt()
+		if err != nil {
+			return nil, err
+		}
+		if (value & 0xFFFFFFFF00000000) != 0 {
+			return nil, errors.New("Error decoding varint integer: " + string(value))
+		}
+		var res int32 = 0
+		if (value & 1) != 0 {
+			res = -1
+		}
+		res = res ^ int32(value>>1)
+		return NewFloat(math.Float32frombits(uint32(res))), nil
+	} else {
+		f, err := decoder.In.Read32()
+		if err != nil {
+			return nil, err
+		}
+		return NewFloat(math.Float32frombits(f)), nil
 	}
-	return NewFloat(math.Float32frombits(f)), nil
 }
 
 // Decodes a Double.
 // @return The decoded Double.
 func (decoder *BinaryDecoder) DecodeDouble() (*Double, error) {
-	d, err := decoder.In.Read64()
-	if err != nil {
-		return nil, err
+	if decoder.Varint {
+		value, err := decoder.In.ReadUVarInt()
+		if err != nil {
+			return nil, err
+		}
+		var res int64 = 0
+		if (value & 1) != 0 {
+			res = -1
+		}
+		res = res ^ int64(value>>1)
+		return NewDouble(math.Float64frombits(uint64(res))), nil
+	} else {
+		d, err := decoder.In.Read64()
+		if err != nil {
+			return nil, err
+		}
+		return NewDouble(math.Float64frombits(d)), nil
 	}
-	return NewDouble(math.Float64frombits(d)), nil
 }
 
 // Decodes an Octet.
@@ -299,13 +328,26 @@ func (decoder *BinaryDecoder) DecodeULong() (*ULong, error) {
 // TODO (AF): Declares this method in Decoder interface then implements
 // DecodeString, DecodeIdentifier and DecodeURI in GenDecoder.
 func (decoder *BinaryDecoder) readString() (string, error) {
-	length, err := decoder.In.Read32()
-	if err != nil {
-		return "", err
+	var length uint32
+	if decoder.Varint {
+		value, err := decoder.In.ReadUVarInt()
+		if err != nil {
+			return "", err
+		}
+		if (value & 0xFFFFFFFF00000000) != 0 {
+			return "", errors.New("Error decoding varint integer: " + string(value))
+		}
+		length = uint32(value)
+	} else {
+		value, err := decoder.In.Read32()
+		if err != nil {
+			return "", err
+		}
+		length = value
 	}
 	// TODO (AF): We may avoid a data copy getting bytes directly in source buffer.
 	buf := make([]byte, length)
-	err = decoder.In.ReadBytes(buf)
+	err := decoder.In.ReadBytes(buf)
 	if err != nil {
 		return "", err
 	}
@@ -325,13 +367,26 @@ func (decoder *BinaryDecoder) DecodeString() (*String, error) {
 // Decodes a Blob.
 // @return The decoded Blob.
 func (decoder *BinaryDecoder) DecodeBlob() (*Blob, error) {
-	length, err := decoder.In.Read32()
-	if err != nil {
-		return nil, err
+	var length uint32
+	if decoder.Varint {
+		value, err := decoder.In.ReadUVarInt()
+		if err != nil {
+			return nil, err
+		}
+		if (value & 0xFFFFFFFF00000000) != 0 {
+			return nil, errors.New("Error decoding varint integer: " + string(value))
+		}
+		length = uint32(value)
+	} else {
+		value, err := decoder.In.Read32()
+		if err != nil {
+			return nil, err
+		}
+		length = value
 	}
 	// TODO (AF): We may avoid a data copy getting bytes directly in source buffer.
 	buf := Blob(make([]byte, length))
-	err = decoder.In.ReadBytes(buf)
+	err := decoder.In.ReadBytes(buf)
 	if err != nil {
 		return nil, err
 	}

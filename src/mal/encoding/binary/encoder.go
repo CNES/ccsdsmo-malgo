@@ -121,15 +121,23 @@ func (encoder *BinaryEncoder) EncodeBoolean(att *Boolean) error {
 // Encodes a non-null Float.
 // @param att The Float to encode.
 func (encoder *BinaryEncoder) EncodeFloat(att *Float) error {
-	val := math.Float32bits(float32(*att))
-	return encoder.Out.Write32(val)
+	if encoder.Varint {
+		value := int32(math.Float32bits(float32(*att)))
+		return encoder.Out.WriteUVarInt(uint64((value<<1)^(value>>31)) & 0xFFFFFFFF)
+	} else {
+		return encoder.Out.Write32(math.Float32bits(float32(*att)))
+	}
 }
 
 // Encodes a non-null Double.
 // @param att The Double to encode.
 func (encoder *BinaryEncoder) EncodeDouble(att *Double) error {
-	val := math.Float64bits(float64(*att))
-	return encoder.Out.Write64(val)
+	if encoder.Varint {
+		value := int64(math.Float64bits(float64(*att)))
+		return encoder.Out.WriteUVarInt(uint64((value << 1) ^ (value >> 63)))
+	} else {
+		return encoder.Out.Write64(math.Float64bits(float64(*att)))
+	}
 }
 
 // Encodes a non-null Octet.
@@ -211,7 +219,12 @@ func (encoder *BinaryEncoder) EncodeULong(att *ULong) error {
 // @param att The String to encode.
 func (encoder *BinaryEncoder) EncodeString(str *String) error {
 	buf := []byte(*str)
-	err := encoder.Out.Write32(uint32(len(buf)))
+	var err error
+	if encoder.Varint {
+		err = encoder.Out.WriteUVarInt(uint64(len(buf)))
+	} else {
+		err = encoder.Out.Write32(uint32(len(buf)))
+	}
 	if err != nil {
 		return err
 	}
@@ -221,7 +234,12 @@ func (encoder *BinaryEncoder) EncodeString(str *String) error {
 // Encodes a non-null Blob.
 // @param att The Blob to encode.
 func (encoder *BinaryEncoder) EncodeBlob(blob *Blob) error {
-	err := encoder.Out.Write32(uint32(len(*blob)))
+	var err error
+	if encoder.Varint {
+		err = encoder.Out.WriteUVarInt(uint64(len(*blob)))
+	} else {
+		err = encoder.Out.Write32(uint32(len(*blob)))
+	}
 	if err != nil {
 		return err
 	}
