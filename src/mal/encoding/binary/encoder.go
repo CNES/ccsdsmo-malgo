@@ -215,10 +215,9 @@ func (encoder *BinaryEncoder) EncodeULong(att *ULong) error {
 	}
 }
 
-// Encodes a non-null String.
-// @param att The String to encode.
-func (encoder *BinaryEncoder) EncodeString(str *String) error {
-	buf := []byte(*str)
+// Encodes a buffer (String, Identifier, URI and Blob).
+// @param buf the buffer to encode.
+func (encoder *BinaryEncoder) encodeBuf(buf []byte) error {
 	var err error
 	if encoder.Varint {
 		err = encoder.Out.WriteUVarInt(uint64(len(buf)))
@@ -231,30 +230,23 @@ func (encoder *BinaryEncoder) EncodeString(str *String) error {
 	return encoder.Out.WriteBytes(buf)
 }
 
-// Encodes a non-null Blob.
-// @param att The Blob to encode.
-func (encoder *BinaryEncoder) EncodeBlob(blob *Blob) error {
-	var err error
-	if encoder.Varint {
-		err = encoder.Out.WriteUVarInt(uint64(len(*blob)))
-	} else {
-		err = encoder.Out.Write32(uint32(len(*blob)))
-	}
-	if err != nil {
-		return err
-	}
-	return encoder.Out.WriteBytes([]byte(*blob))
+// Encodes a non-null String.
+// @param att The String to encode.
+func (encoder *BinaryEncoder) EncodeString(str *String) error {
+	return encoder.encodeBuf([]byte(*str))
 }
 
 // Encodes a non-null Identifier.
 // @param att The Identifier to encode.
 func (encoder *BinaryEncoder) EncodeIdentifier(id *Identifier) error {
-	buf := []byte(*id)
-	err := encoder.Out.Write32(uint32(len(buf)))
-	if err != nil {
-		return err
-	}
-	return encoder.Out.WriteBytes(buf)
+	return encoder.encodeBuf([]byte(*id))
+}
+
+// Encodes a non-null URI.
+// @param att The URI to encode.
+// @throws IllegalArgumentException If the argument is null.
+func (encoder *BinaryEncoder) EncodeURI(uri *URI) error {
+	return encoder.encodeBuf([]byte(*uri))
 }
 
 // Encodes a non-null Duration.
@@ -262,6 +254,12 @@ func (encoder *BinaryEncoder) EncodeIdentifier(id *Identifier) error {
 func (encoder *BinaryEncoder) EncodeDuration(att *Duration) error {
 	val := math.Float64bits(float64(*att))
 	return encoder.Out.Write64(val)
+}
+
+// Encodes a non-null Blob.
+// @param att The Blob to encode.
+func (encoder *BinaryEncoder) EncodeBlob(blob *Blob) error {
+	return encoder.encodeBuf([]byte(*blob))
 }
 
 // Encodes a non-null Time.
@@ -304,18 +302,6 @@ func (encoder *BinaryEncoder) EncodeFineTime(t *FineTime) error {
 	encoder.Out.Write32(uint32(picos))
 
 	return nil
-}
-
-// Encodes a non-null URI.
-// @param att The URI to encode.
-// @throws IllegalArgumentException If the argument is null.
-func (encoder *BinaryEncoder) EncodeURI(uri *URI) error {
-	buf := []byte(*uri)
-	err := encoder.Out.Write32(uint32(len(buf)))
-	if err != nil {
-		return err
-	}
-	return encoder.Out.WriteBytes(buf)
 }
 
 // TODO (AF): Handling of enumeration

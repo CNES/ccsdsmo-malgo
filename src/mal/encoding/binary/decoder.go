@@ -364,6 +364,26 @@ func (decoder *BinaryDecoder) DecodeString() (*String, error) {
 	return NewString(str), nil
 }
 
+// Decodes an Identifier.
+// @return The decoded Identifier.
+func (decoder *BinaryDecoder) DecodeIdentifier() (*Identifier, error) {
+	str, err := decoder.readString()
+	if err != nil {
+		return nil, err
+	}
+	return NewIdentifier(str), nil
+}
+
+// Decodes a URI.
+// @return The decoded URI.
+func (decoder *BinaryDecoder) DecodeURI() (*URI, error) {
+	str, err := decoder.readString()
+	if err != nil {
+		return nil, err
+	}
+	return NewURI(str), nil
+}
+
 // Decodes a Blob.
 // @return The decoded Blob.
 func (decoder *BinaryDecoder) DecodeBlob() (*Blob, error) {
@@ -391,16 +411,6 @@ func (decoder *BinaryDecoder) DecodeBlob() (*Blob, error) {
 		return nil, err
 	}
 	return &buf, nil
-}
-
-// Decodes an Identifier.
-// @return The decoded Identifier.
-func (decoder *BinaryDecoder) DecodeIdentifier() (*Identifier, error) {
-	str, err := decoder.readString()
-	if err != nil {
-		return nil, err
-	}
-	return NewIdentifier(str), nil
 }
 
 // Decodes a Duration.
@@ -456,16 +466,6 @@ func (decoder *BinaryDecoder) DecodeFineTime() (*FineTime, error) {
 	t := time.Unix(timestamp/1000000000, timestamp%1000000000)
 
 	return NewFineTime(t), nil
-}
-
-// Decodes a URI.
-// @return The decoded URI.
-func (decoder *BinaryDecoder) DecodeURI() (*URI, error) {
-	str, err := decoder.readString()
-	if err != nil {
-		return nil, err
-	}
-	return NewURI(str), nil
 }
 
 // TODO (AF): Handling of enumeration
