@@ -1,7 +1,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2017 CNES
+ * Copyright (c) 2017 - 2018 CNES
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -30,7 +30,8 @@ import (
 )
 
 const (
-	MALTCP string = "maltcp"
+	MALTCP     string = "maltcp"
+	MALTCP_URI string = "maltcp://"
 )
 
 type TCPTransportFactory struct {
