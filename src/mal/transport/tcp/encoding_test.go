@@ -1,7 +1,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2017 CNES
+ * Copyright (c) 2017 - 2018 CNES
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -31,7 +31,7 @@ import (
 
 func TestMessage(t *testing.T) {
 	from := URI("maltcp://192.168.1.80:12345/Service1")
-	to := URI("maltcp://192.168.1.80:12346/Service1")
+	to := URI("maltcp://192.168.1.81:54321/Service2")
 	msg1 := &Message{
 		UriFrom:          &from,
 		UriTo:            &to,
@@ -47,12 +47,12 @@ func TestMessage(t *testing.T) {
 		}),
 	}
 
-	transport := &TCPTransport{
+	transport1 := &TCPTransport{
 		uri:     URI("maltcp://192.168.1.80:12345"),
 		version: 1,
 
 		sourceFlag:           true,
-		destinatioFlag:       true,
+		destinationFlag:      true,
 		priorityFlag:         true,
 		timestampFlag:        true,
 		networkZoneFlag:      true,
@@ -63,11 +63,28 @@ func TestMessage(t *testing.T) {
 		flags: 0xFF,
 	}
 
-	buf, err := transport.encode(msg1)
+	buf, err := transport1.encode(msg1)
 	if err != nil {
 		t.Fatalf("Error during encode: %s", err)
 	}
-	msg2, err := transport.decode(buf, "192.168.1.81:54321")
+
+	transport2 := &TCPTransport{
+		uri:     URI("maltcp://192.168.1.81:54321"),
+		version: 1,
+
+		sourceFlag:           true,
+		destinationFlag:      true,
+		priorityFlag:         true,
+		timestampFlag:        true,
+		networkZoneFlag:      true,
+		sessionNameFlag:      true,
+		domainFlag:           true,
+		authenticationIdFlag: true,
+
+		flags: 0xFF,
+	}
+
+	msg2, err := transport2.decode(buf, "192.168.1.80:12345")
 	if err != nil {
 		t.Fatalf("Error during encode: %s", err)
 	}
