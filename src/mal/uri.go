@@ -1,7 +1,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2017 CNES
+ * Copyright (c) 2017 - 2018 CNES
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,7 +23,10 @@
  */
 package mal
 
-import ()
+import (
+	"net/url"
+	"strconv"
+)
 
 var (
 	NULL_URI *URI = nil
@@ -111,4 +114,46 @@ func (u *URI) IsNull() bool {
 
 func (*URI) Null() Element {
 	return NullURI
+}
+
+func (uri *URI) ToURL() (*url.URL, error) {
+	return url.Parse(string(*uri))
+}
+
+func (uri *URI) GetHostname() *String {
+	u, err := uri.ToURL()
+	if err != nil {
+		logger.Errorf("URI.GetHostname: cannot parse %s", uri)
+		return NullString
+	}
+	return NewString(u.Hostname())
+
+}
+
+func (uri *URI) GetPort() int {
+	u, err := uri.ToURL()
+	if err != nil {
+		logger.Errorf("URI.GetPort: cannot parse %s", uri)
+		return -1
+	}
+	port, err := strconv.Atoi(u.Port())
+	return port
+}
+
+func (uri *URI) GetTransport() *String {
+	u, err := uri.ToURL()
+	if err != nil {
+		logger.Errorf("URI.GetTransport: cannot parse %s", uri)
+		return NullString
+	}
+	return NewString(u.Scheme)
+}
+
+func (uri *URI) GetService() *String {
+	u, err := uri.ToURL()
+	if err != nil {
+		logger.Errorf("URI.GetService: cannot parse %s", uri)
+		return NullString
+	}
+	return NewString(u.Path) // RawPath ?
 }
