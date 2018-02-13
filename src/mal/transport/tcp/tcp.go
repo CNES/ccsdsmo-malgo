@@ -1,7 +1,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2017 CNES
+ * Copyright (c) 2017 - 2018 CNES
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,6 +24,7 @@
 package tcp
 
 import (
+	"io"
 	. "mal"
 	"mal/debug"
 	"net"
@@ -61,14 +62,23 @@ type TCPTransport struct {
 	listen net.Listener
 	conns  map[string]net.Conn
 
+	optimizeURI bool
+
 	sourceFlag           bool
-	destinatioFlag       bool
+	sourceId             *URI
+	destinationFlag      bool
+	destinationId        *URI
 	priorityFlag         bool
+	priority             UInteger
 	timestampFlag        bool
 	networkZoneFlag      bool
+	networkZone          Identifier
 	sessionNameFlag      bool
+	sessionName          Identifier
 	domainFlag           bool
+	domain               IdentifierList
 	authenticationIdFlag bool
+	authenticationId     Blob
 
 	flags byte
 
@@ -82,6 +92,8 @@ type TCPTransport struct {
 func (transport *TCPTransport) init() error {
 	transport.running = false
 
+	transport.version = 1
+
 	// TODO (AF): Configure flags
 	transport.flags = 0
 	// Note (AF): Should be always true
@@ -90,8 +102,8 @@ func (transport *TCPTransport) init() error {
 		transport.flags |= (1 << 7)
 	}
 	// Note (AF): Should be always true
-	transport.destinatioFlag = true
-	if transport.destinatioFlag {
+	transport.destinationFlag = true
+	if transport.destinationFlag {
 		transport.flags |= (1 << 6)
 	}
 	transport.priorityFlag = true
@@ -161,27 +173,38 @@ func (transport *TCPTransport) handleConn(listen net.Listener) {
 			break
 		}
 		logger.Infof("Accept connexion from %s", cnx.RemoteAddr())
-		// TODO (AF): Registers new connection
-		// transport.conns[uri] = cnx
 		go transport.handleIn(cnx)
 	}
 	logger.Infof("HandleConn exited")
 }
 
 func (transport *TCPTransport) handleIn(cnx net.Conn) {
+	// Registers the new connection
+	uri := cnx.RemoteAddr().String()
+	transport.conns[uri] = cnx
+
 	for transport.running {
-		logger.Debugf("HandleIn wait for message: %s", cnx.RemoteAddr())
+		logger.Debugf("HandleIn, wait for message: %s", cnx.RemoteAddr())
 		msg, err := transport.readMessage(cnx)
 
 		if err != nil {
-			// TODO (AF): handle error
-			continue
+			if err == io.EOF {
+				logger.Warnf("HandleIn, connection closed: %s", cnx.RemoteAddr())
+				break
+			} else {
+				logger.Warnf("HandleIn, receives message: %+v", err)
+				continue
+			}
 		}
-		logger.Debugf("Receives message: %s", msg)
+		logger.Debugf("HandleIn, receives message: %s", msg)
 		if msg != nil {
 			transport.ctx.Receive(msg)
 		}
 	}
+	// Closes the connection
+	cnx.Close()
+	// Removes connection from transport.conns
+	delete(transport.conns, uri)
 	logger.Infof("HandleIn exited: %s", cnx.RemoteAddr())
 }
 
@@ -191,9 +214,10 @@ func (transport *TCPTransport) readMessage(cnx net.Conn) (*Message, error) {
 
 	// Reads the fixed part of MAL message header
 	for offset := 0; offset < int(FIXED_HEADER_LENGTH); {
+		logger.Debugf("TCPTransport.readMessage, waiting message: ..")
 		nb, err := cnx.Read(buf[offset:])
 		if err != nil {
-			// TODO (AF): handle error
+			logger.Errorf("TCPTransport.readMessage, error reading fixed part of message: %s", err.Error())
 			return nil, err
 		}
 		offset += nb
@@ -242,10 +266,15 @@ func (transport *TCPTransport) readMessage(cnx net.Conn) (*Message, error) {
 }
 
 func (transport *TCPTransport) handleOut() {
+	var msg *Message
+	var nbtry uint
 	for {
 		logger.Debugf("handleOut: wait message")
-		msg, more := <-transport.ch
-		if more {
+		if msg == nil {
+			msg, _ = <-transport.ch
+			nbtry = 0
+		}
+		if msg != nil {
 			logger.Debugf("handleOut: get Message%+v", *msg)
 			u, err := url.Parse(string(*msg.UriTo))
 			if err != nil {
@@ -266,13 +295,25 @@ func (transport *TCPTransport) handleOut() {
 					continue
 				}
 				transport.conns[urito] = cnx
+				go transport.handleIn(cnx)
 			}
 			logger.Debugf("%s, %s", *msg.UriFrom, *msg.UriTo)
 			err = transport.writeMessage(cnx, msg)
 			if err != nil {
-				// TODO (AF): handle error
+				nbtry += 1
 				logger.Debugf("HandleOut: %s", err)
+				// Closes the connection to retrieve a clean state
+				cnx.Close()
+				// Removes connection from transport.conns
+				delete(transport.conns, urito)
+				// try to send anew the message
+				if nbtry < 3 {
+					continue
+				} else {
+					// TODO (AF): Handles the faulty message
+				}
 			}
+			msg = nil
 		} else {
 			logger.Infof("MALTCP Context ends: %+v", msg)
 			transport.ends <- true
@@ -299,7 +340,7 @@ func (transport *TCPTransport) writeMessage(cnx net.Conn, msg *Message) error {
 	logger.Debugf("Message transmitted: ", buf)
 	_, err = cnx.Write(buf)
 	if err != nil {
-		// TODO (AF): Logging
+		logger.Errorf("Transport.writeMessage, cannot send to %s", cnx.RemoteAddr())
 		return err
 	}
 	return nil
@@ -326,7 +367,8 @@ func (transport *TCPTransport) Close() error {
 	transport.running = false
 	close(transport.ch)
 	transport.listen.Close()
-	for _, cnx := range transport.conns {
+	for id, cnx := range transport.conns {
+		logger.Debugf("Transport.Close, close connection: %s", id)
 		cnx.Close()
 	}
 	// TODO (AF):
