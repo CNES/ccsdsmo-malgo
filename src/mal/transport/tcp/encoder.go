@@ -29,43 +29,42 @@ import (
 )
 
 func (transport *TCPTransport) encode(msg *Message) ([]byte, error) {
-	// TODO (AF): calculates the size of the encoded message
 	var length uint32 = 8192
 	buf := make([]byte, 0, length)
 	encoder := binary.NewBinaryEncoder(buf, false)
 
 	sdu, err := encodeSDU(msg.InteractionType, msg.InteractionStage)
 	if err != nil {
-		// TODO (AF): handle error
+		logger.Errorf("TCPTransport.encode, cannot encode SDU: %s", err.Error())
 		return nil, err
 	}
 	err = encoder.Write(sdu | (transport.version << 5))
 	if err != nil {
-		// TODO (AF): handle error
+		logger.Errorf("TCPTransport.encode, cannot write SDU: %s", err.Error())
 		return nil, err
 	}
 
 	err = encoder.EncodeUShort(&msg.ServiceArea)
 	if err != nil {
-		// TODO (AF): handle error
+		logger.Errorf("TCPTransport.encode, cannot encode ServiceArea: %s", err.Error())
 		return nil, err
 	}
 
 	err = encoder.EncodeUShort(&msg.Service)
 	if err != nil {
-		// TODO (AF): handle error
+		logger.Errorf("TCPTransport.encode, cannot encode Service: %s", err.Error())
 		return nil, err
 	}
 
 	err = encoder.EncodeUShort(&msg.Operation)
 	if err != nil {
-		// TODO (AF): handle error
+		logger.Errorf("TCPTransport.encode, cannot encode Operation: %s", err.Error())
 		return nil, err
 	}
 
 	err = encoder.EncodeUOctet(&msg.AreaVersion)
 	if err != nil {
-		// TODO (AF): handle error
+		logger.Errorf("TCPTransport.encode, cannot encode AreaVersion: %s", err.Error())
 		return nil, err
 	}
 
@@ -77,59 +76,76 @@ func (transport *TCPTransport) encode(msg *Message) ([]byte, error) {
 	b |= byte(msg.Session)
 	err = encoder.Write(b)
 	if err != nil {
-		// TODO (AF): handle error
+		logger.Errorf("TCPTransport.encode, cannot write Flags: %s", err.Error())
 		return nil, err
 	}
 
 	err = encoder.EncodeULong(&msg.TransactionId)
 	if err != nil {
-		// TODO (AF): handle error
+		logger.Errorf("TCPTransport.encode, cannot encode TransactionId: %s", err.Error())
 		return nil, err
 	}
 
 	err = encoder.Write(transport.flags)
 	if err != nil {
-		// TODO (AF): handle error
+		logger.Errorf("TCPTransport.encode, cannot write Transport flags: %s", err.Error())
 		return nil, err
 	}
 
 	err = encoder.EncodeUOctet(&msg.EncodingId)
 	if err != nil {
-		// TODO (AF): handle error
+		logger.Errorf("TCPTransport.encode, cannot encode EncodingId: %s", err.Error())
 		return nil, err
 	}
 
 	// Skips variable length field
 	err = encoder.WriteUInt32(0)
 	if err != nil {
-		// TODO (AF): handle error
+		logger.Errorf("TCPTransport.encode, cannot skip variable length: %s", err.Error())
 		return nil, err
 	}
 
+	// Remaining data are now encoded in PDU using varint.
+	encoder.Varint = true
+
 	if transport.sourceFlag {
-		err = encoder.EncodeURI(msg.UriFrom)
-		if err != nil {
-			// TODO (AF): handle error
-			return nil, err
+		if transport.optimizeURI {
+			// TODO (AF): Optimized mapping, writes only URI service part
+			err = encoder.EncodeString(msg.UriFrom.GetService())
+			if err != nil {
+				logger.Errorf("TCPTransport.encode, cannot encode URIFrom: %s", err.Error())
+				return nil, err
+			}
+		} else {
+			err = encoder.EncodeURI(msg.UriFrom)
+			if err != nil {
+				logger.Errorf("TCPTransport.encode, cannot encode URIFrom: %s", err.Error())
+				return nil, err
+			}
 		}
-	} else {
-		// TODO (AF): Optimized mapping, writes only URI service part
 	}
 
-	if transport.destinatioFlag {
-		err = encoder.EncodeURI(msg.UriTo)
-		if err != nil {
-			// TODO (AF): handle error
-			return nil, err
+	if transport.destinationFlag {
+		if transport.optimizeURI {
+			// TODO (AF): Optimized mapping, writes only URI service part
+			err = encoder.EncodeString(msg.UriTo.GetService())
+			if err != nil {
+				logger.Errorf("TCPTransport.encode, cannot encode URITo: %s", err.Error())
+				return nil, err
+			}
+		} else {
+			err = encoder.EncodeURI(msg.UriTo)
+			if err != nil {
+				logger.Errorf("TCPTransport.encode, cannot encode URITo: %s", err.Error())
+				return nil, err
+			}
 		}
-	} else {
-		// TODO (AF): Optimized mapping, writes only URI service part
 	}
 
 	if transport.priorityFlag {
 		err = encoder.EncodeUInteger(&msg.Priority)
 		if err != nil {
-			// TODO (AF): handle error
+			logger.Errorf("TCPTransport.encode, cannot encode Priority: %s", err.Error())
 			return nil, err
 		}
 	}
@@ -137,7 +153,7 @@ func (transport *TCPTransport) encode(msg *Message) ([]byte, error) {
 	if transport.timestampFlag {
 		err = encoder.EncodeTime(&msg.Timestamp)
 		if err != nil {
-			// TODO (AF): handle error
+			logger.Errorf("TCPTransport.encode, cannot encode TimeStamp: %s", err.Error())
 			return nil, err
 		}
 	}
@@ -145,7 +161,7 @@ func (transport *TCPTransport) encode(msg *Message) ([]byte, error) {
 	if transport.networkZoneFlag {
 		err = encoder.EncodeIdentifier(&msg.NetworkZone)
 		if err != nil {
-			// TODO (AF): handle error
+			logger.Errorf("TCPTransport.encode, cannot encode NetworkZone: %s", err.Error())
 			return nil, err
 		}
 	}
@@ -153,7 +169,7 @@ func (transport *TCPTransport) encode(msg *Message) ([]byte, error) {
 	if transport.sessionNameFlag {
 		err = encoder.EncodeIdentifier(&msg.SessionName)
 		if err != nil {
-			// TODO (AF): handle error
+			logger.Errorf("TCPTransport.encode, cannot encode SessionName: %s", err.Error())
 			return nil, err
 		}
 	}
@@ -161,7 +177,7 @@ func (transport *TCPTransport) encode(msg *Message) ([]byte, error) {
 	if transport.domainFlag {
 		err = msg.Domain.Encode(encoder)
 		if err != nil {
-			// TODO (AF): handle error
+			logger.Errorf("TCPTransport.encode, cannot encode Domain: %s", err.Error())
 			return nil, err
 		}
 	}
@@ -169,12 +185,16 @@ func (transport *TCPTransport) encode(msg *Message) ([]byte, error) {
 	if transport.authenticationIdFlag {
 		err = encoder.EncodeBlob(&msg.AuthenticationId)
 		if err != nil {
-			// TODO (AF): handle error
+			logger.Errorf("TCPTransport.encode, cannot encode AuthenticationId: %s", err.Error())
 			return nil, err
 		}
 	}
 
 	err = encoder.WriteBody(msg.Body)
+	if err != nil {
+		logger.Errorf("TCPTransport.encode, cannot write body: %s", err.Error())
+		return nil, err
+	}
 
 	return encoder.Body(), nil
 }

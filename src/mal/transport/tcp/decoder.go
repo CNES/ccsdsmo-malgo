@@ -35,47 +35,47 @@ func (transport *TCPTransport) decode(buf []byte, from string) (*Message, error)
 
 	b, err := decoder.Read()
 	if err != nil {
-		// TODO (AF): handle error
+		logger.Errorf("TCPTransport.decode, cannot read magic: %s", err.Error())
 		return nil, err
 	}
 	if ((b >> 5) & 0x07) != transport.version {
-		return nil, errors.New("MAL/TCP Version Unknown")
+		return nil, errors.New("TCPTransport.decode, MAL/TCP Version incompatible")
 	}
 	sdu := b & 0x1F
 
 	interactionType, interactionStage, err := decodeSDU(sdu)
 	if err != nil {
-		// TODO (AF): handle error
+		logger.Errorf("TCPTransport.decode, cannot decode SDU: %s", err.Error())
 		return nil, err
 	}
 
 	serviceArea, err := decoder.DecodeUShort()
 	if err != nil {
-		// TODO (AF): handle error
+		logger.Errorf("TCPTransport.decode, cannot decode serviceArea: %s", err.Error())
 		return nil, err
 	}
 
 	service, err := decoder.DecodeUShort()
 	if err != nil {
-		// TODO (AF): handle error
+		logger.Errorf("TCPTransport.decode, cannot decode service: %s", err.Error())
 		return nil, err
 	}
 
 	operation, err := decoder.DecodeUShort()
 	if err != nil {
-		// TODO (AF): handle error
+		logger.Errorf("TCPTransport.decode, cannot decode operation: %s", err.Error())
 		return nil, err
 	}
 
 	areaVersion, err := decoder.DecodeUOctet()
 	if err != nil {
-		// TODO (AF): handle error
+		logger.Errorf("TCPTransport.decode, cannot decode areaVersion: %s", err.Error())
 		return nil, err
 	}
 
 	b, err = decoder.Read()
 	if err != nil {
-		// TODO (AF): handle error
+		logger.Errorf("TCPTransport.decode, cannot decode flags: %s", err.Error())
 		return nil, err
 	}
 	isError := ((b >> 7) & 0x01) == binary.TRUE
@@ -84,13 +84,13 @@ func (transport *TCPTransport) decode(buf []byte, from string) (*Message, error)
 
 	transactionId, err := decoder.DecodeULong()
 	if err != nil {
-		// TODO (AF): handle error
+		logger.Errorf("TCPTransport.decode, cannot decode transactionId: %s", err.Error())
 		return nil, err
 	}
 
 	b, err = decoder.Read()
 	if err != nil {
-		// TODO (AF): handle error
+		logger.Errorf("TCPTransport.decode, cannot decode Transport flags: %s", err.Error())
 		return nil, err
 	}
 	source_flag := ((b >> 7) & 0x01) == binary.TRUE
@@ -104,54 +104,61 @@ func (transport *TCPTransport) decode(buf []byte, from string) (*Message, error)
 
 	encodingId, err := decoder.DecodeUOctet()
 	if err != nil {
-		// TODO (AF): handle error
+		logger.Errorf("TCPTransport.decode, cannot decode encodingId: %s", err.Error())
 		return nil, err
 	}
 
 	// Skips variable length field
 	_, err = decoder.ReadUInt32()
 	if err != nil {
-		// TODO (AF): handle error
+		logger.Errorf("TCPTransport.decode, cannot skip variable length: %s", err.Error())
 		return nil, err
 	}
+
+	// Remaining data are now decoded from PDU using varint.
+	decoder.Varint = true
 
 	var urifrom *URI = nil
 	if source_flag {
 		urifrom, err = decoder.DecodeURI()
+		logger.Debugf("TCPTransport.decode, sourceId= %s", *urifrom)
 		if err != nil {
-			// TODO (AF): handle error
+			logger.Errorf("TCPTransport.decode, cannot decode sourceId: %s", err.Error())
 			return nil, err
 		}
 		if !strings.HasPrefix(string(*urifrom), MALTCP) {
-			var uri URI = URI(MALTCP + from + string(*urifrom))
+			// Handle optimized sourceUri transport
+			var uri URI = URI(MALTCP_URI + from + "/" + string(*urifrom))
 			urifrom = &uri
+			logger.Debugf("TCPTransport.decode, sourceId= %s", *urifrom)
 		}
 	} else {
-		var uri URI = URI(MALTCP + from)
-		urifrom = &uri
+		urifrom = transport.sourceId
 	}
 
 	var urito *URI = nil
 	if destination_flag {
 		urito, err = decoder.DecodeURI()
+		logger.Debugf("TCPTransport.decode, destinationId= %s", *urito)
 		if err != nil {
-			// TODO (AF): handle error
+			logger.Errorf("TCPTransport.decode, cannot decode destinationId: %s", err.Error())
 			return nil, err
 		}
 		if !strings.HasPrefix(string(*urito), MALTCP) {
-			var uri URI = URI(string(transport.uri) + string(*urito))
+			// Handle optimized destinationUri transport
+			var uri URI = URI(string(transport.uri) + "/" + string(*urito))
 			urito = &uri
+			logger.Debugf("TCPTransport.decode, destinationId= %s", *urito)
 		}
 	} else {
-		var uri URI = transport.uri
-		urito = &uri
+		urito = transport.destinationId
 	}
 
 	var priority *UInteger = nil
 	if priority_flag {
 		priority, err = decoder.DecodeUInteger()
 		if err != nil {
-			// TODO (AF): handle error
+			logger.Errorf("TCPTransport.decode, cannot decode priority: %s", err.Error())
 			return nil, err
 		}
 	} else {
@@ -162,7 +169,7 @@ func (transport *TCPTransport) decode(buf []byte, from string) (*Message, error)
 	if timestamp_flag {
 		timestamp, err = decoder.DecodeTime()
 		if err != nil {
-			// TODO (AF): handle error
+			logger.Errorf("TCPTransport.decode, cannot decode timestamp: %s", err.Error())
 			return nil, err
 		}
 	} else {
@@ -173,7 +180,7 @@ func (transport *TCPTransport) decode(buf []byte, from string) (*Message, error)
 	if network_zone_flag {
 		networkZone, err = decoder.DecodeIdentifier()
 		if err != nil {
-			// TODO (AF): handle error
+			logger.Errorf("TCPTransport.decode, cannot decode networkZone: %s", err.Error())
 			return nil, err
 		}
 	} else {
@@ -184,7 +191,7 @@ func (transport *TCPTransport) decode(buf []byte, from string) (*Message, error)
 	if session_name_flag {
 		sessionName, err = decoder.DecodeIdentifier()
 		if err != nil {
-			// TODO (AF): handle error
+			logger.Errorf("TCPTransport.decode, cannot decode sessionName: %s", err.Error())
 			return nil, err
 		}
 	} else {
@@ -195,7 +202,7 @@ func (transport *TCPTransport) decode(buf []byte, from string) (*Message, error)
 	if domain_flag {
 		domain, err = DecodeIdentifierList(decoder)
 		if err != nil {
-			// TODO (AF): handle error
+			logger.Errorf("TCPTransport.decode, cannot decode domain: %s", err.Error())
 			return nil, err
 		}
 	} else {
@@ -206,7 +213,7 @@ func (transport *TCPTransport) decode(buf []byte, from string) (*Message, error)
 	if authentication_id_flag {
 		authenticationId, err = decoder.DecodeBlob()
 		if err != nil {
-			// TODO (AF): handle error
+			logger.Errorf("TCPTransport.decode, cannot decode authenticationId: %s", err.Error())
 			return nil, err
 		}
 	} else {
