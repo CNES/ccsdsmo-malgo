@@ -1,7 +1,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2017 CNES
+ * Copyright (c) 2017 - 2018 CNES
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -25,8 +25,12 @@ package broker
 
 import (
 	. "mal"
-	. "mal/api2"
+	. "mal/api"
 	"mal/encoding/binary"
+)
+
+const (
+	bfixed = true
 )
 
 type BrokerSub struct {
@@ -57,7 +61,7 @@ type BrokerImpl struct {
 }
 
 func (handler *BrokerImpl) register(msg *Message, transaction SubscriberTransaction) error {
-	decoder := binary.NewBinaryDecoder(msg.Body)
+	decoder := binary.NewBinaryDecoder(msg.Body, bfixed)
 	sub, err := DecodeSubscription(decoder)
 	if err != nil {
 		return err
@@ -81,11 +85,11 @@ func (handler *BrokerImpl) register(msg *Message, transaction SubscriberTransact
 
 func (handler *BrokerImpl) OnRegister(msg *Message, transaction SubscriberTransaction) error {
 	err := handler.register(msg, transaction)
-	return transaction.RegisterAck(err)
+	return transaction.AckRegister(err)
 }
 
 func (handler *BrokerImpl) deregister(msg *Message, transaction SubscriberTransaction) error {
-	decoder := binary.NewBinaryDecoder(msg.Body)
+	decoder := binary.NewBinaryDecoder(msg.Body, bfixed)
 	list, err := DecodeIdentifierList(decoder)
 	if err != nil {
 		return err
@@ -101,11 +105,11 @@ func (handler *BrokerImpl) deregister(msg *Message, transaction SubscriberTransa
 
 func (handler *BrokerImpl) OnDeregister(msg *Message, transaction SubscriberTransaction) error {
 	err := handler.deregister(msg, transaction)
-	return transaction.DeregisterAck(err)
+	return transaction.AckDeregister(err)
 }
 
 func (handler *BrokerImpl) publishRegister(msg *Message, transaction PublisherTransaction) error {
-	decoder := binary.NewBinaryDecoder(msg.Body)
+	decoder := binary.NewBinaryDecoder(msg.Body, bfixed)
 	list, err := DecodeEntityKeyList(decoder)
 	if err != nil {
 		return err
@@ -128,7 +132,7 @@ func (handler *BrokerImpl) publishRegister(msg *Message, transaction PublisherTr
 
 func (handler *BrokerImpl) OnPublishRegister(msg *Message, transaction PublisherTransaction) error {
 	err := handler.publishRegister(msg, transaction)
-	return transaction.PublishRegisterAck(err)
+	return transaction.AckRegister(err)
 }
 
 func (handler *BrokerImpl) publishDeregister(msg *Message, transaction PublisherTransaction) error {
@@ -141,11 +145,11 @@ func (handler *BrokerImpl) publishDeregister(msg *Message, transaction Publisher
 
 func (handler *BrokerImpl) OnPublishDeregister(msg *Message, transaction PublisherTransaction) error {
 	err := handler.publishDeregister(msg, transaction)
-	return transaction.PublishDeregisterAck(err)
+	return transaction.AckDeregister(err)
 }
 
 func (handler *BrokerImpl) publish(pub *Message, transaction PublisherTransaction) error {
-	decoder := binary.NewBinaryDecoder(pub.Body)
+	decoder := binary.NewBinaryDecoder(pub.Body, bfixed)
 	uhlist, err := DecodeUpdateHeaderList(decoder)
 	if err != nil {
 		return err
@@ -157,14 +161,14 @@ func (handler *BrokerImpl) publish(pub *Message, transaction PublisherTransactio
 
 	for id, sub := range handler.subs {
 		buf := make([]byte, 0, 1024)
-		encoder := binary.NewBinaryEncoder(buf)
+		encoder := binary.NewBinaryEncoder(buf, bfixed)
 		encoder.EncodeIdentifier(NewIdentifier(id))
 		encoder.EncodeElement(uhlist)
 		NewUInteger(uint32(len([]*Blob(*uvlist)))).Encode(encoder)
 		for _, uv := range []*Blob(*uvlist) {
 			encoder.WriteBody([]byte(*uv))
 		}
-		sub.transaction.Notify(encoder.Buffer(), nil)
+		sub.transaction.Notify(encoder.Body(), nil)
 	}
 	return nil
 }
@@ -172,7 +176,8 @@ func (handler *BrokerImpl) publish(pub *Message, transaction PublisherTransactio
 func (handler *BrokerImpl) OnPublish(msg *Message, transaction PublisherTransaction) error {
 	err := handler.publish(msg, transaction)
 	if err != nil {
-		return transaction.PublishError(err)
+		//		return transaction.PublishError(err)
+		return err
 	}
 	return nil
 }
