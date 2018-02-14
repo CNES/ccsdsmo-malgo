@@ -12,11 +12,13 @@ import (
 )
 
 var (
+	BOOL1     Boolean  = false
 	UOCTET1   UOctet   = 0
 	UOCTET2   UOctet   = 255
 	OCTET1    Octet    = -128
 	OCTET2    Octet    = 0
 	OCTET3    Octet    = 127
+	BOOL2     Boolean  = true
 	USHORT1   UShort   = 0
 	USHORT2   UShort   = 256
 	USHORT3   UShort   = 65535
@@ -25,6 +27,7 @@ var (
 	SHORT3    Short    = 0
 	SHORT4    Short    = 256
 	SHORT5    Short    = 32767
+	BOOL3     Boolean  = false
 	UINT1     UInteger = 0
 	UINT2     UInteger = 256
 	UINT3     UInteger = 65536
@@ -36,20 +39,28 @@ var (
 	INT5      Integer  = 256
 	INT6      Integer  = 32767
 	INT7      Integer  = 2147483647
+	BOOL4     Boolean  = false
 	ULONG1    ULong    = 0
 	ULONG2    ULong    = 65536
 	ULONG3    ULong    = 4294967295
 	LONG1     Long     = -2147483648
 	LONG2     Long     = 0
 	LONG3     Long     = 2147483647
+	BOOL5     Boolean  = false
 	FLOAT1    Float    = 1.25E6
 	FLOAT2    Float    = -5.8E-2
+	BOOL6     Boolean  = false
 	DOUBLE1   Double   = 1.25E6
 	DOUBLE2   Double   = -5.8E-2
+	BOOL7     Boolean  = false
 	BLOB1     Blob     = Blob{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
+	BOOL8     Boolean  = false
 	STRING1   String   = String("Hello world")
+	BOOL9     Boolean  = true
 	TIME1     Time     = Time(time.Unix(int64(1234567), int64(500)))
+	BOOL10    Boolean  = true
 	FINETIME1 FineTime = FineTime(time.Unix(int64(1234567), int64(500)))
+	BOOL11    Boolean  = false
 )
 
 // Encodes with FixedBinary and writes in a file
@@ -135,11 +146,13 @@ func TestSplitBinaryDecoding(t *testing.T) {
 }
 
 func testEncoding(t *testing.T, encoder Encoder) {
+	writeBoolean(t, encoder, BOOL1)
 	writeUOctet(t, encoder, UOCTET1)
 	writeUOctet(t, encoder, UOCTET2)
 	writeOctet(t, encoder, OCTET1)
 	writeOctet(t, encoder, OCTET2)
 	writeOctet(t, encoder, OCTET3)
+	writeBoolean(t, encoder, BOOL2)
 	writeUShort(t, encoder, USHORT1)
 	writeUShort(t, encoder, USHORT2)
 	writeUShort(t, encoder, USHORT3)
@@ -148,6 +161,7 @@ func testEncoding(t *testing.T, encoder Encoder) {
 	writeShort(t, encoder, SHORT3)
 	writeShort(t, encoder, SHORT4)
 	writeShort(t, encoder, SHORT5)
+	writeBoolean(t, encoder, BOOL3)
 	writeUInteger(t, encoder, UINT1)
 	writeUInteger(t, encoder, UINT2)
 	writeUInteger(t, encoder, UINT3)
@@ -159,29 +173,39 @@ func testEncoding(t *testing.T, encoder Encoder) {
 	writeInteger(t, encoder, INT5)
 	writeInteger(t, encoder, INT6)
 	writeInteger(t, encoder, INT7)
+	writeBoolean(t, encoder, BOOL4)
 	writeULong(t, encoder, ULONG1)
 	writeULong(t, encoder, ULONG2)
 	writeULong(t, encoder, ULONG3)
 	writeLong(t, encoder, LONG1)
 	writeLong(t, encoder, LONG2)
 	writeLong(t, encoder, LONG3)
+	writeBoolean(t, encoder, BOOL5)
 	writeFloat(t, encoder, FLOAT1)
 	writeFloat(t, encoder, FLOAT2)
+	writeBoolean(t, encoder, BOOL6)
 	writeDouble(t, encoder, DOUBLE1)
 	writeDouble(t, encoder, DOUBLE2)
+	writeBoolean(t, encoder, BOOL7)
 	writeBlob(t, encoder, BLOB1)
+	writeBoolean(t, encoder, BOOL8)
 	writeString(t, encoder, STRING1)
+	writeBoolean(t, encoder, BOOL9)
 	writeTime(t, encoder, TIME1)
+	writeBoolean(t, encoder, BOOL10)
 	writeFineTime(t, encoder, FINETIME1)
+	writeBoolean(t, encoder, BOOL11)
 
 }
 
 func testDecoding(t *testing.T, decoder Decoder) {
+	testBoolean(t, decoder, BOOL1)
 	testUOctet(t, decoder, UOCTET1)
 	testUOctet(t, decoder, UOCTET2)
 	testOctet(t, decoder, OCTET1)
 	testOctet(t, decoder, OCTET2)
 	testOctet(t, decoder, OCTET3)
+	testBoolean(t, decoder, BOOL2)
 	testUShort(t, decoder, USHORT1)
 	testUShort(t, decoder, USHORT2)
 	testUShort(t, decoder, USHORT3)
@@ -190,6 +214,7 @@ func testDecoding(t *testing.T, decoder Decoder) {
 	testShort(t, decoder, SHORT3)
 	testShort(t, decoder, SHORT4)
 	testShort(t, decoder, SHORT5)
+	testBoolean(t, decoder, BOOL3)
 	testUInteger(t, decoder, UINT1)
 	testUInteger(t, decoder, UINT2)
 	testUInteger(t, decoder, UINT3)
@@ -201,21 +226,46 @@ func testDecoding(t *testing.T, decoder Decoder) {
 	testInteger(t, decoder, INT5)
 	testInteger(t, decoder, INT6)
 	testInteger(t, decoder, INT7)
+	testBoolean(t, decoder, BOOL4)
 	testULong(t, decoder, ULONG1)
 	testULong(t, decoder, ULONG2)
 	testULong(t, decoder, ULONG3)
 	testLong(t, decoder, LONG1)
 	testLong(t, decoder, LONG2)
 	testLong(t, decoder, LONG3)
+	testBoolean(t, decoder, BOOL5)
 	testFloat(t, decoder, FLOAT1)
 	testFloat(t, decoder, FLOAT2)
+	testBoolean(t, decoder, BOOL6)
 	testDouble(t, decoder, DOUBLE1)
 	testDouble(t, decoder, DOUBLE2)
+	testBoolean(t, decoder, BOOL7)
 	testBlob(t, decoder, BLOB1)
+	testBoolean(t, decoder, BOOL8)
 	testString(t, decoder, STRING1)
+	testBoolean(t, decoder, BOOL9)
 	testTime(t, decoder, TIME1)
+	testBoolean(t, decoder, BOOL10)
 	testFineTime(t, decoder, FINETIME1)
+	testBoolean(t, decoder, BOOL11)
 
+}
+
+func writeBoolean(t *testing.T, encoder Encoder, b Boolean) {
+	err := encoder.EncodeBoolean(&b)
+	if err != nil {
+		t.Fatalf("Error during encode: %v", b)
+	}
+}
+
+func testBoolean(t *testing.T, decoder Decoder, ref Boolean) {
+	b, err := decoder.DecodeBoolean()
+	if err != nil {
+		t.Fatalf("Error during decode: %v", ref)
+	}
+	if *b != ref {
+		t.Fatalf("Bad decoded value: %v", *b)
+	}
 }
 
 func writeUOctet(t *testing.T, encoder Encoder, o UOctet) {
