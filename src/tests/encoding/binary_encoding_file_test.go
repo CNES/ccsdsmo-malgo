@@ -1,6 +1,8 @@
 package encoding
 
 import (
+	"bytes"
+	"io"
 	"io/ioutil"
 	. "mal"
 	"mal/encoding/binary"
@@ -77,11 +79,15 @@ func TestFixedBinaryEncoding(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error writing file: %s", err)
 	}
+
+	if !deepCompare(t, "gofixedbinary.data", "gofixedbinary.ref") {
+		t.Fatalf("TestFixedBinaryEncoding, files differ: %s")
+	}
 }
 
 // Reads a file and decodes with FixedBinary
 func TestFixedBinaryDecoding(t *testing.T) {
-	buf, err := ioutil.ReadFile("gofixedbinary.data")
+	buf, err := ioutil.ReadFile("gofixedbinary.ref")
 	if err != nil {
 		t.Fatalf("Error reading file: %s", err)
 	}
@@ -104,11 +110,15 @@ func TestVarintBinaryEncoding(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error writing file: %s", err)
 	}
+
+	if !deepCompare(t, "govarintbinary.data", "govarintbinary.ref") {
+		t.Fatalf("TestVarintBinaryEncoding, files differ: %s")
+	}
 }
 
 // Reads a file and decodes with FixedBinary
 func TestVarintBinaryDecoding(t *testing.T) {
-	buf, err := ioutil.ReadFile("govarintbinary.data")
+	buf, err := ioutil.ReadFile("govarintbinary.ref")
 	if err != nil {
 		t.Fatalf("Error reading file: %s", err)
 	}
@@ -132,11 +142,15 @@ func TestSplitBinaryEncoding(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error writing file: %s", err)
 	}
+
+	if !deepCompare(t, "gosplitbinary.data", "gosplitbinary.ref") {
+		t.Fatalf("TestSplitBinaryEncoding, files differ: %s")
+	}
 }
 
 // Reads a file and decodes with SplitBinary
 func TestSplitBinaryDecoding(t *testing.T) {
-	buf, err := ioutil.ReadFile("gosplitbinary.data")
+	buf, err := ioutil.ReadFile("gosplitbinary.ref")
 	if err != nil {
 		t.Fatalf("Error reading file: %s", err)
 	}
@@ -503,5 +517,44 @@ func testFineTime(t *testing.T, decoder Decoder, ref FineTime) {
 	}
 	if (time.Time(*o).UnixNano() / 1000000) != (time.Time(ref).UnixNano() / 1000000) {
 		t.Errorf("Bad decoding, got: %t, want: %t", *o, ref)
+	}
+}
+
+func deepCompare(t *testing.T, file1, file2 string) bool {
+	f1, err := os.Open(file1)
+	if err != nil {
+		t.Errorf("Expected file does not exist: %s", file1)
+		return false
+	}
+
+	f2, err := os.Open(file2)
+	if err != nil {
+		t.Errorf("Actual file does not exist: %s", file2)
+		return false
+	}
+
+	for {
+		b1 := make([]byte, 8192)
+		_, err1 := f1.Read(b1)
+
+		b2 := make([]byte, 8192)
+		_, err2 := f2.Read(b2)
+
+		if err1 != nil || err2 != nil {
+			if err1 == io.EOF && err2 == io.EOF {
+				return true
+			} else if err1 == io.EOF || err2 == io.EOF {
+				t.Errorf("Files size differ")
+				return false
+			} else {
+				t.Errorf("Error reading files")
+				return false
+			}
+		}
+
+		if !bytes.Equal(b1, b2) {
+			t.Errorf("Files differ")
+			return false
+		}
 	}
 }
