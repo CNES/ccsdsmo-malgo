@@ -38,13 +38,15 @@ type SplitBinaryBuffer struct {
 
 // Returns a slice containing all encoded datas
 func (buffer *SplitBinaryBuffer) Body() []byte {
-	var length int = 4 + len(buffer.Bitfield) + len(buffer.Buf)
+	//	var length int = 4 + len(buffer.Bitfield) + len(buffer.Buf)
+	var bflen int = ((((int)(buffer.Bitfield_len) - 1) / 8) + 1)
+	var length int = 4 + bflen + len(buffer.Buf)
 	buf := make([]byte, 0, length)
 	if buffer.Bitfield_len == 0 {
 		buf = binary.WriteUVarInt(0, buf)
 	} else {
-		buf = binary.WriteUVarInt(uint64(buffer.Bitfield_len), buf)
-		buf = append(buf, buffer.Bitfield[0:((buffer.Bitfield_len-1)/8)+1]...)
+		buf = binary.WriteUVarInt(uint64(bflen), buf)
+		buf = append(buf, buffer.Bitfield[0:bflen]...)
 	}
 	buf = append(buf, buffer.Buf...)
 
@@ -64,6 +66,7 @@ func (buffer *SplitBinaryBuffer) Reset(write bool) {
 
 func (buffer *SplitBinaryBuffer) WriteFlag(value bool) error {
 	if (buffer.Bitfield_idx % 8) == 0 {
+		// Ensures that the buffer has space for next bit
 		buffer.Bitfield = append(buffer.Bitfield, 0)
 	}
 	if value {

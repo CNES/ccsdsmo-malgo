@@ -39,11 +39,10 @@ func NewSplitBinaryDecoder(data []byte) *SplitBinaryDecoder {
 
 	var offset int = 0
 
-	bitfield_len := int(binary.ReadUVarInt(data, &offset))
-	if bitfield_len > 0 {
-		len := ((bitfield_len - 1) / 8) + 1
-		bitfield = data[offset : offset+len]
-		offset += len
+	bitfield_size := int(binary.ReadUVarInt(data, &offset))
+	if bitfield_size > 0 {
+		bitfield = data[offset : offset+bitfield_size]
+		offset += bitfield_size
 	}
 	buf = data[offset:]
 
@@ -51,7 +50,7 @@ func NewSplitBinaryDecoder(data []byte) *SplitBinaryDecoder {
 	buffer.Offset = 0
 	buffer.Buf = buf
 	buffer.Bitfield_idx = 0
-	buffer.Bitfield_len = uint(bitfield_len)
+	buffer.Bitfield_len = uint(bitfield_size * 8)
 	buffer.Bitfield = bitfield
 
 	decoder := &SplitBinaryDecoder{
