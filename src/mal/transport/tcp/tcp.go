@@ -178,25 +178,44 @@ func (transport *TCPTransport) handleConn(listen net.Listener) {
 	logger.Infof("HandleConn exited")
 }
 
+// A utility function which tests if an error returned from a TCPConnection or
+// TCPListener is actually an EOF. In some edge cases this which should be treated
+// as EOFs are not returned as one.
+func isEOF(err error) bool {
+	if err == io.EOF {
+		return true
+	} else if oerr, ok := err.(*net.OpError); ok {
+		/* this hack happens because the error is returned when the
+		 * network socket is closing and instead of returning a
+		 * io.EOF it returns this error.New(...) struct. */
+		if oerr.Err.Error() == "use of closed network connection" {
+			return true
+		}
+	} else {
+		if err.Error() == "use of closed network connection" {
+			return true
+		}
+	}
+	return false
+}
+
 func (transport *TCPTransport) handleIn(cnx net.Conn) {
 	// Registers the new connection
 	uri := cnx.RemoteAddr().String()
 	transport.conns[uri] = cnx
 
 	for transport.running {
-		logger.Debugf("HandleIn, wait for message: %s", cnx.RemoteAddr())
+		logger.Debugf("TCPTransport.HandleIn(%s), wait for message.", cnx.RemoteAddr())
 		msg, err := transport.readMessage(cnx)
 
 		if err != nil {
-			if err == io.EOF {
-				logger.Warnf("HandleIn, connection closed: %s", cnx.RemoteAddr())
+			if isEOF(err) {
 				break
 			} else {
-				logger.Warnf("HandleIn, receives message: %+v", err)
 				continue
 			}
 		}
-		logger.Debugf("HandleIn, receives message: %s", msg)
+		logger.Debugf("TCPTransport.HandleIn(%s), receives message: %s", cnx.RemoteAddr(), msg)
 		if msg != nil {
 			transport.ctx.Receive(msg)
 		}
@@ -205,7 +224,7 @@ func (transport *TCPTransport) handleIn(cnx net.Conn) {
 	cnx.Close()
 	// Removes connection from transport.conns
 	delete(transport.conns, uri)
-	logger.Infof("HandleIn exited: %s", cnx.RemoteAddr())
+	logger.Infof("TCPTransport.HandleIn(%s) exited: %s", cnx.RemoteAddr(), cnx.RemoteAddr())
 }
 
 func (transport *TCPTransport) readMessage(cnx net.Conn) (*Message, error) {
@@ -214,10 +233,14 @@ func (transport *TCPTransport) readMessage(cnx net.Conn) (*Message, error) {
 
 	// Reads the fixed part of MAL message header
 	for offset := 0; offset < int(FIXED_HEADER_LENGTH); {
-		logger.Debugf("TCPTransport.readMessage, waiting message: ..")
+		logger.Debugf("TCPTransport.readMessage(%s), waiting message: ..", cnx.RemoteAddr())
 		nb, err := cnx.Read(buf[offset:])
 		if err != nil {
-			logger.Errorf("TCPTransport.readMessage, error reading fixed part of message: %s", err.Error())
+			if !isEOF(err) {
+				logger.Errorf("TCPTransport.readMessage(%s), error reading fixed part of message: %s", cnx.RemoteAddr(), err.Error())
+			} else {
+				logger.Warnf("TCPTransport.readMessage(%s), connection closed", cnx.RemoteAddr())
+			}
 			return nil, err
 		}
 		offset += nb
