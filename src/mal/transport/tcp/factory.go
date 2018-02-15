@@ -57,7 +57,7 @@ func (*TCPTransportFactory) NewTransport(u *url.URL, ctx TransportCallback) (Tra
 	address := u.Hostname()
 	port, err := strconv.Atoi(u.Port())
 	if err != nil {
-		// TODO (AF): Log an error
+		logger.Errorf("TCPTransportFactory.NewTransport: Bad URL, cannot get listening port.")
 		return nil, NULL_URI, err
 	}
 
@@ -71,12 +71,12 @@ func (*TCPTransportFactory) NewTransport(u *url.URL, ctx TransportCallback) (Tra
 
 	err = transport.init()
 	if err != nil {
-		// TODO (AF): Log an error
+		logger.Errorf("TCPTransportFactory.NewTransport: Cannot initialize transport.")
 		return nil, NULL_URI, err
 	}
 	err = transport.start()
 	if err != nil {
-		// TODO (AF): Log an error
+		logger.Errorf("TCPTransportFactory.NewTransport: Cannot start transport.")
 		return nil, NULL_URI, err
 	}
 

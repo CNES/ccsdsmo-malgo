@@ -110,7 +110,7 @@ func (transport *TCPTransport) encode(msg *Message) ([]byte, error) {
 
 	if transport.sourceFlag {
 		if transport.optimizeURI {
-			// TODO (AF): Optimized mapping, writes only URI service part
+			// Optimized mapping, writes only URI service part
 			err = encoder.EncodeString(msg.UriFrom.GetService())
 			if err != nil {
 				logger.Errorf("TCPTransport.encode, cannot encode URIFrom: %s", err.Error())
@@ -127,7 +127,7 @@ func (transport *TCPTransport) encode(msg *Message) ([]byte, error) {
 
 	if transport.destinationFlag {
 		if transport.optimizeURI {
-			// TODO (AF): Optimized mapping, writes only URI service part
+			// Optimized mapping, writes only URI service part
 			err = encoder.EncodeString(msg.UriTo.GetService())
 			if err != nil {
 				logger.Errorf("TCPTransport.encode, cannot encode URITo: %s", err.Error())
