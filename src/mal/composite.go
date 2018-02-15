@@ -29,5 +29,3 @@ type Composite interface {
 	Element
 	composite() Composite
 }
-
-// TODO (AF): ?

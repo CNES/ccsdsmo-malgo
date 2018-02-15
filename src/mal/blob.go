@@ -1,7 +1,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2017 CNES
+ * Copyright (c) 2017 - 2018 CNES
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -34,12 +34,6 @@ type Blob []byte
 var (
 	NullBlob *Blob = nil
 )
-
-// TODO (AF): useless?
-//func NewBlob(b []byte) *Blob {
-//	var val Blob = Blob(b)
-//	return &val
-//}
 
 func (blob Blob) Copy() Blob {
 	buf := make([]byte, blob.Capacity())
