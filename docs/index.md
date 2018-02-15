@@ -495,11 +495,11 @@ func newMyProvider(url string, service string) (*MyProvider, error) {
 		provider.nbmsg += 1
 		if msg != nil {
 			transaction := t.(ProgressTransaction)
-			transaction.Ack(nil)
+			transaction.Ack(nil, false)
 			for i := 0; i < 10; i++ {
-				transaction.Update(update, nil)
+				transaction.Update(update, false)
 			}
-			transaction.Reply(response, nil)
+			transaction.Reply(response, false)
 		} else {
 			logger.Warnf("receive: nil")
 		}
