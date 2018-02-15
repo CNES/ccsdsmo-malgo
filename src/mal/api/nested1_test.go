@@ -69,7 +69,7 @@ func newTestNested1Provider1(p2uri *URI) (*TestNested1Provider1, error) {
 		if msg != nil {
 			transaction := t.(InvokeTransaction)
 			fmt.Println("\t$$$$$ Provider1 receive: ", string(msg.Body))
-			transaction.Ack(nil)
+			transaction.Ack(nil, false)
 			provider.nbmsg += 1
 
 			op := provider.cctx.NewInvokeOperation(provider.p2uri, 200, 1, 2, 2)
@@ -86,7 +86,7 @@ func newTestNested1Provider1(p2uri *URI) (*TestNested1Provider1, error) {
 			}
 			fmt.Println("\t&&&&& Nested Invoke1: OK, ", string(reply.Body))
 
-			transaction.Reply(msg.Body, nil)
+			transaction.Reply(msg.Body, false)
 		} else {
 			fmt.Println("receive: nil")
 		}
@@ -126,12 +126,12 @@ func newTestNested1Provider2() (*TestNested1Provider2, error) {
 		if msg != nil {
 			transaction := t.(InvokeTransaction)
 			fmt.Println("\t$$$$$ Provider2 receive: ", string(msg.Body))
-			transaction.Ack(nil)
+			transaction.Ack(nil, false)
 			fmt.Println("\t$$$$$ Provider2 ack sent: OK")
 			provider.nbmsg += 1
 			time.Sleep(250 * time.Millisecond)
 			//		transaction.Reply([]byte("reply message"), nil)
-			transaction.Reply(msg.Body, nil)
+			transaction.Reply(msg.Body, false)
 			fmt.Println("\t$$$$$ Provider2 reply sent: OK")
 		} else {
 			fmt.Println("receive: nil")

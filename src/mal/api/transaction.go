@@ -64,14 +64,14 @@ type SendTransactionX struct {
 
 type SubmitTransaction interface {
 	Transaction
-	Ack(err error) error
+	Ack(body []byte, isError bool) error
 }
 
 type SubmitTransactionX struct {
 	TransactionX
 }
 
-func (tx *SubmitTransactionX) Ack(err error) error {
+func (tx *SubmitTransactionX) Ack(body []byte, isError bool) error {
 	msg := &Message{
 		InteractionType:  MAL_INTERACTIONTYPE_SUBMIT,
 		InteractionStage: MAL_IP_STAGE_SUBMIT_ACK,
@@ -82,10 +82,8 @@ func (tx *SubmitTransactionX) Ack(err error) error {
 		Operation:        tx.operation,
 		UriFrom:          tx.uri,
 		UriTo:            tx.urifrom,
-	}
-	if err != nil {
-		msg.IsErrorMessage = true
-		msg.Body = []byte(err.Error())
+		IsErrorMessage:   Boolean(isError),
+		Body:             body,
 	}
 	return tx.ctx.Send(msg)
 }
@@ -94,14 +92,15 @@ func (tx *SubmitTransactionX) Ack(err error) error {
 // MAL Request interaction
 
 type RequestTransaction interface {
-	Reply([]byte, error) error
+	Transaction
+	Reply(body []byte, isError bool) error
 }
 
 type RequestTransactionX struct {
 	TransactionX
 }
 
-func (tx *RequestTransactionX) Reply(body []byte, err error) error {
+func (tx *RequestTransactionX) Reply(body []byte, isError bool) error {
 	msg := &Message{
 		InteractionType:  MAL_INTERACTIONTYPE_REQUEST,
 		InteractionStage: MAL_IP_STAGE_REQUEST_RESPONSE,
@@ -112,12 +111,8 @@ func (tx *RequestTransactionX) Reply(body []byte, err error) error {
 		Operation:        tx.operation,
 		UriFrom:          tx.uri,
 		UriTo:            tx.urifrom,
-	}
-	if err != nil {
-		msg.IsErrorMessage = true
-		msg.Body = []byte(err.Error())
-	} else {
-		msg.Body = body
+		IsErrorMessage:   Boolean(isError),
+		Body:             body,
 	}
 	return tx.ctx.Send(msg)
 }
@@ -126,15 +121,16 @@ func (tx *RequestTransactionX) Reply(body []byte, err error) error {
 // MAL Invoke interaction
 
 type InvokeTransaction interface {
-	Ack(error) error
-	Reply([]byte, error) error
+	Transaction
+	Ack(body []byte, isError bool) error
+	Reply(body []byte, isError bool) error
 }
 
 type InvokeTransactionX struct {
 	TransactionX
 }
 
-func (tx *InvokeTransactionX) Ack(err error) error {
+func (tx *InvokeTransactionX) Ack(body []byte, isError bool) error {
 	msg := &Message{
 		InteractionType:  MAL_INTERACTIONTYPE_INVOKE,
 		InteractionStage: MAL_IP_STAGE_INVOKE_ACK,
@@ -145,15 +141,13 @@ func (tx *InvokeTransactionX) Ack(err error) error {
 		Operation:        tx.operation,
 		UriFrom:          tx.uri,
 		UriTo:            tx.urifrom,
-	}
-	if err != nil {
-		msg.IsErrorMessage = true
-		msg.Body = []byte(err.Error())
+		IsErrorMessage:   Boolean(isError),
+		Body:             body,
 	}
 	return tx.ctx.Send(msg)
 }
 
-func (tx *InvokeTransactionX) Reply(body []byte, err error) error {
+func (tx *InvokeTransactionX) Reply(body []byte, isError bool) error {
 	msg := &Message{
 		InteractionType:  MAL_INTERACTIONTYPE_INVOKE,
 		InteractionStage: MAL_IP_STAGE_INVOKE_RESPONSE,
@@ -164,12 +158,8 @@ func (tx *InvokeTransactionX) Reply(body []byte, err error) error {
 		Operation:        tx.operation,
 		UriFrom:          tx.uri,
 		UriTo:            tx.urifrom,
-	}
-	if err != nil {
-		msg.IsErrorMessage = true
-		msg.Body = []byte(err.Error())
-	} else {
-		msg.Body = body
+		IsErrorMessage:   Boolean(isError),
+		Body:             body,
 	}
 	return tx.ctx.Send(msg)
 }
@@ -178,16 +168,17 @@ func (tx *InvokeTransactionX) Reply(body []byte, err error) error {
 // MAL Progress interaction
 
 type ProgressTransaction interface {
-	Ack(error) error
-	Update([]byte, error) error
-	Reply([]byte, error) error
+	Transaction
+	Ack(body []byte, isError bool) error
+	Update(body []byte, isError bool) error
+	Reply(body []byte, isError bool) error
 }
 
 type ProgressTransactionX struct {
 	TransactionX
 }
 
-func (tx *ProgressTransactionX) Ack(err error) error {
+func (tx *ProgressTransactionX) Ack(body []byte, isError bool) error {
 	msg := &Message{
 		InteractionType:  MAL_INTERACTIONTYPE_PROGRESS,
 		InteractionStage: MAL_IP_STAGE_PROGRESS_ACK,
@@ -198,15 +189,13 @@ func (tx *ProgressTransactionX) Ack(err error) error {
 		Operation:        tx.operation,
 		UriFrom:          tx.uri,
 		UriTo:            tx.urifrom,
-	}
-	if err != nil {
-		msg.IsErrorMessage = true
-		msg.Body = []byte(err.Error())
+		IsErrorMessage:   Boolean(isError),
+		Body:             body,
 	}
 	return tx.ctx.Send(msg)
 }
 
-func (tx *ProgressTransactionX) Update(body []byte, err error) error {
+func (tx *ProgressTransactionX) Update(body []byte, isError bool) error {
 	msg := &Message{
 		InteractionType:  MAL_INTERACTIONTYPE_PROGRESS,
 		InteractionStage: MAL_IP_STAGE_PROGRESS_UPDATE,
@@ -217,17 +206,13 @@ func (tx *ProgressTransactionX) Update(body []byte, err error) error {
 		Operation:        tx.operation,
 		UriFrom:          tx.uri,
 		UriTo:            tx.urifrom,
-	}
-	if err != nil {
-		msg.IsErrorMessage = true
-		msg.Body = []byte(err.Error())
-	} else {
-		msg.Body = body
+		IsErrorMessage:   Boolean(isError),
+		Body:             body,
 	}
 	return tx.ctx.Send(msg)
 }
 
-func (tx *ProgressTransactionX) Reply(body []byte, err error) error {
+func (tx *ProgressTransactionX) Reply(body []byte, isError bool) error {
 	msg := &Message{
 		InteractionType:  MAL_INTERACTIONTYPE_PROGRESS,
 		InteractionStage: MAL_IP_STAGE_PROGRESS_RESPONSE,
@@ -238,12 +223,8 @@ func (tx *ProgressTransactionX) Reply(body []byte, err error) error {
 		Operation:        tx.operation,
 		UriFrom:          tx.uri,
 		UriTo:            tx.urifrom,
-	}
-	if err != nil {
-		msg.IsErrorMessage = true
-		msg.Body = []byte(err.Error())
-	} else {
-		msg.Body = body
+		IsErrorMessage:   Boolean(isError),
+		Body:             body,
 	}
 	return tx.ctx.Send(msg)
 }
@@ -255,22 +236,22 @@ func (tx *ProgressTransactionX) Reply(body []byte, err error) error {
 
 type BrokerTransaction interface {
 	Transaction
-	AckRegister(error) error
-	AckDeregister(error) error
+	AckRegister(body []byte, isError bool) error
+	AckDeregister(body []byte, isError bool) error
 }
 
 // SubscriberTransaction
 
 type SubscriberTransaction interface {
 	BrokerTransaction
-	Notify([]byte, error) error
+	Notify(body []byte, isError bool) error
 }
 
 type SubscriberTransactionX struct {
 	TransactionX
 }
 
-func (tx *SubscriberTransactionX) AckRegister(err error) error {
+func (tx *SubscriberTransactionX) AckRegister(body []byte, isError bool) error {
 	msg := &Message{
 		InteractionType:  MAL_INTERACTIONTYPE_PUBSUB,
 		InteractionStage: MAL_IP_STAGE_PUBSUB_REGISTER_ACK,
@@ -281,15 +262,13 @@ func (tx *SubscriberTransactionX) AckRegister(err error) error {
 		Operation:        tx.operation,
 		UriFrom:          tx.uri,
 		UriTo:            tx.urifrom,
-	}
-	if err != nil {
-		msg.IsErrorMessage = true
-		msg.Body = []byte(err.Error())
+		IsErrorMessage:   Boolean(isError),
+		Body:             body,
 	}
 	return tx.ctx.Send(msg)
 }
 
-func (tx *SubscriberTransactionX) Notify(body []byte, err error) error {
+func (tx *SubscriberTransactionX) Notify(body []byte, isError bool) error {
 	msg := &Message{
 		InteractionType:  MAL_INTERACTIONTYPE_PUBSUB,
 		InteractionStage: MAL_IP_STAGE_PUBSUB_NOTIFY,
@@ -300,17 +279,13 @@ func (tx *SubscriberTransactionX) Notify(body []byte, err error) error {
 		Operation:        tx.operation,
 		UriFrom:          tx.uri,
 		UriTo:            tx.urifrom,
-	}
-	if err != nil {
-		msg.IsErrorMessage = true
-		msg.Body = []byte(err.Error())
-	} else {
-		msg.Body = body
+		IsErrorMessage:   Boolean(isError),
+		Body:             body,
 	}
 	return tx.ctx.Send(msg)
 }
 
-func (tx *SubscriberTransactionX) AckDeregister(err error) error {
+func (tx *SubscriberTransactionX) AckDeregister(body []byte, isError bool) error {
 	msg := &Message{
 		InteractionType:  MAL_INTERACTIONTYPE_PUBSUB,
 		InteractionStage: MAL_IP_STAGE_PUBSUB_DEREGISTER_ACK,
@@ -321,10 +296,8 @@ func (tx *SubscriberTransactionX) AckDeregister(err error) error {
 		Operation:        tx.operation,
 		UriFrom:          tx.uri,
 		UriTo:            tx.urifrom,
-	}
-	if err != nil {
-		msg.IsErrorMessage = true
-		msg.Body = []byte(err.Error())
+		IsErrorMessage:   Boolean(isError),
+		Body:             body,
 	}
 	return tx.ctx.Send(msg)
 }
@@ -339,7 +312,7 @@ type PublisherTransactionX struct {
 	TransactionX
 }
 
-func (tx *PublisherTransactionX) AckRegister(err error) error {
+func (tx *PublisherTransactionX) AckRegister(body []byte, isError bool) error {
 	msg := &Message{
 		InteractionType:  MAL_INTERACTIONTYPE_PUBSUB,
 		InteractionStage: MAL_IP_STAGE_PUBSUB_PUBLISH_REGISTER_ACK,
@@ -350,15 +323,13 @@ func (tx *PublisherTransactionX) AckRegister(err error) error {
 		Operation:        tx.operation,
 		UriFrom:          tx.uri,
 		UriTo:            tx.urifrom,
-	}
-	if err != nil {
-		msg.IsErrorMessage = true
-		msg.Body = []byte(err.Error())
+		IsErrorMessage:   Boolean(isError),
+		Body:             body,
 	}
 	return tx.ctx.Send(msg)
 }
 
-func (tx *PublisherTransactionX) AckDeregister(err error) error {
+func (tx *PublisherTransactionX) AckDeregister(body []byte, isError bool) error {
 	msg := &Message{
 		InteractionType:  MAL_INTERACTIONTYPE_PUBSUB,
 		InteractionStage: MAL_IP_STAGE_PUBSUB_PUBLISH_DEREGISTER_ACK,
@@ -369,10 +340,8 @@ func (tx *PublisherTransactionX) AckDeregister(err error) error {
 		Operation:        tx.operation,
 		UriFrom:          tx.uri,
 		UriTo:            tx.urifrom,
-	}
-	if err != nil {
-		msg.IsErrorMessage = true
-		msg.Body = []byte(err.Error())
+		IsErrorMessage:   Boolean(isError),
+		Body:             body,
 	}
 	return tx.ctx.Send(msg)
 }

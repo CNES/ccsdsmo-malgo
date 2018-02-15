@@ -149,7 +149,7 @@ func newTestSubmitProvider() (*TestSubmitProvider, error) {
 			transaction := t.(SubmitTransaction)
 			fmt.Println("\t$$$$$ submitHandler receive: ", string(msg.Body))
 			provider.nbmsg += 1
-			transaction.Ack(nil)
+			transaction.Ack(nil, false)
 		} else {
 			fmt.Println("receive: nil")
 		}
@@ -238,7 +238,7 @@ func newTestRequestProvider() (*TestRequestProvider, error) {
 			transaction := t.(RequestTransaction)
 			fmt.Println("\t$$$$$ requestHandler receive: ", string(msg.Body))
 			provider.nbmsg += 1
-			transaction.Reply([]byte("reply message"), nil)
+			transaction.Reply([]byte("reply message"), false)
 		} else {
 			fmt.Println("receive: nil")
 		}
@@ -326,11 +326,11 @@ func newTestInvokeProvider() (*TestInvokeProvider, error) {
 		if msg != nil {
 			transaction := t.(InvokeTransaction)
 			fmt.Println("\t$$$$$ invokeProvider receive: ", string(msg.Body))
-			transaction.Ack(nil)
+			transaction.Ack(nil, false)
 			provider.nbmsg += 1
 			time.Sleep(250 * time.Millisecond)
 			//		transaction.Reply([]byte("reply message"), nil)
-			transaction.Reply(msg.Body, nil)
+			transaction.Reply(msg.Body, false)
 		} else {
 			fmt.Println("receive: nil")
 		}
@@ -434,11 +434,11 @@ func newTestProgressProvider() (*TestProgressProvider, error) {
 		if msg != nil {
 			fmt.Println("\t$$$$$ progressHandler1 receive: ", string(msg.Body))
 			transaction := t.(ProgressTransaction)
-			transaction.Ack(nil)
+			transaction.Ack(nil, false)
 			for i := 0; i < 10; i++ {
-				transaction.Update([]byte(fmt.Sprintf("messsage1.#%d", i)), nil)
+				transaction.Update([]byte(fmt.Sprintf("messsage1.#%d", i)), false)
 			}
-			transaction.Reply([]byte("last message1"), nil)
+			transaction.Reply([]byte("last message1"), false)
 		} else {
 			fmt.Println("receive: nil")
 		}
@@ -453,11 +453,11 @@ func newTestProgressProvider() (*TestProgressProvider, error) {
 		if msg != nil {
 			fmt.Println("\t$$$$$ progressHandler2 receive: ", string(msg.Body))
 			transaction := t.(ProgressTransaction)
-			transaction.Ack(nil)
+			transaction.Ack(nil, false)
 			for i := 0; i < 5; i++ {
-				transaction.Update([]byte(fmt.Sprintf("messsage2.#%d", i)), nil)
+				transaction.Update([]byte(fmt.Sprintf("messsage2.#%d", i)), false)
 			}
-			transaction.Reply([]byte("last message2"), nil)
+			transaction.Reply([]byte("last message2"), false)
 		} else {
 			fmt.Println("receive: nil")
 		}
@@ -608,34 +608,34 @@ func (broker *TestPubSubProvider) close() {
 func (broker *TestPubSubProvider) OnRegister(msg *Message, tx SubscriberTransaction) error {
 	fmt.Println("\t##########\n\t# OnRegister:")
 	broker.subs = tx
-	tx.AckRegister(nil)
+	tx.AckRegister(nil, false)
 	return nil
 }
 
 func (broker *TestPubSubProvider) OnDeregister(msg *Message, tx SubscriberTransaction) error {
 	fmt.Println("\t##########\n\t# OnDeregister:")
 	broker.subs = nil
-	tx.AckDeregister(nil)
+	tx.AckDeregister(nil, false)
 	return nil
 }
 
 func (broker *TestPubSubProvider) OnPublishRegister(msg *Message, tx PublisherTransaction) error {
 	fmt.Println("\t##########\n\t# OnPublishRegister:")
-	tx.AckRegister(nil)
+	tx.AckRegister(nil, false)
 	return nil
 }
 
 func (broker *TestPubSubProvider) OnPublish(msg *Message, tx PublisherTransaction) error {
 	fmt.Println("\t##########\n\t# OnPublish:")
 	if broker.subs != nil {
-		broker.subs.Notify(msg.Body, nil)
+		broker.subs.Notify(msg.Body, false)
 	}
 	return nil
 }
 
 func (broker *TestPubSubProvider) OnPublishDeregister(msg *Message, tx PublisherTransaction) error {
 	fmt.Println("\t##########\n\t# OnPublishDeregister:")
-	tx.AckDeregister(nil)
+	tx.AckDeregister(nil, false)
 	return nil
 }
 
