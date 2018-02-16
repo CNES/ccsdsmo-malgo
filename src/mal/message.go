@@ -1,7 +1,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2017 ccsdsmo
+ * Copyright (c) 2017 - 2018 ccsdsmo
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -117,10 +117,6 @@ const MAL_UPDATETYPE_SHORT_FORM Long = 0x1000001000016
 // ================================================================================
 // Defines MAL Message structure and interface
 
-//type Message interface {
-//	urito() URI
-//}
-
 // TODO (AF): Handles the polymorphism of message, use an interface implemented by
 // MAL transport.
 
@@ -144,13 +140,5 @@ type Message struct {
 	Operation        UShort
 	AreaVersion      UOctet
 	IsErrorMessage   Boolean
-
-	// TODO: currently assumes that the body is not segmented
-	//	body_offset uint
-	//	body_length uint
-	Body []byte
+	Body             []byte
 }
-
-//func (msg Message) Body() []byte {
-//	return msg.body
-//}

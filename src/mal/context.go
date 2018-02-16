@@ -48,6 +48,8 @@ type Context struct {
 	transport Transport
 }
 
+// Be careful: Depending of the application logic if there is not enough slots in
+// the internal channel there may be a blocking of the underlying transport threads.
 func NewContext(url string) (*Context, error) {
 	listeners := make(map[URI]Listener)
 	// TODO (AF): Fix length of channel
