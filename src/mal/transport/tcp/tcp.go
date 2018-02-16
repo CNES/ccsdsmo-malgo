@@ -33,6 +33,8 @@ import (
 )
 
 const (
+	// Name of preoperty allowing to fix the underlying protocol: currently tcp, tcp4 or tcp6.
+	// By default use tcp.
 	NETWORK_PROPERTY string = "network"
 
 	VARIABLE_LENGTH_OFFSET uint32 = 19
@@ -56,6 +58,7 @@ type TCPTransport struct {
 
 	running bool
 
+	// Channel for outgoing messages.
 	ch   chan *Message
 	ends chan bool
 
@@ -89,6 +92,7 @@ type TCPTransport struct {
 	dfltDomain           IdentifierList
 }
 
+// Initializes the MAL/TCP context.
 func (transport *TCPTransport) init() error {
 	transport.running = false
 
@@ -96,12 +100,12 @@ func (transport *TCPTransport) init() error {
 
 	// TODO (AF): Configure flags
 	transport.flags = 0
-	// Note (AF): Should be always true
+	// Note: Should be always true
 	transport.sourceFlag = true
 	if transport.sourceFlag {
 		transport.flags |= (1 << 7)
 	}
-	// Note (AF): Should be always true
+	// Note: Should be always true
 	transport.destinationFlag = true
 	if transport.destinationFlag {
 		transport.flags |= (1 << 6)
@@ -146,13 +150,14 @@ func (transport *TCPTransport) init() error {
 	return nil
 }
 
+// Starts the MAL/TCP context.
 func (transport *TCPTransport) start() error {
 	// If the host in the address parameter is empty or a literal unspecified IP address,
 	// Listen listens on all available unicast and anycast IP addresses of the local system.
 	// To only use IPv4, use "tcp4" a network parameter.
 	listen, err := net.Listen(transport.network, ":"+strconv.Itoa(int(transport.port)))
 	if err != nil {
-		// TODO (AF): Log an error
+		logger.Errorf("TCPTransport.start, cannot create listen socket: %s", err.Error())
 		return err
 	}
 
@@ -160,6 +165,7 @@ func (transport *TCPTransport) start() error {
 
 	transport.listen = listen
 	go transport.handleConn(listen)
+	// Note: May be we have to create multiples threads to handle outgoing messages.
 	go transport.handleOut()
 
 	return nil
@@ -169,13 +175,13 @@ func (transport *TCPTransport) handleConn(listen net.Listener) {
 	for {
 		cnx, err := listen.Accept()
 		if err != nil {
-			// TODO (AF): handle error
+			logger.Errorf("TCPTransport.handleConn, error accepting connection: %s", err.Error())
 			break
 		}
-		logger.Infof("Accept connexion from %s", cnx.RemoteAddr())
+		logger.Infof("TCPTransport.handleConn, accept connexion from %s", cnx.RemoteAddr())
 		go transport.handleIn(cnx)
 	}
-	logger.Infof("HandleConn exited")
+	logger.Infof("TCPTransport.HandleConn exited")
 }
 
 // A utility function which tests if an error returned from a TCPConnection or
@@ -228,7 +234,6 @@ func (transport *TCPTransport) handleIn(cnx net.Conn) {
 }
 
 func (transport *TCPTransport) readMessage(cnx net.Conn) (*Message, error) {
-	// TODO (AF): May be this array should be reused
 	var buf []byte = make([]byte, FIXED_HEADER_LENGTH)
 
 	// Reads the fixed part of MAL message header
@@ -260,7 +265,7 @@ func (transport *TCPTransport) readMessage(cnx net.Conn) (*Message, error) {
 	for offset := int(FIXED_HEADER_LENGTH); offset < len(newbuf); {
 		nb, err := cnx.Read(newbuf[offset:])
 		if err != nil {
-			// TODO (AF): handle error
+			logger.Errorf("TCPTransport.readMessage(%s), error reading message: %s", cnx.RemoteAddr(), err.Error())
 			return nil, err
 		}
 		offset += nb
@@ -269,21 +274,11 @@ func (transport *TCPTransport) readMessage(cnx net.Conn) (*Message, error) {
 
 	// Decodes the message
 	msg, err := transport.decode(newbuf, cnx.RemoteAddr().String())
-	// TODO (AF): Optimized URI mapping
-	//	if msg.UriTo == nil {
-	//		var urito URI = transport.uri
-	//		msg.UriTo = &urito
-	//	}
-	//	if msg.UriFrom == nil {
-	//		var urifrom
-	//		msg.UriFrom = &URI("maltcp://" + cnx.RemoteAddr().String())
-	//	}
 	if err != nil {
-		// TODO (AF): handle error
-		logger.Errorf("##### Errors receiving message: %s", err)
+		logger.Errorf("TCPTransport.readMessage(%s), error receiving message: %s", err.Error())
 		return nil, err
 	}
-	logger.Debugf("##### Receives: %s from %s to %s", msg, *msg.UriFrom, *msg.UriTo)
+	logger.Debugf("TCPTransport.readMessage(%s), receives %s from %s to %s", cnx.RemoteAddr(), msg, *msg.UriFrom, *msg.UriTo)
 
 	return msg, nil
 }
@@ -292,39 +287,38 @@ func (transport *TCPTransport) handleOut() {
 	var msg *Message
 	var nbtry uint
 	for {
-		logger.Debugf("handleOut: wait message")
+		logger.Debugf("TCPTransport.handleOut, wait message..")
 		if msg == nil {
 			msg, _ = <-transport.ch
 			nbtry = 0
 		}
 		if msg != nil {
-			logger.Debugf("handleOut: get Message%+v", *msg)
+			logger.Debugf("TCPTransport.handleOut, get Message %+v", *msg)
 			u, err := url.Parse(string(*msg.UriTo))
 			if err != nil {
-				logger.Errorf("Cannot route message, urito=%s", *msg.UriTo)
+				logger.Errorf("TCPTransport.handleOut, cannot route message to %s", *msg.UriTo)
 				continue
 			}
-			// TODO (AF):
-			//		urito := url.URL{Scheme: u.Scheme, Host: u.Host}
 			urito := u.Host
 
 			cnx, ok := transport.conns[urito]
 			if !ok {
-				logger.Debugf("Creates connection to %s", urito)
+				logger.Debugf("TCPTransport.handleOut, creates connection to %s", urito)
 				cnx, err = net.Dial("tcp", urito)
 				if err != nil {
-					// TODO (AF): handles error
-					logger.Errorf("HandleOut: %s", err)
+					logger.Errorf("TCPTransport.handleOut, cannot creates connection to %s: %s", urito, err.Error())
+					// TODO (AF): Handles the faulty message, forwards it to error listener
 					continue
 				}
+				// Registers the created connection
 				transport.conns[urito] = cnx
 				go transport.handleIn(cnx)
 			}
-			logger.Debugf("%s, %s", *msg.UriFrom, *msg.UriTo)
+			logger.Debugf("TCPTransport.handleOut, send message to %s", *msg.UriTo)
 			err = transport.writeMessage(cnx, msg)
 			if err != nil {
 				nbtry += 1
-				logger.Debugf("HandleOut: %s", err)
+				logger.Debugf("TCPTransport.handleOut, error sending message: %s", err.Error())
 				// Closes the connection to retrieve a clean state
 				cnx.Close()
 				// Removes connection from transport.conns
@@ -333,16 +327,16 @@ func (transport *TCPTransport) handleOut() {
 				if nbtry < 3 {
 					continue
 				} else {
-					// TODO (AF): Handles the faulty message
+					// TODO (AF): Handles the faulty message, forwards it to error listener
 				}
 			}
 			msg = nil
 		} else {
-			logger.Infof("MALTCP Context ends: %+v", msg)
+			logger.Infof("TCPTransport.handleOut, ends")
 			transport.ends <- true
 		}
 	}
-	logger.Debugf("HandleOut exited")
+	logger.Debugf("TCPTransport.handleOut exited")
 }
 
 func write32(value uint32, buf []byte) {
