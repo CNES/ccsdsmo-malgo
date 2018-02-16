@@ -182,8 +182,8 @@ type SubmitOperationX struct {
 func (cctx *ClientContext) NewSubmitOperation(urito *URI, area UShort, areaVersion UOctet, service UShort, operation UShort) SubmitOperation {
 	// Gets a new TransactionId for operation
 	tid := cctx.TransactionId()
-	// TODO (AF): Fix length of channel
-	ch := make(chan *Message, 10)
+	// Normally should not receive more than one message
+	ch := make(chan *Message)
 	op := &SubmitOperationX{OperationX: OperationX{cctx, tid, ch, urito, area, areaVersion, service, operation, _CREATED}}
 	return op
 }
@@ -268,8 +268,8 @@ type RequestOperationX struct {
 func (cctx *ClientContext) NewRequestOperation(urito *URI, area UShort, areaVersion UOctet, service UShort, operation UShort) RequestOperation {
 	// Gets a new TransactionId for operation
 	tid := cctx.TransactionId()
-	// TODO (AF): Fix length of channel
-	ch := make(chan *Message, 10)
+	// Normally should not receive more than one message
+	ch := make(chan *Message)
 	op := &RequestOperationX{OperationX: OperationX{cctx, tid, ch, urito, area, areaVersion, service, operation, _CREATED}}
 	return op
 }
@@ -358,8 +358,8 @@ type InvokeOperationX struct {
 func (cctx *ClientContext) NewInvokeOperation(urito *URI, area UShort, areaVersion UOctet, service UShort, operation UShort) InvokeOperation {
 	// Gets a new TransactionId for operation
 	tid := cctx.TransactionId()
-	// TODO (AF): Fix length of channel
-	ch := make(chan *Message, 10)
+	// Normally should not receive more than 2 messages, and it waits first message (ack) synchronously.
+	ch := make(chan *Message)
 	op := &InvokeOperationX{OperationX: OperationX{cctx, tid, ch, urito, area, areaVersion, service, operation, _CREATED}}
 	return op
 }
@@ -485,6 +485,9 @@ type ProgressOperationX struct {
 func (cctx *ClientContext) NewProgressOperation(urito *URI, area UShort, areaVersion UOctet, service UShort, operation UShort) ProgressOperation {
 	// Gets a new TransactionId for operation
 	tid := cctx.TransactionId()
+	// Be careful: Depending of the application logic this channel can receive an arbitrary number of Update messages.
+	// The size of this channel must be large enough to buffer these messages in order to avoid blocking of the underlying
+	// MAL context thread.
 	// TODO (AF): Fix length of channel
 	ch := make(chan *Message, 10)
 	op := &ProgressOperationX{OperationX: OperationX{cctx, tid, ch, urito, area, areaVersion, service, operation, _CREATED}}
@@ -648,6 +651,9 @@ type SubscriberOperationX struct {
 func (cctx *ClientContext) NewSubscriberOperation(urito *URI, area UShort, areaVersion UOctet, service UShort, operation UShort) SubscriberOperation {
 	// Gets a new TransactionId for operation
 	tid := cctx.TransactionId()
+	// Be careful: Depending of the application logic this channel can receive an arbitrary number of Notify messages.
+	// The size of this channel must be large enough to buffer these messages in order to avoid blocking of the underlying
+	// MAL context thread.
 	// TODO (AF): Fix length of channel
 	ch := make(chan *Message, 10)
 	op := &SubscriberOperationX{OperationX: OperationX{cctx, tid, ch, urito, area, areaVersion, service, operation, _CREATED}}
@@ -819,8 +825,8 @@ type PublisherOperationX struct {
 func (cctx *ClientContext) NewPublisherOperation(urito *URI, area UShort, areaVersion UOctet, service UShort, operation UShort) PublisherOperation {
 	// Gets a new TransactionId for operation
 	tid := cctx.TransactionId()
-	// TODO (AF): Fix length of channel
-	ch := make(chan *Message, 10)
+	// Normally should not receive more than one message (Acknowledge of Register and Deregister messages).
+	ch := make(chan *Message)
 	op := &PublisherOperationX{OperationX: OperationX{cctx, tid, ch, urito, area, areaVersion, service, operation, _CREATED}}
 	return op
 }

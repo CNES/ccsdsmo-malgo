@@ -44,7 +44,7 @@ type OperationHandler interface {
 
 type pDesc struct {
 	stype InteractionType
-	// TODO (AF): Not really needed, these fields are included in the correponding key.
+	// Note: Not really needed, these fields are included in the correponding key.
 	area        UShort
 	areaVersion UOctet
 	service     UShort
