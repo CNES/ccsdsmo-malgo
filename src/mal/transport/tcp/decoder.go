@@ -25,8 +25,8 @@ package tcp
 
 import (
 	"errors"
-	. "mal"
-	"mal/encoding/binary"
+	. "github.com/ccsdsmo/malgo/src/mal"
+	"github.com/ccsdsmo/malgo/src/mal/encoding/binary"
 	"strings"
 )
 

@@ -24,9 +24,9 @@
 package mal
 
 import (
-	"mal/debug"
+	"github.com/ccsdsmo/malgo/src/mal/debug"
 )
 
 var (
-	logger debug.Logger = debug.GetLogger("mal")
+	logger debug.Logger = debug.GetLogger("github.com/ccsdsmo/malgo/src/mal")
 )

@@ -25,14 +25,14 @@ package tcp_test
 
 import (
 	"fmt"
-	. "mal"
-	_ "mal/transport/tcp" // Needed to initialize TCP transport factory
+	. "github.com/ccsdsmo/malgo/src/mal"
+	_ "github.com/ccsdsmo/malgo/src/mal/transport/tcp" // Needed to initialize TCP transport factory
 	"testing"
 	"time"
 )
 
 var (
-	maltcp string = "maltcp://127.0.0.1:16000?par1=value1"
+	maltcp string = "github.com/ccsdsmo/malgo/src/maltcp://127.0.0.1:16000?par1=value1"
 )
 
 // Test TCP transport using a unique context
@@ -101,8 +101,8 @@ func TestTCP1(t *testing.T) {
 }
 
 var (
-	maltcp1 string = "maltcp://127.0.0.1:16001"
-	maltcp2 string = "maltcp://127.0.0.1:16002"
+	maltcp1 string = "github.com/ccsdsmo/malgo/src/maltcp://127.0.0.1:16001"
+	maltcp2 string = "github.com/ccsdsmo/malgo/src/maltcp://127.0.0.1:16002"
 )
 
 // Test TCP transport using 2 different contexts

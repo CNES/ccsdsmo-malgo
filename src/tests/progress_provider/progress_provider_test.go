@@ -25,9 +25,9 @@ package progress_provider
 
 import (
 	"fmt"
-	. "mal"
-	. "mal/api"
-	_ "mal/transport/tcp" // Needed to initialize TCP transport factory
+	. "github.com/ccsdsmo/malgo/src/mal"
+	. "github.com/ccsdsmo/malgo/src/mal/api"
+	_ "github.com/ccsdsmo/malgo/src/mal/transport/tcp" // Needed to initialize TCP transport factory
 	"testing"
 	"time"
 )
@@ -50,7 +50,7 @@ type TestProgressProvider struct {
 //
 // launches the MAL/C progress_provider the the MAL/GO progress_consumer
 func newTestProgressProvider() (*TestProgressProvider, error) {
-	ctx, err := NewContext("maltcp://127.0.0.1:6666")
+	ctx, err := NewContext("github.com/ccsdsmo/malgo/src/maltcp://127.0.0.1:6666")
 	if err != nil {
 		return nil, err
 	}

@@ -24,8 +24,8 @@
 package tcp
 
 import (
-	. "mal"
-	"mal/encoding/binary"
+	. "github.com/ccsdsmo/malgo/src/mal"
+	"github.com/ccsdsmo/malgo/src/mal/encoding/binary"
 )
 
 func (transport *TCPTransport) encode(msg *Message) ([]byte, error) {

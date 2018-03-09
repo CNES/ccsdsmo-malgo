@@ -25,7 +25,7 @@ package api
 
 import (
 	"errors"
-	. "mal"
+	. "github.com/ccsdsmo/malgo/src/mal"
 )
 
 const (

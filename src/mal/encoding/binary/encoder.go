@@ -25,7 +25,7 @@ package binary
 
 import (
 	"errors"
-	. "mal"
+	. "github.com/ccsdsmo/malgo/src/mal"
 	"math"
 	"time"
 )

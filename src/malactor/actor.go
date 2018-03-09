@@ -2,7 +2,7 @@ package malactor
 
 import (
 	"fmt"
-	. "mal"
+	. "github.com/ccsdsmo/malgo/src/mal"
 )
 
 type Actor interface {

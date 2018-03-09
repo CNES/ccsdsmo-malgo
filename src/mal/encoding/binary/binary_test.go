@@ -24,8 +24,8 @@
 package binary_test
 
 import (
-	. "mal"
-	"mal/encoding/binary"
+	. "github.com/ccsdsmo/malgo/src/mal"
+	"github.com/ccsdsmo/malgo/src/mal/encoding/binary"
 	"math/rand"
 	"reflect"
 	"testing"

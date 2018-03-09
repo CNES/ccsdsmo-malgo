@@ -25,13 +25,13 @@ package api
 
 import (
 	"errors"
-	. "mal"
-	"mal/debug"
+	. "github.com/ccsdsmo/malgo/src/mal"
+	"github.com/ccsdsmo/malgo/src/mal/debug"
 	"sync/atomic"
 )
 
 var (
-	logger debug.Logger = debug.GetLogger("mal.api")
+	logger debug.Logger = debug.GetLogger("github.com/ccsdsmo/malgo/src/mal.api")
 )
 
 // Defines a generic handler interface for providers
