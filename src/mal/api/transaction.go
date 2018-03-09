@@ -24,7 +24,7 @@
 package api
 
 import (
-	. "mal"
+	. "github.com/ccsdsmo/malgo/src/mal"
 )
 
 // Defines a generic root Transaction interface (context of an incoming interaction)

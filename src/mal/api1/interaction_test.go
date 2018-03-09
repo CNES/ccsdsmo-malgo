@@ -25,19 +25,19 @@ package api1_test
 
 import (
 	"fmt"
-	. "mal"
-	. "mal/api1"
-	_ "mal/transport/tcp" // Needed to initialize TCP transport factory
+	. "github.com/ccsdsmo/malgo/src/mal"
+	. "github.com/ccsdsmo/malgo/src/mal/api1"
+	_ "github.com/ccsdsmo/malgo/src/mal/transport/tcp" // Needed to initialize TCP transport factory
 	"testing"
 	"time"
 )
 
 const (
-	provider_url   = "maltcp://127.0.0.1:16001"
-	consumer_url   = "maltcp://127.0.0.1:16002"
-	publisher_url  = "maltcp://127.0.0.1:16001"
-	subscriber_url = "maltcp://127.0.0.1:16002"
-	broker_url     = "maltcp://127.0.0.1:16003"
+	provider_url   = "github.com/ccsdsmo/malgo/src/maltcp://127.0.0.1:16001"
+	consumer_url   = "github.com/ccsdsmo/malgo/src/maltcp://127.0.0.1:16002"
+	publisher_url  = "github.com/ccsdsmo/malgo/src/maltcp://127.0.0.1:16001"
+	subscriber_url = "github.com/ccsdsmo/malgo/src/maltcp://127.0.0.1:16002"
+	broker_url     = "github.com/ccsdsmo/malgo/src/maltcp://127.0.0.1:16003"
 )
 
 // ########## ########## ########## ########## ########## ########## ########## ##########

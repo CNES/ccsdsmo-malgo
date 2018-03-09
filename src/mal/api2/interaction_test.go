@@ -25,16 +25,16 @@ package api2_test
 
 import (
 	"fmt"
-	. "mal"
-	. "mal/api2"
-	_ "mal/transport/tcp" // Needed to initialize TCP transport factory
+	. "github.com/ccsdsmo/malgo/src/mal"
+	. "github.com/ccsdsmo/malgo/src/mal/api2"
+	_ "github.com/ccsdsmo/malgo/src/mal/transport/tcp" // Needed to initialize TCP transport factory
 	"testing"
 	"time"
 )
 
 const (
-	provider_url = "maltcp://127.0.0.1:16001"
-	consumer_url = "maltcp://127.0.0.1:16002"
+	provider_url = "github.com/ccsdsmo/malgo/src/maltcp://127.0.0.1:16001"
+	consumer_url = "github.com/ccsdsmo/malgo/src/maltcp://127.0.0.1:16002"
 )
 
 // ########## ########## ########## ########## ########## ########## ########## ##########

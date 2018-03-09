@@ -27,7 +27,7 @@ package api2
 // based and interface based interfaces in a same way.
 
 import (
-	. "mal"
+	. "github.com/ccsdsmo/malgo/src/mal"
 )
 
 type handler interface {

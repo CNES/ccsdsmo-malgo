@@ -24,8 +24,8 @@
 package splitbinary_test
 
 import (
-	. "mal"
-	"mal/encoding/splitbinary"
+	. "github.com/ccsdsmo/malgo/src/mal"
+	"github.com/ccsdsmo/malgo/src/mal/encoding/splitbinary"
 	"math/rand"
 	"reflect"
 	"testing"

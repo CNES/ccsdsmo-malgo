@@ -24,14 +24,14 @@
 package tcp
 
 import (
-	. "mal"
+	. "github.com/ccsdsmo/malgo/src/mal"
 	"testing"
 	"time"
 )
 
 func TestMessage(t *testing.T) {
-	from := URI("maltcp://192.168.1.80:12345/Service1")
-	to := URI("maltcp://192.168.1.81:54321/Service2")
+	from := URI("github.com/ccsdsmo/malgo/src/maltcp://192.168.1.80:12345/Service1")
+	to := URI("github.com/ccsdsmo/malgo/src/maltcp://192.168.1.81:54321/Service2")
 	msg1 := &Message{
 		UriFrom:          &from,
 		UriTo:            &to,
@@ -48,7 +48,7 @@ func TestMessage(t *testing.T) {
 	}
 
 	transport1 := &TCPTransport{
-		uri:     URI("maltcp://192.168.1.80:12345"),
+		uri:     URI("github.com/ccsdsmo/malgo/src/maltcp://192.168.1.80:12345"),
 		version: 1,
 
 		sourceFlag:           true,
@@ -69,7 +69,7 @@ func TestMessage(t *testing.T) {
 	}
 
 	transport2 := &TCPTransport{
-		uri:     URI("maltcp://192.168.1.81:54321"),
+		uri:     URI("github.com/ccsdsmo/malgo/src/maltcp://192.168.1.81:54321"),
 		version: 1,
 
 		sourceFlag:           true,

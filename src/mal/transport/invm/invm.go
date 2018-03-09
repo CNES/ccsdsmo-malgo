@@ -25,13 +25,13 @@ package invm
 
 import (
 	"errors"
-	. "mal"
-	"mal/debug"
+	. "github.com/ccsdsmo/malgo/src/mal"
+	"github.com/ccsdsmo/malgo/src/mal/debug"
 	"net/url"
 )
 
 var (
-	logger debug.Logger = debug.GetLogger("mal.transport.invm")
+	logger debug.Logger = debug.GetLogger("github.com/ccsdsmo/malgo/src/mal.transport.invm")
 )
 
 type InVMTransport struct {

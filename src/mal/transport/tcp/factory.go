@@ -24,7 +24,7 @@
 package tcp
 
 import (
-	. "mal"
+	. "github.com/ccsdsmo/malgo/src/mal"
 	"net/url"
 	"strconv"
 )

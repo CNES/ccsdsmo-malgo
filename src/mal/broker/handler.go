@@ -24,9 +24,9 @@
 package broker
 
 import (
-	. "mal"
-	. "mal/api"
-	"mal/encoding/binary"
+	. "github.com/ccsdsmo/malgo/src/mal"
+	. "github.com/ccsdsmo/malgo/src/mal/api"
+	"github.com/ccsdsmo/malgo/src/mal/encoding/binary"
 )
 
 const (

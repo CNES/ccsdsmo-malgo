@@ -25,8 +25,8 @@ package tcp
 
 import (
 	"io"
-	. "mal"
-	"mal/debug"
+	. "github.com/ccsdsmo/malgo/src/mal"
+	"github.com/ccsdsmo/malgo/src/mal/debug"
 	"net"
 	"net/url"
 	"strconv"
@@ -42,7 +42,7 @@ const (
 )
 
 var (
-	logger debug.Logger = debug.GetLogger("mal.transport.tcp")
+	logger debug.Logger = debug.GetLogger("github.com/ccsdsmo/malgo/src/mal.transport.tcp")
 )
 
 type TCPTransport struct {

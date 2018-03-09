@@ -26,9 +26,9 @@ package api_test
 import (
 	"errors"
 	"fmt"
-	. "mal"
-	. "mal/api"
-	_ "mal/transport/tcp" // Needed to initialize TCP transport factory
+	. "github.com/ccsdsmo/malgo/src/mal"
+	. "github.com/ccsdsmo/malgo/src/mal/api"
+	_ "github.com/ccsdsmo/malgo/src/mal/transport/tcp" // Needed to initialize TCP transport factory
 	"testing"
 	"time"
 )

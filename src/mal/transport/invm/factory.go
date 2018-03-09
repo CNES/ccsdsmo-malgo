@@ -25,7 +25,7 @@ package invm
 
 import (
 	"errors"
-	. "mal"
+	. "github.com/ccsdsmo/malgo/src/mal"
 	"net/url"
 )
 

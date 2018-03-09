@@ -1,7 +1,7 @@
 package malactor
 
 import (
-	. "mal"
+	. "github.com/ccsdsmo/malgo/src/mal"
 )
 
 type handler interface {

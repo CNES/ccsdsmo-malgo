@@ -25,16 +25,16 @@ package progress_consumer
 
 import (
 	"fmt"
-	. "mal"
-	. "mal/api"
-	"mal/encoding/binary"
-	_ "mal/transport/tcp" // Needed to initialize TCP transport factory
+	. "github.com/ccsdsmo/malgo/src/mal"
+	. "github.com/ccsdsmo/malgo/src/mal/api"
+	"github.com/ccsdsmo/malgo/src/mal/encoding/binary"
+	_ "github.com/ccsdsmo/malgo/src/mal/transport/tcp" // Needed to initialize TCP transport factory
 	"testing"
 )
 
 const (
-	provider_url = "maltcp://127.0.0.1:6660/progress_provider/provider"
-	consumer_url = "maltcp://127.0.0.1:16002"
+	provider_url = "github.com/ccsdsmo/malgo/src/maltcp://127.0.0.1:6660/progress_provider/provider"
+	consumer_url = "github.com/ccsdsmo/malgo/src/maltcp://127.0.0.1:16002"
 )
 
 // Test TCP transport Progress Interaction using the high level API, this test can be

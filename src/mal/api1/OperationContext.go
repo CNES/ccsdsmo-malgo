@@ -29,7 +29,7 @@ package api1
 import (
 	"errors"
 	"fmt"
-	. "mal"
+	. "github.com/ccsdsmo/malgo/src/mal"
 	"sync/atomic"
 )
 
