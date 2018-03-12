@@ -24,9 +24,9 @@
 package tcp
 
 import (
-	"io"
 	. "github.com/ccsdsmo/malgo/mal"
 	"github.com/ccsdsmo/malgo/mal/debug"
+	"io"
 	"net"
 	"net/url"
 	"strconv"
@@ -175,7 +175,10 @@ func (transport *TCPTransport) handleConn(listen net.Listener) {
 	for {
 		cnx, err := listen.Accept()
 		if err != nil {
-			logger.Errorf("TCPTransport.handleConn, error accepting connection: %s", err.Error())
+			// If closing don't log an error.
+			if transport.running {
+				logger.Errorf("TCPTransport.handleConn, error accepting connection: %s", err.Error())
+			}
 			break
 		}
 		logger.Infof("TCPTransport.handleConn, accept connexion from %s", cnx.RemoteAddr())
