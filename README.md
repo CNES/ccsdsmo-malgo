@@ -37,9 +37,12 @@ This GO API basically includes 4 packages:
 ```
 options: -v -timeout 1m
 
-go test ./src/mal/encoding/binary
-go test ./src/mal/encoding/splitbinary
-go test ./src/mal/transport/invm
-go test ./src/mal/transport/tcp
-go test ./src/mal/api
+cd src
+go test github.com/ccsdsmo/malgo/mal/encoding/binary
+go test github.com/ccsdsmo/malgo/mal/encoding/splitbinary
+go test github.com/ccsdsmo/malgo/mal/transport/invm
+go test github.com/ccsdsmo/malgo/mal/transport/tcp
+go test github.com/ccsdsmo/malgo/mal/api
+go test github.com/ccsdsmo/malgo/tests/encoding
+go test github.com/ccsdsmo/malgo/tests/issue1
 ```
