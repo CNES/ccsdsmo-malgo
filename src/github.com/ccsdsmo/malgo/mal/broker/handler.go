@@ -46,14 +46,119 @@ type BrokerSub struct {
 	session     SessionType
 	sessionName Identifier
 	serviceArea UShort
-	Service     UShort
+	service     UShort
 	operation   UShort
 	entities    *EntityRequestList
 	transaction SubscriberTransaction
 }
 
 func subkey(urifrom string, subid string) string {
+	// Conforming to 3.5.6.3.d, the URI of the consumer and the subscription identifier
+	// shall form the unique identifier of the subscription.
 	return urifrom + "/" + subid
+}
+
+func (sub *BrokerSub) domainMatches(domain IdentifierList, subdomain *IdentifierList) bool {
+	// See MAL specification 3.5.6.5 e,f,g p 3-57
+
+	// e) The domain of the update message shall match the domain of the subscription message.
+	// f) If the subscription EntityRequest included a subDomain field, then this shall be appended
+	//    to the domain of the subscription message to make the complete domain for that request.
+	// g) The final Identifier of the subDomain may be the wildcard character ‘*’.
+
+	var required []*Identifier
+	var all bool = false
+
+	if subdomain == nil {
+		required = sub.domain
+	} else {
+		required = make([]*Identifier, len(sub.domain)+len(*subdomain))
+		copy(required, sub.domain)
+		required = append(required, *subdomain...)
+		if (*(*subdomain)[len(*subdomain)-1]) == "*" {
+			all = true
+			required = required[:len(*subdomain)-1]
+		}
+	}
+
+	if len(domain) < len(required) {
+		return false
+	}
+
+	for idx, name := range ([]*Identifier)(sub.domain) {
+		if name != ([]*Identifier)(domain)[idx] {
+			return false
+		}
+	}
+
+	if len(domain) > len(sub.domain) {
+		return all
+	}
+
+	return true
+}
+
+func (sub *BrokerSub) matches(msg *Message, key EntityKey) bool {
+	// See MAL specification 3.5.6.5 e,f,g p 3-57
+
+	if (msg.Session != sub.session) || (msg.SessionName != sub.sessionName) {
+		// h) The session types and names must match.
+		logger.Warnf("Broker.matches #1 !!")
+		return false
+	}
+
+	// Evaluates all requests of the subscription
+	for _, request := range ([]*EntityRequest)(*sub.entities) {
+		if !sub.domainMatches(msg.Domain, request.SubDomain) {
+			logger.Warnf("Broker.matches #2 !!")
+			continue
+		}
+		if !request.AllAreas && msg.ServiceArea != sub.serviceArea {
+			// j) The area identifiers must match unless the subscription specified True in the allAreas
+			//    field of the EntityRequest, in which case they shall be ignored.
+			logger.Warnf("Broker.matches #3 !!")
+			continue
+		}
+		if !request.AllServices && msg.Service != sub.service {
+			// k) The service identifiers must match unless the subscription specified True in the
+			//    allServices field of the EntityRequest, in which case they shall be ignored.
+			logger.Warnf("Broker.matches #4 !!")
+			continue
+		}
+		if !request.AllOperations && msg.Operation != sub.operation {
+			// l) The operation identifiers must match unless the subscription specified True in the
+			// allOperations field of the EntityRequest, in which case they shall be ignored.
+			logger.Warnf("Broker.matches #5 !!")
+			continue
+		}
+
+		// Search for a matching key in the current request
+		for _, rkey := range ([]*EntityKey)(request.EntityKeys) {
+			// a) A sub-key specified in the EntityKey structure shall take one of three types of value:
+			//    an actual value, a NULL value, and the special wildcard value of ‘*’ (for the first subkey
+			//    only) or zero (for the other three sub-keys).
+			// b) If a sub-key contains a specific value it shall only match a sub-key that contains the
+			//    same value. This includes an empty ‘’ value for the first sub-key. The matches are
+			//    case sensitive.
+			// c) If a sub-key contains a NULL value it shall only match a sub-key that contains
+			//    NULL.
+			// d) If a sub-key contains the wildcard value it shall match a sub-key that contains any
+			//    value including NULL.
+			logger.Warnf("Broker.matches request -> %s %d %d %d", *rkey.FirstSubKey, *rkey.SecondSubKey, *rkey.ThirdSubKey, *rkey.FourthSubKey)
+			logger.Warnf("Broker.matches update -> %s %d %d %d", *key.FirstSubKey, *key.SecondSubKey, *key.ThirdSubKey, *key.FourthSubKey)
+			if (((string)(*rkey.FirstSubKey) == "*") || ((string)(*rkey.FirstSubKey) == (string)(*key.FirstSubKey))) &&
+				(((int64)(*rkey.SecondSubKey) == 0) || ((string)(*rkey.SecondSubKey) == (string)(*key.SecondSubKey))) &&
+				(((int64)(*rkey.ThirdSubKey) == 0) || ((string)(*rkey.ThirdSubKey) == (string)(*key.ThirdSubKey))) &&
+				(((int64)(*rkey.FourthSubKey) == 0) || ((string)(*rkey.FourthSubKey) == (string)(*key.FourthSubKey))) {
+				return true
+			}
+			logger.Warnf("Broker.matches #6 !!")
+		}
+		// There is no matching key in this entity request
+	}
+
+	// There is no matching key in this subscription
+	return false
 }
 
 // Structure used to memorize a publisher registration
@@ -137,7 +242,7 @@ func (handler *BrokerImpl) register(msg *Message, transaction SubscriberTransact
 		session:     msg.Session,
 		sessionName: msg.SessionName,
 		serviceArea: msg.ServiceArea,
-		Service:     msg.Service,
+		service:     msg.Service,
 		operation:   msg.Operation,
 		entities:    &sub.Entities,
 		transaction: transaction,
@@ -149,10 +254,9 @@ func (handler *BrokerImpl) register(msg *Message, transaction SubscriberTransact
 func (handler *BrokerImpl) OnRegister(msg *Message, transaction SubscriberTransaction) error {
 	err := handler.register(msg, transaction)
 	if err != nil {
-		// TODO (AF): Builds and encode reply
 		return transaction.AckRegister(nil, true)
 	} else {
-		// TODO (AF): Builds and encode reply
+		// TODO (AF): Builds and encode error structure (cf. 3.5.6.11.3)
 		return transaction.AckRegister(nil, false)
 	}
 }
@@ -175,13 +279,10 @@ func (handler *BrokerImpl) deregister(msg *Message, transaction SubscriberTransa
 
 func (handler *BrokerImpl) OnDeregister(msg *Message, transaction SubscriberTransaction) error {
 	err := handler.deregister(msg, transaction)
-	if err != nil {
-		// TODO (AF): Builds and encode reply
-		return transaction.AckDeregister(nil, true)
-	} else {
-		// TODO (AF): Builds and encode reply
-		return transaction.AckDeregister(nil, false)
+	if err == nil {
+		// TODO (AF): Logs an error message
 	}
+	return transaction.AckDeregister(nil, true)
 }
 
 func (handler *BrokerImpl) publishRegister(msg *Message, transaction PublisherTransaction) error {
@@ -214,7 +315,7 @@ func (handler *BrokerImpl) OnPublishRegister(msg *Message, transaction Publisher
 		// TODO (AF): Builds and encode reply
 		return transaction.AckRegister(nil, true)
 	} else {
-		// TODO (AF): Builds and encode reply
+		// TODO (AF): Builds and encode error structure (cf 3.5.6.11.6)
 		return transaction.AckRegister(nil, false)
 	}
 }
@@ -230,13 +331,10 @@ func (handler *BrokerImpl) publishDeregister(msg *Message, transaction Publisher
 
 func (handler *BrokerImpl) OnPublishDeregister(msg *Message, transaction PublisherTransaction) error {
 	err := handler.publishDeregister(msg, transaction)
-	if err != nil {
-		// TODO (AF): Builds and encode reply
-		return transaction.AckDeregister(nil, true)
-	} else {
-		// TODO (AF): Builds and encode reply
-		return transaction.AckDeregister(nil, false)
+	if err == nil {
+		// TODO (AF): Logs an error message
 	}
+	return transaction.AckDeregister(nil, true)
 }
 
 func (handler *BrokerImpl) publish(pub *Message, transaction PublisherTransaction) error {
@@ -250,22 +348,35 @@ func (handler *BrokerImpl) publish(pub *Message, transaction PublisherTransactio
 	logger.Infof("Broker.Publish, DecodeUpdateHeaderList -> %+v", uhlist)
 	uvlist, err := DecodeUpdateList(decoder)
 	if err != nil {
+		// TODO (AF): Returns a PublishError MAL message to publisher
 		return err
 	}
 	logger.Infof("Broker.Publish, DecodeUpdateList -> %d %v", len([]*Blob(*uvlist)), uvlist)
 
+	if len(*uhlist) != len(*uvlist) {
+		return errors.New("Bad header and value list lengths")
+	}
 	for _, sub := range handler.subs {
+		var headers UpdateHeaderList = make([]*UpdateHeader, 0, len(*uhlist))
+		var values UpdateList = make([]*Blob, 0, len(*uhlist))
+		for idx, hdr := range *uhlist {
+			if sub.matches(pub, hdr.Key) {
+				logger.Warnf("Broker.Publish match !!")
+				// Adds the update to the notify message for this subscription
+				headers = append(headers, hdr)
+				values = append(values, (*uvlist)[idx])
+			}
+		}
+		if len(headers) == 0 {
+			// there is no update matching this subscription
+			continue
+		}
+
 		buf := make([]byte, 0, 1024)
 		encoder := binary.NewBinaryEncoder(buf, varint)
 		encoder.EncodeIdentifier(&sub.subid)
-		// encoder.EncodeElement(uhlist)
-		// Encode update value list
-		//		NewUInteger(uint32(len([]*Blob(*uvlist)))).Encode(encoder)
-		//		for _, uv := range []*Blob(*uvlist) {
-		//			encoder.WriteBody([]byte(*uv))
-		//		}
-		uhlist.Encode(encoder)
-		uvlist.Encode(encoder)
+		headers.Encode(encoder)
+		values.Encode(encoder)
 		sub.transaction.Notify(encoder.Body(), false)
 	}
 	return nil
