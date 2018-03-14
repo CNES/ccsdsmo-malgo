@@ -79,9 +79,9 @@ func TestPubSub(t *testing.T) {
 	}
 	pubop := publisher.NewPublisherOperation(broker.Uri(), 200, 1, 1, 1)
 
-	ek1 := &EntityKey{NewIdentifier("key1"), NewLong(0), NewLong(0), NewLong(0)}
-	ek2 := &EntityKey{NewIdentifier("key2"), NewLong(0), NewLong(0), NewLong(0)}
-	var eklist = EntityKeyList([]*EntityKey{ek1, ek2})
+	ekpub1 := &EntityKey{NewIdentifier("key1"), NewLong(1), NewLong(1), NewLong(1)}
+	ekpub2 := &EntityKey{NewIdentifier("key2"), NewLong(1), NewLong(1), NewLong(1)}
+	var eklist = EntityKeyList([]*EntityKey{ekpub1, ekpub2})
 	eklist.Encode(encoder)
 
 	pubop.Register(encoder.Body())
@@ -105,10 +105,11 @@ func TestPubSub(t *testing.T) {
 	}
 	subop := subscriber.NewSubscriberOperation(broker.Uri(), 200, 1, 1, 1)
 
-	domains := IdentifierList([]*Identifier{NewIdentifier("DOMAIN")})
+	//	domains := IdentifierList([]*Identifier{NewIdentifier("DOMAIN")})
+	eksub := &EntityKey{NewIdentifier("key1"), NewLong(0), NewLong(0), NewLong(0)}
 	var erlist = EntityRequestList([]*EntityRequest{
 		&EntityRequest{
-			&domains, true, true, true, true, EntityKeyList([]*EntityKey{ek1}),
+			NullIdentifierList, true, true, true, true, EntityKeyList([]*EntityKey{eksub}),
 		},
 	})
 	var subid = Identifier("MySubscription")
@@ -121,9 +122,9 @@ func TestPubSub(t *testing.T) {
 	fmt.Printf("subop.Register OK\n")
 
 	// Publish a first update
-	updthdr1 := &UpdateHeader{*TimeNow(), *publisher.Uri, MAL_UPDATETYPE_CREATION, *ek1}
-	updthdr2 := &UpdateHeader{*TimeNow(), *publisher.Uri, MAL_UPDATETYPE_CREATION, *ek2}
-	updthdr3 := &UpdateHeader{*TimeNow(), *publisher.Uri, MAL_UPDATETYPE_CREATION, *ek1}
+	updthdr1 := &UpdateHeader{*TimeNow(), *publisher.Uri, MAL_UPDATETYPE_CREATION, *ekpub1}
+	updthdr2 := &UpdateHeader{*TimeNow(), *publisher.Uri, MAL_UPDATETYPE_CREATION, *ekpub2}
+	updthdr3 := &UpdateHeader{*TimeNow(), *publisher.Uri, MAL_UPDATETYPE_CREATION, *ekpub1}
 	updtHdrlist1 := UpdateHeaderList([]*UpdateHeader{updthdr1, updthdr2, updthdr3})
 
 	updt1 := &Blob{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
@@ -143,8 +144,8 @@ func TestPubSub(t *testing.T) {
 	time.Sleep(100 * time.Millisecond)
 
 	// Publish a second update
-	updthdr4 := &UpdateHeader{*TimeNow(), *publisher.Uri, MAL_UPDATETYPE_CREATION, *ek1}
-	updthdr5 := &UpdateHeader{*TimeNow(), *publisher.Uri, MAL_UPDATETYPE_CREATION, *ek1}
+	updthdr4 := &UpdateHeader{*TimeNow(), *publisher.Uri, MAL_UPDATETYPE_CREATION, *ekpub1}
+	updthdr5 := &UpdateHeader{*TimeNow(), *publisher.Uri, MAL_UPDATETYPE_CREATION, *ekpub1}
 	updtHdrlist2 := UpdateHeaderList([]*UpdateHeader{updthdr4, updthdr5})
 
 	updt4 := &Blob{2, 3}
