@@ -36,7 +36,7 @@ type SplitBinaryBuffer struct {
 	Bitfield     []byte
 }
 
-// Returns a slice containing all encoded datas
+// Returns a newly allocated slice containing all encoded datas.
 func (buffer *SplitBinaryBuffer) Body() []byte {
 	//	var length int = 4 + len(buffer.Bitfield) + len(buffer.Buf)
 	var bflen int = ((((int)(buffer.Bitfield_len) - 1) / 8) + 1)
@@ -53,7 +53,9 @@ func (buffer *SplitBinaryBuffer) Body() []byte {
 	return buf
 }
 
-// Reset the buffer allowing to reuse it to write anew
+// Reset the buffer allowing to reuse it.
+// If write parameter is true the internal slice is cleaned and the buffer
+// can be write anew.
 func (buffer *SplitBinaryBuffer) Reset(write bool) {
 	if write {
 		buffer.Buf = buffer.Buf[:0]
