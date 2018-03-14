@@ -29,19 +29,47 @@ import (
 
 // Defines a generic root Transaction interface (context of an incoming interaction)
 type Transaction interface {
+	init(msg *Message)
 	getTid() ULong
 }
 
 // Defines a generic root Transaction structure
 type TransactionX struct {
-	ctx         *Context
-	uri         *URI
-	urifrom     *URI
+	ctx     *Context
+	uri     *URI
+	urifrom *URI
+
+	AuthenticationId Blob
+	EncodingId       UOctet
+	QoSLevel         QoSLevel
+	Priority         UInteger
+	Domain           IdentifierList
+	NetworkZone      Identifier
+	Session          SessionType
+	SessionName      Identifier
+
 	tid         ULong
 	area        UShort
 	areaVersion UOctet
 	service     UShort
 	operation   UShort
+}
+
+// Fix additionnal parameters from incoming message
+func (tx *TransactionX) init(msg *Message) {
+	tx.AuthenticationId = msg.AuthenticationId
+	tx.EncodingId = msg.EncodingId
+	tx.QoSLevel = msg.QoSLevel
+	tx.Priority = msg.Priority
+	tx.Domain = msg.Domain
+	tx.NetworkZone = msg.NetworkZone
+	tx.Session = msg.Session
+	tx.SessionName = msg.SessionName
+	tx.tid = msg.TransactionId
+	tx.area = msg.ServiceArea
+	tx.areaVersion = msg.AreaVersion
+	tx.service = msg.Service
+	tx.operation = msg.Operation
 }
 
 func (tx *TransactionX) getTid() ULong {
@@ -73,6 +101,16 @@ type SubmitTransactionX struct {
 
 func (tx *SubmitTransactionX) Ack(body []byte, isError bool) error {
 	msg := &Message{
+		UriFrom:          tx.uri,
+		UriTo:            tx.urifrom,
+		AuthenticationId: tx.AuthenticationId,
+		EncodingId:       tx.EncodingId,
+		QoSLevel:         tx.QoSLevel,
+		Priority:         tx.Priority,
+		Domain:           tx.Domain,
+		NetworkZone:      tx.NetworkZone,
+		Session:          tx.Session,
+		SessionName:      tx.SessionName,
 		InteractionType:  MAL_INTERACTIONTYPE_SUBMIT,
 		InteractionStage: MAL_IP_STAGE_SUBMIT_ACK,
 		TransactionId:    tx.tid,
@@ -80,8 +118,6 @@ func (tx *SubmitTransactionX) Ack(body []byte, isError bool) error {
 		AreaVersion:      tx.areaVersion,
 		Service:          tx.service,
 		Operation:        tx.operation,
-		UriFrom:          tx.uri,
-		UriTo:            tx.urifrom,
 		IsErrorMessage:   Boolean(isError),
 		Body:             body,
 	}
@@ -102,15 +138,23 @@ type RequestTransactionX struct {
 
 func (tx *RequestTransactionX) Reply(body []byte, isError bool) error {
 	msg := &Message{
+		UriFrom:          tx.uri,
+		UriTo:            tx.urifrom,
+		AuthenticationId: tx.AuthenticationId,
+		EncodingId:       tx.EncodingId,
+		QoSLevel:         tx.QoSLevel,
+		Priority:         tx.Priority,
+		Domain:           tx.Domain,
+		NetworkZone:      tx.NetworkZone,
+		Session:          tx.Session,
+		SessionName:      tx.SessionName,
 		InteractionType:  MAL_INTERACTIONTYPE_REQUEST,
 		InteractionStage: MAL_IP_STAGE_REQUEST_RESPONSE,
 		TransactionId:    tx.tid,
 		ServiceArea:      tx.area,
-		AreaVersion:      tx.areaVersion,
 		Service:          tx.service,
 		Operation:        tx.operation,
-		UriFrom:          tx.uri,
-		UriTo:            tx.urifrom,
+		AreaVersion:      tx.areaVersion,
 		IsErrorMessage:   Boolean(isError),
 		Body:             body,
 	}
@@ -132,6 +176,16 @@ type InvokeTransactionX struct {
 
 func (tx *InvokeTransactionX) Ack(body []byte, isError bool) error {
 	msg := &Message{
+		UriFrom:          tx.uri,
+		UriTo:            tx.urifrom,
+		AuthenticationId: tx.AuthenticationId,
+		EncodingId:       tx.EncodingId,
+		QoSLevel:         tx.QoSLevel,
+		Priority:         tx.Priority,
+		Domain:           tx.Domain,
+		NetworkZone:      tx.NetworkZone,
+		Session:          tx.Session,
+		SessionName:      tx.SessionName,
 		InteractionType:  MAL_INTERACTIONTYPE_INVOKE,
 		InteractionStage: MAL_IP_STAGE_INVOKE_ACK,
 		TransactionId:    tx.tid,
@@ -139,8 +193,6 @@ func (tx *InvokeTransactionX) Ack(body []byte, isError bool) error {
 		AreaVersion:      tx.areaVersion,
 		Service:          tx.service,
 		Operation:        tx.operation,
-		UriFrom:          tx.uri,
-		UriTo:            tx.urifrom,
 		IsErrorMessage:   Boolean(isError),
 		Body:             body,
 	}
@@ -149,6 +201,16 @@ func (tx *InvokeTransactionX) Ack(body []byte, isError bool) error {
 
 func (tx *InvokeTransactionX) Reply(body []byte, isError bool) error {
 	msg := &Message{
+		UriFrom:          tx.uri,
+		UriTo:            tx.urifrom,
+		AuthenticationId: tx.AuthenticationId,
+		EncodingId:       tx.EncodingId,
+		QoSLevel:         tx.QoSLevel,
+		Priority:         tx.Priority,
+		Domain:           tx.Domain,
+		NetworkZone:      tx.NetworkZone,
+		Session:          tx.Session,
+		SessionName:      tx.SessionName,
 		InteractionType:  MAL_INTERACTIONTYPE_INVOKE,
 		InteractionStage: MAL_IP_STAGE_INVOKE_RESPONSE,
 		TransactionId:    tx.tid,
@@ -156,8 +218,6 @@ func (tx *InvokeTransactionX) Reply(body []byte, isError bool) error {
 		AreaVersion:      tx.areaVersion,
 		Service:          tx.service,
 		Operation:        tx.operation,
-		UriFrom:          tx.uri,
-		UriTo:            tx.urifrom,
 		IsErrorMessage:   Boolean(isError),
 		Body:             body,
 	}
@@ -180,6 +240,16 @@ type ProgressTransactionX struct {
 
 func (tx *ProgressTransactionX) Ack(body []byte, isError bool) error {
 	msg := &Message{
+		UriFrom:          tx.uri,
+		UriTo:            tx.urifrom,
+		AuthenticationId: tx.AuthenticationId,
+		EncodingId:       tx.EncodingId,
+		QoSLevel:         tx.QoSLevel,
+		Priority:         tx.Priority,
+		Domain:           tx.Domain,
+		NetworkZone:      tx.NetworkZone,
+		Session:          tx.Session,
+		SessionName:      tx.SessionName,
 		InteractionType:  MAL_INTERACTIONTYPE_PROGRESS,
 		InteractionStage: MAL_IP_STAGE_PROGRESS_ACK,
 		TransactionId:    tx.tid,
@@ -187,8 +257,6 @@ func (tx *ProgressTransactionX) Ack(body []byte, isError bool) error {
 		AreaVersion:      tx.areaVersion,
 		Service:          tx.service,
 		Operation:        tx.operation,
-		UriFrom:          tx.uri,
-		UriTo:            tx.urifrom,
 		IsErrorMessage:   Boolean(isError),
 		Body:             body,
 	}
@@ -197,6 +265,16 @@ func (tx *ProgressTransactionX) Ack(body []byte, isError bool) error {
 
 func (tx *ProgressTransactionX) Update(body []byte, isError bool) error {
 	msg := &Message{
+		UriFrom:          tx.uri,
+		UriTo:            tx.urifrom,
+		AuthenticationId: tx.AuthenticationId,
+		EncodingId:       tx.EncodingId,
+		QoSLevel:         tx.QoSLevel,
+		Priority:         tx.Priority,
+		Domain:           tx.Domain,
+		NetworkZone:      tx.NetworkZone,
+		Session:          tx.Session,
+		SessionName:      tx.SessionName,
 		InteractionType:  MAL_INTERACTIONTYPE_PROGRESS,
 		InteractionStage: MAL_IP_STAGE_PROGRESS_UPDATE,
 		TransactionId:    tx.tid,
@@ -204,8 +282,6 @@ func (tx *ProgressTransactionX) Update(body []byte, isError bool) error {
 		AreaVersion:      tx.areaVersion,
 		Service:          tx.service,
 		Operation:        tx.operation,
-		UriFrom:          tx.uri,
-		UriTo:            tx.urifrom,
 		IsErrorMessage:   Boolean(isError),
 		Body:             body,
 	}
@@ -214,6 +290,16 @@ func (tx *ProgressTransactionX) Update(body []byte, isError bool) error {
 
 func (tx *ProgressTransactionX) Reply(body []byte, isError bool) error {
 	msg := &Message{
+		UriFrom:          tx.uri,
+		UriTo:            tx.urifrom,
+		AuthenticationId: tx.AuthenticationId,
+		EncodingId:       tx.EncodingId,
+		QoSLevel:         tx.QoSLevel,
+		Priority:         tx.Priority,
+		Domain:           tx.Domain,
+		NetworkZone:      tx.NetworkZone,
+		Session:          tx.Session,
+		SessionName:      tx.SessionName,
 		InteractionType:  MAL_INTERACTIONTYPE_PROGRESS,
 		InteractionStage: MAL_IP_STAGE_PROGRESS_RESPONSE,
 		TransactionId:    tx.tid,
@@ -221,8 +307,6 @@ func (tx *ProgressTransactionX) Reply(body []byte, isError bool) error {
 		AreaVersion:      tx.areaVersion,
 		Service:          tx.service,
 		Operation:        tx.operation,
-		UriFrom:          tx.uri,
-		UriTo:            tx.urifrom,
 		IsErrorMessage:   Boolean(isError),
 		Body:             body,
 	}
@@ -253,6 +337,16 @@ type SubscriberTransactionX struct {
 
 func (tx *SubscriberTransactionX) AckRegister(body []byte, isError bool) error {
 	msg := &Message{
+		UriFrom:          tx.uri,
+		UriTo:            tx.urifrom,
+		AuthenticationId: tx.AuthenticationId,
+		EncodingId:       tx.EncodingId,
+		QoSLevel:         tx.QoSLevel,
+		Priority:         tx.Priority,
+		Domain:           tx.Domain,
+		NetworkZone:      tx.NetworkZone,
+		Session:          tx.Session,
+		SessionName:      tx.SessionName,
 		InteractionType:  MAL_INTERACTIONTYPE_PUBSUB,
 		InteractionStage: MAL_IP_STAGE_PUBSUB_REGISTER_ACK,
 		TransactionId:    tx.tid,
@@ -260,8 +354,6 @@ func (tx *SubscriberTransactionX) AckRegister(body []byte, isError bool) error {
 		AreaVersion:      tx.areaVersion,
 		Service:          tx.service,
 		Operation:        tx.operation,
-		UriFrom:          tx.uri,
-		UriTo:            tx.urifrom,
 		IsErrorMessage:   Boolean(isError),
 		Body:             body,
 	}
@@ -270,6 +362,16 @@ func (tx *SubscriberTransactionX) AckRegister(body []byte, isError bool) error {
 
 func (tx *SubscriberTransactionX) Notify(body []byte, isError bool) error {
 	msg := &Message{
+		UriFrom:          tx.uri,
+		UriTo:            tx.urifrom,
+		AuthenticationId: tx.AuthenticationId,
+		EncodingId:       tx.EncodingId,
+		QoSLevel:         tx.QoSLevel,
+		Priority:         tx.Priority,
+		Domain:           tx.Domain,
+		NetworkZone:      tx.NetworkZone,
+		Session:          tx.Session,
+		SessionName:      tx.SessionName,
 		InteractionType:  MAL_INTERACTIONTYPE_PUBSUB,
 		InteractionStage: MAL_IP_STAGE_PUBSUB_NOTIFY,
 		TransactionId:    tx.tid,
@@ -277,8 +379,6 @@ func (tx *SubscriberTransactionX) Notify(body []byte, isError bool) error {
 		AreaVersion:      tx.areaVersion,
 		Service:          tx.service,
 		Operation:        tx.operation,
-		UriFrom:          tx.uri,
-		UriTo:            tx.urifrom,
 		IsErrorMessage:   Boolean(isError),
 		Body:             body,
 	}
@@ -287,6 +387,16 @@ func (tx *SubscriberTransactionX) Notify(body []byte, isError bool) error {
 
 func (tx *SubscriberTransactionX) AckDeregister(body []byte, isError bool) error {
 	msg := &Message{
+		UriFrom:          tx.uri,
+		UriTo:            tx.urifrom,
+		AuthenticationId: tx.AuthenticationId,
+		EncodingId:       tx.EncodingId,
+		QoSLevel:         tx.QoSLevel,
+		Priority:         tx.Priority,
+		Domain:           tx.Domain,
+		NetworkZone:      tx.NetworkZone,
+		Session:          tx.Session,
+		SessionName:      tx.SessionName,
 		InteractionType:  MAL_INTERACTIONTYPE_PUBSUB,
 		InteractionStage: MAL_IP_STAGE_PUBSUB_DEREGISTER_ACK,
 		TransactionId:    tx.tid,
@@ -294,8 +404,6 @@ func (tx *SubscriberTransactionX) AckDeregister(body []byte, isError bool) error
 		AreaVersion:      tx.areaVersion,
 		Service:          tx.service,
 		Operation:        tx.operation,
-		UriFrom:          tx.uri,
-		UriTo:            tx.urifrom,
 		IsErrorMessage:   Boolean(isError),
 		Body:             body,
 	}
@@ -314,6 +422,16 @@ type PublisherTransactionX struct {
 
 func (tx *PublisherTransactionX) AckRegister(body []byte, isError bool) error {
 	msg := &Message{
+		UriFrom:          tx.uri,
+		UriTo:            tx.urifrom,
+		AuthenticationId: tx.AuthenticationId,
+		EncodingId:       tx.EncodingId,
+		QoSLevel:         tx.QoSLevel,
+		Priority:         tx.Priority,
+		Domain:           tx.Domain,
+		NetworkZone:      tx.NetworkZone,
+		Session:          tx.Session,
+		SessionName:      tx.SessionName,
 		InteractionType:  MAL_INTERACTIONTYPE_PUBSUB,
 		InteractionStage: MAL_IP_STAGE_PUBSUB_PUBLISH_REGISTER_ACK,
 		TransactionId:    tx.tid,
@@ -321,8 +439,6 @@ func (tx *PublisherTransactionX) AckRegister(body []byte, isError bool) error {
 		AreaVersion:      tx.areaVersion,
 		Service:          tx.service,
 		Operation:        tx.operation,
-		UriFrom:          tx.uri,
-		UriTo:            tx.urifrom,
 		IsErrorMessage:   Boolean(isError),
 		Body:             body,
 	}
@@ -331,6 +447,16 @@ func (tx *PublisherTransactionX) AckRegister(body []byte, isError bool) error {
 
 func (tx *PublisherTransactionX) AckDeregister(body []byte, isError bool) error {
 	msg := &Message{
+		UriFrom:          tx.uri,
+		UriTo:            tx.urifrom,
+		AuthenticationId: tx.AuthenticationId,
+		EncodingId:       tx.EncodingId,
+		QoSLevel:         tx.QoSLevel,
+		Priority:         tx.Priority,
+		Domain:           tx.Domain,
+		NetworkZone:      tx.NetworkZone,
+		Session:          tx.Session,
+		SessionName:      tx.SessionName,
 		InteractionType:  MAL_INTERACTIONTYPE_PUBSUB,
 		InteractionStage: MAL_IP_STAGE_PUBSUB_PUBLISH_DEREGISTER_ACK,
 		TransactionId:    tx.tid,
@@ -338,8 +464,6 @@ func (tx *PublisherTransactionX) AckDeregister(body []byte, isError bool) error 
 		AreaVersion:      tx.areaVersion,
 		Service:          tx.service,
 		Operation:        tx.operation,
-		UriFrom:          tx.uri,
-		UriTo:            tx.urifrom,
 		IsErrorMessage:   Boolean(isError),
 		Body:             body,
 	}

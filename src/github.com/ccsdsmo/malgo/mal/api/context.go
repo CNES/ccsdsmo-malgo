@@ -53,8 +53,18 @@ type pDesc struct {
 }
 
 type ClientContext struct {
-	Ctx        *Context
-	Uri        *URI
+	Ctx *Context
+	Uri *URI
+
+	AuthenticationId Blob
+	EncodingId       UOctet
+	QoSLevel         QoSLevel
+	Priority         UInteger
+	Domain           IdentifierList
+	NetworkZone      Identifier
+	Session          SessionType
+	SessionName      Identifier
+
 	operations map[ULong]OperationHandler
 	handlers   map[uint64](*pDesc)
 	txcounter  uint64
@@ -66,12 +76,52 @@ func NewClientContext(ctx *Context, service string) (*ClientContext, error) {
 	uri := ctx.NewURI(service)
 	operations := make(map[ULong]OperationHandler)
 	handlers := make(map[uint64](*pDesc))
-	cctx := &ClientContext{ctx, uri, operations, handlers, 0, false}
+	cctx := &ClientContext{
+		Ctx: ctx, Uri: uri, operations: operations, handlers: handlers, txcounter: 0, goroutine: false}
 	err := ctx.RegisterEndPoint(uri, cctx)
 	if err != nil {
 		return nil, err
 	}
 	return cctx, nil
+}
+
+func (cctx *ClientContext) SetAuthenticationId(AuthenticationId Blob) *ClientContext {
+	cctx.AuthenticationId = AuthenticationId
+	return cctx
+}
+func (cctx *ClientContext) SetEncodingId(EncodingId UOctet) *ClientContext {
+	cctx.EncodingId = EncodingId
+	return cctx
+}
+
+func (cctx *ClientContext) SetQoSLevel(QoSLevel QoSLevel) *ClientContext {
+	cctx.QoSLevel = QoSLevel
+	return cctx
+}
+
+func (cctx *ClientContext) SetPriority(Priority UInteger) *ClientContext {
+	cctx.Priority = Priority
+	return cctx
+}
+
+func (cctx *ClientContext) SetDomain(Domain IdentifierList) *ClientContext {
+	cctx.Domain = Domain
+	return cctx
+}
+
+func (cctx *ClientContext) SetNetworkZone(NetworkZone Identifier) *ClientContext {
+	cctx.NetworkZone = NetworkZone
+	return cctx
+}
+
+func (cctx *ClientContext) SetSession(Session SessionType) *ClientContext {
+	cctx.Session = Session
+	return cctx
+}
+
+func (cctx *ClientContext) SetSessionName(SessionName Identifier) *ClientContext {
+	cctx.SessionName = SessionName
+	return cctx
 }
 
 func (cctx *ClientContext) TransactionId() ULong {
@@ -184,26 +234,36 @@ func (cctx *ClientContext) OnMessage(msg *Message) {
 		var transaction Transaction
 		switch msg.InteractionType {
 		case MAL_INTERACTIONTYPE_SEND:
-			transaction = &SendTransactionX{TransactionX{cctx.Ctx, cctx.Uri, msg.UriFrom, msg.TransactionId, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation}}
+			transaction = &SendTransactionX{TransactionX{ctx: cctx.Ctx, uri: cctx.Uri, urifrom: msg.UriFrom}}
+			transaction.init(msg)
 		case MAL_INTERACTIONTYPE_SUBMIT:
-			transaction = &SubmitTransactionX{TransactionX{cctx.Ctx, cctx.Uri, msg.UriFrom, msg.TransactionId, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation}}
+			transaction = &SubmitTransactionX{TransactionX{ctx: cctx.Ctx, uri: cctx.Uri, urifrom: msg.UriFrom}}
+			transaction.init(msg)
 		case MAL_INTERACTIONTYPE_REQUEST:
-			transaction = &RequestTransactionX{TransactionX{cctx.Ctx, cctx.Uri, msg.UriFrom, msg.TransactionId, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation}}
+			transaction = &RequestTransactionX{TransactionX{ctx: cctx.Ctx, uri: cctx.Uri, urifrom: msg.UriFrom}}
+			transaction.init(msg)
 		case MAL_INTERACTIONTYPE_INVOKE:
-			transaction = &InvokeTransactionX{TransactionX{cctx.Ctx, cctx.Uri, msg.UriFrom, msg.TransactionId, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation}}
+			transaction = &InvokeTransactionX{TransactionX{ctx: cctx.Ctx, uri: cctx.Uri, urifrom: msg.UriFrom}}
+			transaction.init(msg)
 		case MAL_INTERACTIONTYPE_PROGRESS:
-			transaction = &ProgressTransactionX{TransactionX{cctx.Ctx, cctx.Uri, msg.UriFrom, msg.TransactionId, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation}}
+			transaction = &ProgressTransactionX{TransactionX{ctx: cctx.Ctx, uri: cctx.Uri, urifrom: msg.UriFrom}}
+			transaction.init(msg)
 		case MAL_INTERACTIONTYPE_PUBSUB:
 			if msg.InteractionStage == MAL_IP_STAGE_PUBSUB_PUBLISH_REGISTER {
-				transaction = &PublisherTransactionX{TransactionX{cctx.Ctx, cctx.Uri, msg.UriFrom, msg.TransactionId, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation}}
+				transaction = &PublisherTransactionX{TransactionX{ctx: cctx.Ctx, uri: cctx.Uri, urifrom: msg.UriFrom}}
+				transaction.init(msg)
 			} else if msg.InteractionStage == MAL_IP_STAGE_PUBSUB_PUBLISH {
-				transaction = &PublisherTransactionX{TransactionX{cctx.Ctx, cctx.Uri, msg.UriFrom, msg.TransactionId, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation}}
+				transaction = &PublisherTransactionX{TransactionX{ctx: cctx.Ctx, uri: cctx.Uri, urifrom: msg.UriFrom}}
+				transaction.init(msg)
 			} else if msg.InteractionStage == MAL_IP_STAGE_PUBSUB_PUBLISH_DEREGISTER {
-				transaction = &PublisherTransactionX{TransactionX{cctx.Ctx, cctx.Uri, msg.UriFrom, msg.TransactionId, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation}}
+				transaction = &PublisherTransactionX{TransactionX{ctx: cctx.Ctx, uri: cctx.Uri, urifrom: msg.UriFrom}}
+				transaction.init(msg)
 			} else if msg.InteractionStage == MAL_IP_STAGE_PUBSUB_REGISTER {
-				transaction = &SubscriberTransactionX{TransactionX{cctx.Ctx, cctx.Uri, msg.UriFrom, msg.TransactionId, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation}}
+				transaction = &SubscriberTransactionX{TransactionX{ctx: cctx.Ctx, uri: cctx.Uri, urifrom: msg.UriFrom}}
+				transaction.init(msg)
 			} else if msg.InteractionStage == MAL_IP_STAGE_PUBSUB_DEREGISTER {
-				transaction = &SubscriberTransactionX{TransactionX{cctx.Ctx, cctx.Uri, msg.UriFrom, msg.TransactionId, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation}}
+				transaction = &SubscriberTransactionX{TransactionX{ctx: cctx.Ctx, uri: cctx.Uri, urifrom: msg.UriFrom}}
+				transaction.init(msg)
 			} else {
 				// TODO (AF): Log an error? Adds an error listener?
 				logger.Errorf("Unknown interaction stage for PubSub: %tv", msg)
