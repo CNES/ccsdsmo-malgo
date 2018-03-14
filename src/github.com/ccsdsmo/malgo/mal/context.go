@@ -43,6 +43,7 @@ type Context struct {
 	listeners map[URI]Listener
 	ch        chan *Message
 	ends      chan bool
+	// Access Control handler
 	achdlr    AccessControl
 	errch     chan *MessageError
 	transport Transport
