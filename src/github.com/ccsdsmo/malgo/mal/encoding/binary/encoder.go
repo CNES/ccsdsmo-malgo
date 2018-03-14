@@ -56,9 +56,11 @@ func NewBinaryEncoder(buf []byte, varint bool) *BinaryEncoder {
 	return encoder
 }
 
-// Returns a slice containing all encoded data as needed to be sent
+// Returns a new slice containing all encoded data as needed to be sent.
+// The buffer can be used anew without side-effect on this slice, the internal slice
+// can be get using encoder.Out.(*binary.BinaryBuffer).Buf
 func (encoder *BinaryEncoder) Body() []byte {
-	return encoder.Out.(*BinaryBuffer).Buf
+	return encoder.Out.(*BinaryBuffer).Body()
 }
 
 // TODO (AF): No longer needed

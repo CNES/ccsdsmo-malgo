@@ -34,12 +34,17 @@ type BinaryBuffer struct {
 	Buf    []byte
 }
 
-// Returns a slice containing all encoded datas
+// Returns a newly allocated slice containing all encoded datas.
 func (buffer *BinaryBuffer) Body() []byte {
-	return buffer.Buf
+	buf := make([]byte, len(buffer.Buf))
+	copy(buf, buffer.Buf)
+
+	return buf
 }
 
-// Reset the buffer allowing to reuse it
+// Reset the buffer allowing to reuse it.
+// If write parameter is true the internal slice is cleaned and the buffer
+// can be write anew.
 func (buffer *BinaryBuffer) Reset(write bool) {
 	if write {
 		buffer.Buf = buffer.Buf[:0]
