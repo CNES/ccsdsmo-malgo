@@ -58,6 +58,7 @@ type ClientContext struct {
 	operations map[ULong]OperationHandler
 	handlers   map[uint64](*pDesc)
 	txcounter  uint64
+	goroutine  bool
 }
 
 func NewClientContext(ctx *Context, service string) (*ClientContext, error) {
@@ -65,7 +66,7 @@ func NewClientContext(ctx *Context, service string) (*ClientContext, error) {
 	uri := ctx.NewURI(service)
 	operations := make(map[ULong]OperationHandler)
 	handlers := make(map[uint64](*pDesc))
-	cctx := &ClientContext{ctx, uri, operations, handlers, 0}
+	cctx := &ClientContext{ctx, uri, operations, handlers, 0, false}
 	err := ctx.RegisterEndPoint(uri, cctx)
 	if err != nil {
 		return nil, err
@@ -178,6 +179,7 @@ func (cctx *ClientContext) OnMessage(msg *Message) {
 		if err != nil {
 			// TODO (AF): Log an error? Adds an error listener?
 			logger.Errorf("Cannot route message: %tv", msg)
+			return
 		}
 		var transaction Transaction
 		switch msg.InteractionType {
@@ -205,13 +207,20 @@ func (cctx *ClientContext) OnMessage(msg *Message) {
 			} else {
 				// TODO (AF): Log an error? Adds an error listener?
 				logger.Errorf("Unknown interaction stage for PubSub: %tv", msg)
+				return
 			}
 		default:
 			// TODO (AF): Log an error? Adds an error listener?
 			logger.Errorf("Unknown interaction type: %s", msg)
 			return
 		}
-		go handler(msg, transaction)
+		if cctx.goroutine {
+			// Note (AF): Be careful, each MAL message is handled in a separate goroutine. It is the responsability
+			// of the provider to ensure the order of message processing.
+			go handler(msg, transaction)
+		} else {
+			handler(msg, transaction)
+		}
 	} else {
 		// Note (AF): The generated TransactionId is unique for this requesting URI so we
 		// can use it as key to retrieve the Operation (This is more restrictive than the
