@@ -24,16 +24,24 @@
 package broker
 
 import (
+	"errors"
 	. "github.com/ccsdsmo/malgo/mal"
 	. "github.com/ccsdsmo/malgo/mal/api"
+	"github.com/ccsdsmo/malgo/mal/debug"
 	"github.com/ccsdsmo/malgo/mal/encoding/binary"
 )
 
 const (
-	bfixed = true
+	varint = true
 )
 
+var (
+	logger debug.Logger = debug.GetLogger("mal.broker")
+)
+
+// Structure used to memorize a subscriber registration
 type BrokerSub struct {
+	subid       Identifier
 	domain      IdentifierList
 	session     SessionType
 	sessionName Identifier
@@ -44,6 +52,11 @@ type BrokerSub struct {
 	transaction SubscriberTransaction
 }
 
+func subkey(urifrom string, subid string) string {
+	return urifrom + "/" + subid
+}
+
+// Structure used to memorize a publisher registration
 type BrokerPub struct {
 	domain      IdentifierList
 	session     SessionType
@@ -55,21 +68,71 @@ type BrokerPub struct {
 	transaction PublisherTransaction
 }
 
+// TODO (AF): Creates a client interface to handle broker implementation
+
 type BrokerImpl struct {
+	ctx  *Context
+	cctx *ClientContext
+
+	// Map of all active subscribers
 	subs map[string]*BrokerSub
+	// Map o fall active publishers
 	pubs map[string]*BrokerPub
 }
 
+func NewBroker(ctx *Context, name string) (*BrokerImpl, error) {
+	cctx, err := NewClientContext(ctx, name)
+	if err != nil {
+		return nil, err
+	}
+
+	subs := make(map[string]*BrokerSub)
+	pubs := make(map[string]*BrokerPub)
+	broker := &BrokerImpl{ctx, cctx, subs, pubs}
+
+	brokerHandler := func(msg *Message, t Transaction) error {
+		if msg.InteractionStage == MAL_IP_STAGE_PUBSUB_PUBLISH_REGISTER {
+			broker.OnPublishRegister(msg, t.(PublisherTransaction))
+		} else if msg.InteractionStage == MAL_IP_STAGE_PUBSUB_PUBLISH {
+			broker.OnPublish(msg, t.(PublisherTransaction))
+		} else if msg.InteractionStage == MAL_IP_STAGE_PUBSUB_PUBLISH_DEREGISTER {
+			broker.OnPublishDeregister(msg, t.(PublisherTransaction))
+		} else if msg.InteractionStage == MAL_IP_STAGE_PUBSUB_REGISTER {
+			broker.OnRegister(msg, t.(SubscriberTransaction))
+		} else if msg.InteractionStage == MAL_IP_STAGE_PUBSUB_DEREGISTER {
+			broker.OnDeregister(msg, t.(SubscriberTransaction))
+		} else {
+			return errors.New("Bad stage")
+		}
+		return nil
+	}
+	// Registers the broker handler
+	cctx.RegisterBrokerHandler(200, 1, 1, 1, brokerHandler)
+
+	return broker, nil
+}
+
+func (handler *BrokerImpl) Uri() *URI {
+	return handler.cctx.Uri
+}
+
+func (handler *BrokerImpl) Close() {
+	// TODO (AF): Removes all remaining subscribers and publishers
+	handler.cctx.Close()
+}
+
 func (handler *BrokerImpl) register(msg *Message, transaction SubscriberTransaction) error {
-	decoder := binary.NewBinaryDecoder(msg.Body, bfixed)
+	decoder := binary.NewBinaryDecoder(msg.Body, varint)
 	sub, err := DecodeSubscription(decoder)
 	if err != nil {
 		return err
 	}
+	subkey := subkey(string(*msg.UriFrom), string(sub.SubscriptionId))
+	logger.Infof("Broker.Register: %t -> %t", subkey, sub.Entities)
 
-	subid := string(*msg.UriFrom) + string(sub.SubscriptionId)
-	// Note (AF): Be careful the replacement of a subscription is an atomic operation.
-	handler.subs[subid] = &BrokerSub{
+	// Note (AF): Be careful the replacement of a subscription should be an atomic operation.
+	handler.subs[subkey] = &BrokerSub{
+		subid:       sub.SubscriptionId,
 		domain:      msg.Domain,
 		session:     msg.Session,
 		sessionName: msg.SessionName,
@@ -85,35 +148,50 @@ func (handler *BrokerImpl) register(msg *Message, transaction SubscriberTransact
 
 func (handler *BrokerImpl) OnRegister(msg *Message, transaction SubscriberTransaction) error {
 	err := handler.register(msg, transaction)
-	return transaction.AckRegister(err)
+	if err != nil {
+		// TODO (AF): Builds and encode reply
+		return transaction.AckRegister(nil, true)
+	} else {
+		// TODO (AF): Builds and encode reply
+		return transaction.AckRegister(nil, false)
+	}
 }
 
 func (handler *BrokerImpl) deregister(msg *Message, transaction SubscriberTransaction) error {
-	decoder := binary.NewBinaryDecoder(msg.Body, bfixed)
+	decoder := binary.NewBinaryDecoder(msg.Body, varint)
 	list, err := DecodeIdentifierList(decoder)
 	if err != nil {
 		return err
 	}
 
 	for _, id := range []*Identifier(*list) {
-		subid := string(*msg.UriFrom) + string(*id)
-		// TODDO (AF): May be we have to verify if the subscription exists.
-		delete(handler.subs, string(subid))
+		subkey := subkey(string(*msg.UriFrom), string(*id))
+		logger.Infof("Broker.Deregister: %v", subkey)
+		// TODDO (AF): May be we have to verify if the subscriber is registered.
+		delete(handler.subs, string(subkey))
 	}
 	return nil
 }
 
 func (handler *BrokerImpl) OnDeregister(msg *Message, transaction SubscriberTransaction) error {
 	err := handler.deregister(msg, transaction)
-	return transaction.AckDeregister(err)
+	if err != nil {
+		// TODO (AF): Builds and encode reply
+		return transaction.AckDeregister(nil, true)
+	} else {
+		// TODO (AF): Builds and encode reply
+		return transaction.AckDeregister(nil, false)
+	}
 }
 
 func (handler *BrokerImpl) publishRegister(msg *Message, transaction PublisherTransaction) error {
-	decoder := binary.NewBinaryDecoder(msg.Body, bfixed)
+	decoder := binary.NewBinaryDecoder(msg.Body, varint)
 	list, err := DecodeEntityKeyList(decoder)
 	if err != nil {
 		return err
 	}
+
+	logger.Infof("Broker.PublishRegister: %t", list)
 
 	pubid := string(*msg.UriFrom)
 	handler.pubs[pubid] = &BrokerPub{
@@ -132,12 +210,19 @@ func (handler *BrokerImpl) publishRegister(msg *Message, transaction PublisherTr
 
 func (handler *BrokerImpl) OnPublishRegister(msg *Message, transaction PublisherTransaction) error {
 	err := handler.publishRegister(msg, transaction)
-	return transaction.AckRegister(err)
+	if err != nil {
+		// TODO (AF): Builds and encode reply
+		return transaction.AckRegister(nil, true)
+	} else {
+		// TODO (AF): Builds and encode reply
+		return transaction.AckRegister(nil, false)
+	}
 }
 
 func (handler *BrokerImpl) publishDeregister(msg *Message, transaction PublisherTransaction) error {
 	pubid := string(*msg.UriFrom)
-	// TODDO (AF): May be we have to verify if the publisher exists.
+	logger.Infof("Broker.PublishDeregister: %v", pubid)
+	// TODDO (AF): May be we have to verify if the publisher is registered.
 	delete(handler.pubs, string(pubid))
 
 	return nil
@@ -145,30 +230,43 @@ func (handler *BrokerImpl) publishDeregister(msg *Message, transaction Publisher
 
 func (handler *BrokerImpl) OnPublishDeregister(msg *Message, transaction PublisherTransaction) error {
 	err := handler.publishDeregister(msg, transaction)
-	return transaction.AckDeregister(err)
+	if err != nil {
+		// TODO (AF): Builds and encode reply
+		return transaction.AckDeregister(nil, true)
+	} else {
+		// TODO (AF): Builds and encode reply
+		return transaction.AckDeregister(nil, false)
+	}
 }
 
 func (handler *BrokerImpl) publish(pub *Message, transaction PublisherTransaction) error {
-	decoder := binary.NewBinaryDecoder(pub.Body, bfixed)
+	logger.Debugf("Broker.Publish -> %v", pub)
+
+	decoder := binary.NewBinaryDecoder(pub.Body, varint)
 	uhlist, err := DecodeUpdateHeaderList(decoder)
 	if err != nil {
 		return err
 	}
+	logger.Infof("Broker.Publish, DecodeUpdateHeaderList -> %+v", uhlist)
 	uvlist, err := DecodeUpdateList(decoder)
 	if err != nil {
 		return err
 	}
+	logger.Infof("Broker.Publish, DecodeUpdateList -> %d %v", len([]*Blob(*uvlist)), uvlist)
 
-	for id, sub := range handler.subs {
+	for _, sub := range handler.subs {
 		buf := make([]byte, 0, 1024)
-		encoder := binary.NewBinaryEncoder(buf, bfixed)
-		encoder.EncodeIdentifier(NewIdentifier(id))
-		encoder.EncodeElement(uhlist)
-		NewUInteger(uint32(len([]*Blob(*uvlist)))).Encode(encoder)
-		for _, uv := range []*Blob(*uvlist) {
-			encoder.WriteBody([]byte(*uv))
-		}
-		sub.transaction.Notify(encoder.Body(), nil)
+		encoder := binary.NewBinaryEncoder(buf, varint)
+		encoder.EncodeIdentifier(&sub.subid)
+		// encoder.EncodeElement(uhlist)
+		// Encode update value list
+		//		NewUInteger(uint32(len([]*Blob(*uvlist)))).Encode(encoder)
+		//		for _, uv := range []*Blob(*uvlist) {
+		//			encoder.WriteBody([]byte(*uv))
+		//		}
+		uhlist.Encode(encoder)
+		uvlist.Encode(encoder)
+		sub.transaction.Notify(encoder.Body(), false)
 	}
 	return nil
 }
@@ -176,6 +274,7 @@ func (handler *BrokerImpl) publish(pub *Message, transaction PublisherTransactio
 func (handler *BrokerImpl) OnPublish(msg *Message, transaction PublisherTransaction) error {
 	err := handler.publish(msg, transaction)
 	if err != nil {
+		// TODO (AF): Returns error
 		//		return transaction.PublishError(err)
 		return err
 	}
