@@ -196,5 +196,5 @@ func (transport *TCPTransport) encode(msg *Message) ([]byte, error) {
 		return nil, err
 	}
 
-	return encoder.Body(), nil
+	return encoder.Out.(*binary.BinaryBuffer).Buf, nil
 }
