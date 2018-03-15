@@ -72,26 +72,29 @@ func (sub *BrokerSub) domainMatches(domain IdentifierList, subdomain *Identifier
 	if subdomain == nil {
 		required = sub.domain
 	} else {
-		required = make([]*Identifier, len(sub.domain)+len(*subdomain))
-		copy(required, sub.domain)
+		required = make([]*Identifier, 0, len(sub.domain)+len(*subdomain))
+		required = append(required, sub.domain...)
 		required = append(required, *subdomain...)
-		if (*(*subdomain)[len(*subdomain)-1]) == "*" {
+		if (*(required)[len(required)-1]) == "*" {
 			all = true
-			required = required[:len(*subdomain)-1]
+			required = required[:len(required)-1]
 		}
 	}
-
+	logger.Debugf("Broker.domainMatches %v, %v", required, all)
 	if len(domain) < len(required) {
+		logger.Debugf("Broker.domainMatches #1 !! -> %d < %d", len(domain), len(required))
 		return false
 	}
 
-	for idx, name := range ([]*Identifier)(sub.domain) {
-		if name != ([]*Identifier)(domain)[idx] {
+	for idx, name := range ([]*Identifier)(required) {
+		if *name != *([]*Identifier)(domain)[idx] {
+			logger.Debugf("Broker.domainMatches #2 %d %s != %s !!", idx, *name, *([]*Identifier)(domain)[idx])
 			return false
 		}
 	}
 
-	if len(domain) > len(sub.domain) {
+	if len(domain) > len(required) {
+		logger.Debugf("Broker.domainMatches #3 !! -> %v", all)
 		return all
 	}
 
@@ -100,35 +103,36 @@ func (sub *BrokerSub) domainMatches(domain IdentifierList, subdomain *Identifier
 
 func (sub *BrokerSub) matches(msg *Message, key EntityKey) bool {
 	// See MAL specification 3.5.6.5 e,f,g p 3-57
+	logger.Debugf("Broker.matches -> %s", sub.subid)
 
 	if (msg.Session != sub.session) || (msg.SessionName != sub.sessionName) {
 		// h) The session types and names must match.
-		logger.Warnf("Broker.matches #1 !!")
+		logger.Debugf("Broker.matches #1 !!")
 		return false
 	}
 
 	// Evaluates all requests of the subscription
 	for _, request := range ([]*EntityRequest)(*sub.entities) {
 		if !sub.domainMatches(msg.Domain, request.SubDomain) {
-			logger.Warnf("Broker.matches #2 !!")
+			logger.Debugf("Broker.matches #2 !!")
 			continue
 		}
 		if !request.AllAreas && msg.ServiceArea != sub.serviceArea {
 			// j) The area identifiers must match unless the subscription specified True in the allAreas
 			//    field of the EntityRequest, in which case they shall be ignored.
-			logger.Warnf("Broker.matches #3 !!")
+			logger.Debugf("Broker.matches #3 !!")
 			continue
 		}
 		if !request.AllServices && msg.Service != sub.service {
 			// k) The service identifiers must match unless the subscription specified True in the
 			//    allServices field of the EntityRequest, in which case they shall be ignored.
-			logger.Warnf("Broker.matches #4 !!")
+			logger.Debugf("Broker.matches #4 !!")
 			continue
 		}
 		if !request.AllOperations && msg.Operation != sub.operation {
 			// l) The operation identifiers must match unless the subscription specified True in the
 			// allOperations field of the EntityRequest, in which case they shall be ignored.
-			logger.Warnf("Broker.matches #5 !!")
+			logger.Debugf("Broker.matches #5 !!")
 			continue
 		}
 
@@ -144,15 +148,15 @@ func (sub *BrokerSub) matches(msg *Message, key EntityKey) bool {
 			//    NULL.
 			// d) If a sub-key contains the wildcard value it shall match a sub-key that contains any
 			//    value including NULL.
-			logger.Warnf("Broker.matches request -> %s %d %d %d", *rkey.FirstSubKey, *rkey.SecondSubKey, *rkey.ThirdSubKey, *rkey.FourthSubKey)
-			logger.Warnf("Broker.matches update -> %s %d %d %d", *key.FirstSubKey, *key.SecondSubKey, *key.ThirdSubKey, *key.FourthSubKey)
+			logger.Debugf("Broker.matches request -> %s %d %d %d", *rkey.FirstSubKey, *rkey.SecondSubKey, *rkey.ThirdSubKey, *rkey.FourthSubKey)
+			logger.Debugf("Broker.matches update -> %s %d %d %d", *key.FirstSubKey, *key.SecondSubKey, *key.ThirdSubKey, *key.FourthSubKey)
 			if (((string)(*rkey.FirstSubKey) == "*") || ((string)(*rkey.FirstSubKey) == (string)(*key.FirstSubKey))) &&
 				(((int64)(*rkey.SecondSubKey) == 0) || ((string)(*rkey.SecondSubKey) == (string)(*key.SecondSubKey))) &&
 				(((int64)(*rkey.ThirdSubKey) == 0) || ((string)(*rkey.ThirdSubKey) == (string)(*key.ThirdSubKey))) &&
 				(((int64)(*rkey.FourthSubKey) == 0) || ((string)(*rkey.FourthSubKey) == (string)(*key.FourthSubKey))) {
 				return true
 			}
-			logger.Warnf("Broker.matches #6 !!")
+			logger.Debugf("Broker.matches #6 !!")
 		}
 		// There is no matching key in this entity request
 	}
@@ -219,6 +223,11 @@ func NewBroker(ctx *Context, name string) (*BrokerImpl, error) {
 
 func (handler *BrokerImpl) Uri() *URI {
 	return handler.cctx.Uri
+}
+
+// Gets the underlying ClientContext used by the broker.
+func (handler *BrokerImpl) ClientContext() *ClientContext {
+	return handler.cctx
 }
 
 func (handler *BrokerImpl) Close() {
