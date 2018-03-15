@@ -65,10 +65,10 @@ type ClientContext struct {
 	Session          SessionType
 	SessionName      Identifier
 
-	operations map[ULong]OperationHandler
-	handlers   map[uint64](*pDesc)
-	txcounter  uint64
-	goroutine  bool
+	operations  map[ULong]OperationHandler
+	handlers    map[uint64](*pDesc)
+	txcounter   uint64
+	concurrency bool
 }
 
 func NewClientContext(ctx *Context, service string) (*ClientContext, error) {
@@ -77,7 +77,7 @@ func NewClientContext(ctx *Context, service string) (*ClientContext, error) {
 	operations := make(map[ULong]OperationHandler)
 	handlers := make(map[uint64](*pDesc))
 	cctx := &ClientContext{
-		Ctx: ctx, Uri: uri, operations: operations, handlers: handlers, txcounter: 0, goroutine: false}
+		Ctx: ctx, Uri: uri, operations: operations, handlers: handlers, txcounter: 0, concurrency: false}
 	err := ctx.RegisterEndPoint(uri, cctx)
 	if err != nil {
 		return nil, err
@@ -121,6 +121,13 @@ func (cctx *ClientContext) SetSession(Session SessionType) *ClientContext {
 
 func (cctx *ClientContext) SetSessionName(SessionName Identifier) *ClientContext {
 	cctx.SessionName = SessionName
+	return cctx
+}
+
+// Be careful concurrency is needed to allow the use of ClientContext in a nested way.
+// However concurrency should be then handled in provider.
+func (cctx *ClientContext) SetConcurrency(multi bool) *ClientContext {
+	cctx.concurrency = multi
 	return cctx
 }
 
@@ -197,8 +204,23 @@ func (cctx *ClientContext) deregisterProviderHandler(hdltype InteractionType, ar
 }
 
 func (cctx *ClientContext) Close() error {
-	// TODO (AF): Close operations and services
-	return cctx.Ctx.UnregisterEndPoint(cctx.Uri)
+	logger.Debugf("ClientContext.Close: %v", cctx)
+
+	// Unregisters the endpoint
+	err := cctx.Ctx.UnregisterEndPoint(cctx.Uri)
+	if err != nil {
+		return err
+	}
+
+	// Closes and removes all operations
+	for _, op := range cctx.operations {
+		op.onClose()
+	}
+	cctx.operations = nil
+
+	// Closes and removes all registered handlers
+
+	return nil
 }
 
 // ================================================================================
@@ -274,7 +296,7 @@ func (cctx *ClientContext) OnMessage(msg *Message) {
 			logger.Errorf("Unknown interaction type: %s", msg)
 			return
 		}
-		if cctx.goroutine {
+		if cctx.concurrency {
 			// Note (AF): Be careful, each MAL message is handled in a separate goroutine. It is the responsability
 			// of the provider to ensure the order of message processing.
 			go handler(msg, transaction)
