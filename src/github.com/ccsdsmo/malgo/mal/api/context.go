@@ -203,8 +203,21 @@ func (cctx *ClientContext) deregisterProviderHandler(hdltype InteractionType, ar
 	return nil
 }
 
+func (cctx *ClientContext) cleanOps() {
+	// Closes and removes all operations
+	for tid, op := range cctx.operations {
+		logger.Debugf("ClientContext: close operation: %d", tid)
+		op.onClose()
+	}
+	cctx.operations = nil
+}
+
+func (cctx *ClientContext) cleanHandlers() error {
+	cctx.handlers = nil
+}
+
 func (cctx *ClientContext) Close() error {
-	logger.Debugf("ClientContext.Close: %v", cctx)
+	logger.Debugf("ClientContext.Close: %s", cctx.Uri)
 
 	// Unregisters the endpoint
 	err := cctx.Ctx.UnregisterEndPoint(cctx.Uri)
@@ -212,13 +225,8 @@ func (cctx *ClientContext) Close() error {
 		return err
 	}
 
-	// Closes and removes all operations
-	for _, op := range cctx.operations {
-		op.onClose()
-	}
-	cctx.operations = nil
-
-	// Closes and removes all registered handlers
+	cctx.cleanOps()
+	cctx.cleanHandlers()
 
 	return nil
 }
@@ -319,12 +327,10 @@ func (cctx *ClientContext) OnMessage(msg *Message) {
 	}
 }
 
-// TODO (AF): Take in account operations and handlers!!
+// Closes operations and handlers.
 func (cctx *ClientContext) OnClose() error {
-	logger.Infof("close EndPoint: %s", cctx.Uri)
-	for tid, handler := range cctx.operations {
-		logger.Debugf("close operation: %d", tid)
-		handler.onClose()
-	}
+	logger.Infof("ClientContext.OnClose: %s", cctx.Uri)
+	cctx.cleanOps()
+	cctx.cleanHandlers()
 	return nil
 }
