@@ -45,6 +45,7 @@ type Operation interface {
 	GetTid() ULong
 	verify(msg *Message) bool
 	finalize()
+	Interrupt()
 	Close() error
 	Reset() error
 }
@@ -82,6 +83,16 @@ func (op *OperationX) finalize() {
 
 func (op *OperationX) GetTid() ULong {
 	return op.tid
+}
+
+// Interrupts the operation.
+func (op *OperationX) Interrupt() {
+	if op.status == _CLOSED {
+		return
+	}
+	if op.ch != nil {
+		op.ch <- nil
+	}
 }
 
 // Closes the operation.
@@ -168,11 +179,12 @@ func (op *SendOperationX) Send(body []byte) error {
 }
 
 func (op *SendOperationX) onMessage(msg *Message) {
-	// TODO (AF): Should never reveive messages, log an error
+	logger.Errorf("SendOperation.onMessage: should never happened!")
 }
 
+// This function is called when underlying ClientContext is closed
 func (op *SendOperationX) onClose() {
-	// TODO (AF): Should never be called, log an error
+	// Nothing to do
 }
 
 // ================================================================================
@@ -239,12 +251,17 @@ func (op *SubmitOperationX) Submit(body []byte) (*Message, error) {
 	msg, more := <-op.ch
 	if !more {
 		op.finalize()
-		logger.Errorf("Operation ends: %s, %s", op.cctx.Uri, op.tid)
+		logger.Errorf("SubmitOperation.Sumit: Operation ends: %s, %s", op.cctx.Uri, op.tid)
 		return nil, errors.New("Operation ends")
+	}
+	if msg == nil {
+		op.finalize()
+		logger.Warnf("SubmitOperation.Sumit: Operation interupted (%s, %s)", op.cctx.Uri, op.tid)
+		return nil, errors.New("Operation interupted")
 	}
 	if msg.InteractionStage != MAL_IP_STAGE_SUBMIT_ACK {
 		op.finalize()
-		logger.Errorf("Bad return message, operation (%s, %s), stage %d", op.cctx.Uri, op.tid, msg.InteractionStage)
+		logger.Errorf("SubmitOperation.Sumit: Bad return message, operation (%s, %s), stage %d", op.cctx.Uri, op.tid, msg.InteractionStage)
 		return nil, errors.New("Bad return message")
 	}
 	op.finalize()
@@ -265,8 +282,9 @@ func (op *SubmitOperationX) onMessage(msg *Message) {
 	}
 }
 
+// This function is called when underlying ClientContext is closed
 func (op *SubmitOperationX) onClose() {
-	// TODO (AF):
+	op.Close()
 }
 
 // ================================================================================
@@ -333,13 +351,18 @@ func (op *RequestOperationX) Request(body []byte) (*Message, error) {
 	msg, more := <-op.ch
 	if !more {
 		op.finalize()
-		logger.Debugf("Operation ends: %s, %s", op.cctx.Uri, op.tid)
+		logger.Debugf("RequetOperation.Request: Operation ends: %s, %s", op.cctx.Uri, op.tid)
 		return nil, errors.New("Operation ends")
+	}
+	if msg == nil {
+		op.finalize()
+		logger.Warnf("RequetOperation.Request: Operation interupted (%s, %s)", op.cctx.Uri, op.tid)
+		return nil, errors.New("Operation interupted")
 	}
 	// Verify the message stage
 	if msg.InteractionStage != MAL_IP_STAGE_REQUEST_RESPONSE {
 		op.finalize()
-		logger.Errorf("Bad return message, operation (%s, %s), stage %d", op.cctx.Uri, op.tid, msg.InteractionStage)
+		logger.Errorf("RequetOperation.Request: Bad return message, operation (%s, %s), stage %d", op.cctx.Uri, op.tid, msg.InteractionStage)
 		return nil, errors.New("Bad return message")
 	}
 	op.finalize()
@@ -360,8 +383,9 @@ func (op *RequestOperationX) onMessage(msg *Message) {
 	}
 }
 
+// This function is called when underlying ClientContext is closed
 func (op *RequestOperationX) onClose() {
-	// TODO (AF):
+	op.Close()
 }
 
 // ================================================================================
@@ -431,13 +455,18 @@ func (op *InvokeOperationX) Invoke(body []byte) (*Message, error) {
 	msg, more := <-op.ch
 	if !more {
 		op.finalize()
-		logger.Debugf("Operation ends: %s, %s", op.cctx.Uri, op.tid)
+		logger.Debugf("InvokeOperation.Invoke: Operation ends: %s, %s", op.cctx.Uri, op.tid)
 		return nil, errors.New("Operation ends")
+	}
+	if msg == nil {
+		op.finalize()
+		logger.Warnf("InvokeOperation.Invoke: Operation interupted (%s, %s)", op.cctx.Uri, op.tid)
+		return nil, errors.New("Operation interupted")
 	}
 	// Verify the message stage
 	if msg.InteractionStage != MAL_IP_STAGE_INVOKE_ACK {
 		op.finalize()
-		logger.Errorf("Bad return message, operation (%s, %s), stage %d", op.cctx.Uri, op.tid, msg.InteractionStage)
+		logger.Errorf("InvokeOperation.Invoke: Bad return message, operation (%s, %s), stage %d", op.cctx.Uri, op.tid, msg.InteractionStage)
 		return nil, errors.New("Bad return message")
 	}
 	op.status = _ACKNOWLEDGED
@@ -467,13 +496,18 @@ func (op *InvokeOperationX) GetResponse() (*Message, error) {
 	msg, more := <-op.ch
 	if !more {
 		op.finalize()
-		logger.Debugf("Operation ends: %s, %s", op.cctx.Uri, op.tid)
+		logger.Debugf("InvokeOperation.GetResponse: Operation ends: %s, %s", op.cctx.Uri, op.tid)
 		return nil, errors.New("Operation ends")
+	}
+	if msg == nil {
+		op.finalize()
+		logger.Warnf("InvokeOperation.GetResponse: Operation interupted (%s, %s)", op.cctx.Uri, op.tid)
+		return nil, errors.New("Operation interupted")
 	}
 	// Verify the message stage
 	if msg.InteractionStage != MAL_IP_STAGE_INVOKE_RESPONSE {
 		op.finalize()
-		logger.Errorf("Bad return message, operation (%s, %s), stage %d", op.cctx.Uri, op.tid, msg.InteractionStage)
+		logger.Errorf("InvokeOperation.GetResponse: Bad return message, operation (%s, %s), stage %d", op.cctx.Uri, op.tid, msg.InteractionStage)
 		return nil, errors.New("Bad return message")
 	}
 	op.finalize()
@@ -495,8 +529,9 @@ func (op *InvokeOperationX) onMessage(msg *Message) {
 	}
 }
 
+// This function is called when underlying ClientContext is closed
 func (op *InvokeOperationX) onClose() {
-	// TODO (AF):
+	op.Close()
 }
 
 // ================================================================================
@@ -569,13 +604,18 @@ func (op *ProgressOperationX) Progress(body []byte) (*Message, error) {
 	msg, more := <-op.ch
 	if !more {
 		op.finalize()
-		logger.Debugf("Operation ends: %s, %s", op.cctx.Uri, op.tid)
+		logger.Debugf("ProgressOperation.Progress: Operation ends: %s, %s", op.cctx.Uri, op.tid)
 		return nil, errors.New("Operation ends")
+	}
+	if msg == nil {
+		op.finalize()
+		logger.Warnf("ProgressOperation.Progress: Operation interupted (%s, %s)", op.cctx.Uri, op.tid)
+		return nil, errors.New("Operation interupted")
 	}
 	// Verify the message stage
 	if msg.InteractionStage != MAL_IP_STAGE_PROGRESS_ACK {
 		op.finalize()
-		logger.Errorf("Bad return message, operation (%s, %s), stage %d", op.cctx.Uri, op.tid, msg.InteractionStage)
+		logger.Errorf("ProgressOperation.Progress: Bad return message, operation (%s, %s), stage %d", op.cctx.Uri, op.tid, msg.InteractionStage)
 		return nil, errors.New("Bad return message")
 	}
 	op.status = _ACKNOWLEDGED
@@ -598,14 +638,18 @@ func (op *ProgressOperationX) GetUpdate() (*Message, error) {
 	msg, more := <-op.ch
 	if !more {
 		op.finalize()
-		logger.Debugf("Operation ends: %s, %s", op.cctx.Uri, op.tid)
+		logger.Debugf("ProgressOperation.GetUpdate: Operation ends: %s, %s", op.cctx.Uri, op.tid)
 		return nil, errors.New("Operation ends")
+	}
+	if msg == nil {
+		logger.Warnf("ProgressOperation.GetUpdate: Operation interupted (%s, %s)", op.cctx.Uri, op.tid)
+		return nil, errors.New("Operation interupted")
 	}
 
 	if (msg.InteractionStage != MAL_IP_STAGE_PROGRESS_UPDATE) &&
 		(msg.InteractionStage != MAL_IP_STAGE_PROGRESS_RESPONSE) {
 		op.finalize()
-		logger.Errorf("Bad return message, operation (%s, %s), stage %d", op.cctx.Uri, op.tid, msg.InteractionStage)
+		logger.Errorf("ProgressOperation.GetUpdate: Bad return message, operation (%s, %s), stage %d", op.cctx.Uri, op.tid, msg.InteractionStage)
 		return nil, errors.New("Bad return message")
 	}
 
@@ -642,13 +686,17 @@ func (op *ProgressOperationX) GetResponse() (*Message, error) {
 	msg, more := <-op.ch
 	if !more {
 		op.finalize()
-		logger.Debugf("Operation ends: %s, %s", op.cctx.Uri, op.tid)
+		logger.Debugf("ProgressOperation.GetResponse: Operation ends: %s, %s", op.cctx.Uri, op.tid)
 		return nil, errors.New("Operation ends")
+	}
+	if msg == nil {
+		logger.Warnf("ProgressOperation.GetResponse: Operation interupted (%s, %s)", op.cctx.Uri, op.tid)
+		return nil, errors.New("Operation interupted")
 	}
 
 	if msg.InteractionStage != MAL_IP_STAGE_PROGRESS_RESPONSE {
 		op.finalize()
-		logger.Errorf("Bad return message, operation (%s, %s), stage %d", op.cctx.Uri, op.tid, msg.InteractionStage)
+		logger.Errorf("ProgressOperation.GetResponse: Bad return message, operation (%s, %s), stage %d", op.cctx.Uri, op.tid, msg.InteractionStage)
 		return nil, errors.New("Bad return message")
 	}
 	op.finalize()
@@ -670,8 +718,9 @@ func (op *ProgressOperationX) onMessage(msg *Message) {
 	}
 }
 
+// This function is called when underlying ClientContext is closed
 func (op *ProgressOperationX) onClose() {
-	// TODO (AF):
+	op.Close()
 }
 
 // ================================================================================
@@ -744,13 +793,18 @@ func (op *SubscriberOperationX) Register(body []byte) (*Message, error) {
 	msg, more := <-op.ch
 	if !more {
 		op.finalize()
-		logger.Debugf("Operation ends: %s, %s", op.cctx.Uri, op.tid)
+		logger.Debugf("SubscriberOperation.Register: Operation ends: %s, %s", op.cctx.Uri, op.tid)
 		return nil, errors.New("Operation ends")
+	}
+	if msg == nil {
+		op.finalize()
+		logger.Warnf("SubscriberOperation.Register: Operation interupted (%s, %s)", op.cctx.Uri, op.tid)
+		return nil, errors.New("Operation interupted")
 	}
 	// Verify the message stage
 	if msg.InteractionStage != MAL_IP_STAGE_PUBSUB_REGISTER_ACK {
 		op.finalize()
-		logger.Errorf("Bad return message, operation (%s, %s), stage %d", op.cctx.Uri, op.tid, msg.InteractionStage)
+		logger.Errorf("SubscriberOperation.Register: Bad return message, operation (%s, %s), stage %d", op.cctx.Uri, op.tid, msg.InteractionStage)
 		return nil, errors.New("Bad return message")
 	}
 	// Verify that the message is ok (ack or error)
@@ -774,19 +828,23 @@ func (op *SubscriberOperationX) GetNotify() (*Message, error) {
 	msg, more := <-op.ch
 	if !more {
 		op.finalize()
-		logger.Debugf("Operation ends: %s, %s", op.cctx.Uri, op.tid)
+		logger.Debugf("SubscriberOperation.GetNotify: Operation ends: %s, %s", op.cctx.Uri, op.tid)
 		return nil, errors.New("Operation ends")
+	}
+	if msg == nil {
+		logger.Warnf("SubscriberOperation.GetNotify: Operation interupted (%s, %s)", op.cctx.Uri, op.tid)
+		return nil, errors.New("Operation interupted")
 	}
 	// Verify the message stage
 	if msg.InteractionStage != MAL_IP_STAGE_PUBSUB_NOTIFY {
 		op.finalize()
-		logger.Errorf("Bad return message, operation (%s, %s), stage %d", op.cctx.Uri, op.tid, msg.InteractionStage)
+		logger.Errorf("SubscriberOperation.GetNotify: Bad return message, operation (%s, %s), stage %d", op.cctx.Uri, op.tid, msg.InteractionStage)
 		return nil, errors.New("Bad return message")
 	}
 	// Verify that the message is ok (ack or error)
 	if msg.IsErrorMessage {
 		op.finalize()
-		return msg, errors.New("Error message")
+		return msg, errors.New("SubscriberOperation.GetNotify: Error message")
 	} else {
 		return msg, nil
 	}
@@ -830,8 +888,13 @@ func (op *SubscriberOperationX) Deregister(body []byte) (*Message, error) {
 		msg, more := <-op.ch
 		if !more {
 			op.finalize()
-			logger.Debugf("Operation ends: %s, %s", op.cctx.Uri, op.tid)
+			logger.Debugf("SubscriberOperation.Deregister: Operation ends: %s, %s", op.cctx.Uri, op.tid)
 			return nil, errors.New("Operation ends")
+		}
+		if msg == nil {
+			op.finalize()
+			logger.Warnf("SubscriberOperation.Deregister: Operation interupted (%s, %s)", op.cctx.Uri, op.tid)
+			return nil, errors.New("Operation interupted")
 		}
 		if msg.InteractionStage == MAL_IP_STAGE_PUBSUB_NOTIFY {
 			continue
@@ -839,7 +902,7 @@ func (op *SubscriberOperationX) Deregister(body []byte) (*Message, error) {
 		// Verify the message stage
 		if msg.InteractionStage != MAL_IP_STAGE_PUBSUB_DEREGISTER_ACK {
 			op.finalize()
-			logger.Errorf("Bad return message, operation (%s, %s), stage %d", op.cctx.Uri, op.tid, msg.InteractionStage)
+			logger.Errorf("SubscriberOperation.Deregister: Bad return message, operation (%s, %s), stage %d", op.cctx.Uri, op.tid, msg.InteractionStage)
 			return nil, errors.New("Bad return message")
 		}
 		op.finalize()
@@ -860,8 +923,9 @@ func (op *SubscriberOperationX) onMessage(msg *Message) {
 	}
 }
 
+// This function is called when underlying ClientContext is closed
 func (op *SubscriberOperationX) onClose() {
-	// TODO (AF):
+	op.Close()
 }
 
 // ================================================================================
@@ -931,13 +995,18 @@ func (op *PublisherOperationX) Register(body []byte) (*Message, error) {
 	msg, more := <-op.ch
 	if !more {
 		op.finalize()
-		logger.Debugf("Operation ends: %s, %s", op.cctx.Uri, op.tid)
+		logger.Debugf("PublisherOperation.Register: Operation ends: %s, %s", op.cctx.Uri, op.tid)
 		return nil, errors.New("Operation ends")
+	}
+	if msg == nil {
+		op.finalize()
+		logger.Warnf("PublisherOperation.Register: Operation interupted (%s, %s)", op.cctx.Uri, op.tid)
+		return nil, errors.New("Operation interupted")
 	}
 	// Verify the message stage
 	if msg.InteractionStage != MAL_IP_STAGE_PUBSUB_PUBLISH_REGISTER_ACK {
 		op.finalize()
-		logger.Errorf("Bad return message, operation (%s, %s), stage %d", op.cctx.Uri, op.tid, msg.InteractionStage)
+		logger.Errorf("PublisherOperation.Register: Bad return message, operation (%s, %s), stage %d", op.cctx.Uri, op.tid, msg.InteractionStage)
 		return nil, errors.New("Bad return message")
 	}
 	// Verify that the message is ok (ack or error)
@@ -1022,13 +1091,18 @@ func (op *PublisherOperationX) Deregister(body []byte) (*Message, error) {
 	msg, more := <-op.ch
 	if !more {
 		op.finalize()
-		logger.Debugf("Operation ends: %s, %s", op.cctx.Uri, op.tid)
+		logger.Debugf("PublisherOperation.Deregister: Operation ends: %s, %s", op.cctx.Uri, op.tid)
 		return nil, errors.New("Operation ends")
+	}
+	if msg == nil {
+		op.finalize()
+		logger.Warnf("PublisherOperation.Deregister: Operation interupted (%s, %s)", op.cctx.Uri, op.tid)
+		return nil, errors.New("Operation interupted")
 	}
 	// Verify the message stage
 	if msg.InteractionStage != MAL_IP_STAGE_PUBSUB_PUBLISH_DEREGISTER_ACK {
 		op.finalize()
-		logger.Errorf("Bad return message, operation (%s, %s), stage %d", op.cctx.Uri, op.tid, msg.InteractionStage)
+		logger.Errorf("PublisherOperation.Deregister: Bad return message, operation (%s, %s), stage %d", op.cctx.Uri, op.tid, msg.InteractionStage)
 		return nil, errors.New("Bad return message")
 	}
 	op.finalize()
@@ -1048,6 +1122,7 @@ func (op *PublisherOperationX) onMessage(msg *Message) {
 	}
 }
 
+// This function is called when underlying ClientContext is closed
 func (op *PublisherOperationX) onClose() {
-	// TODO (AF):
+	op.Close()
 }
