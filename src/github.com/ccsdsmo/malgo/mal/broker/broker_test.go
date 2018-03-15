@@ -77,6 +77,9 @@ func TestPubSub(t *testing.T) {
 		t.Fatal("Error creating publisher, ", err)
 		return
 	}
+	defer publisher.Close()
+	publisher.SetDomain(IdentifierList([]*Identifier{NewIdentifier("spacecraft1"), NewIdentifier("payload"), NewIdentifier("camera")}))
+
 	pubop := publisher.NewPublisherOperation(broker.Uri(), 200, 1, 1, 1)
 
 	ekpub1 := &EntityKey{NewIdentifier("key1"), NewLong(1), NewLong(1), NewLong(1)}
@@ -103,13 +106,16 @@ func TestPubSub(t *testing.T) {
 		t.Fatal("Error creating subscriber, ", err)
 		return
 	}
+	defer subscriber.Close()
+	subscriber.SetDomain(IdentifierList([]*Identifier{NewIdentifier("spacecraft1"), NewIdentifier("payload")}))
+
 	subop := subscriber.NewSubscriberOperation(broker.Uri(), 200, 1, 1, 1)
 
-	//	domains := IdentifierList([]*Identifier{NewIdentifier("DOMAIN")})
+	domains := IdentifierList([]*Identifier{NewIdentifier("*")})
 	eksub := &EntityKey{NewIdentifier("key1"), NewLong(0), NewLong(0), NewLong(0)}
 	var erlist = EntityRequestList([]*EntityRequest{
 		&EntityRequest{
-			NullIdentifierList, true, true, true, true, EntityKeyList([]*EntityKey{eksub}),
+			&domains, true, true, true, true, EntityKeyList([]*EntityKey{eksub}),
 		},
 	})
 	var subid = Identifier("MySubscription")
