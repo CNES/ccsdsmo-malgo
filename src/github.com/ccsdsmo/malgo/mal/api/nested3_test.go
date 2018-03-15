@@ -57,6 +57,8 @@ func newTestNested3Provider1(ctx *Context, p2uri *URI) (*TestNested3Provider1, e
 	if err != nil {
 		return nil, err
 	}
+	// In order to use the ClientContext in a nested way we have to allow concurrency
+	cctx.SetConcurrency(true)
 	provider := &TestNested3Provider1{ctx, cctx, cctx.Uri, p2uri, 0}
 
 	// Register handler
@@ -106,7 +108,10 @@ func newTestNested3Provider2(ctx *Context) (*TestNested3Provider2, error) {
 	if err != nil {
 		return nil, err
 	}
+	// In order to use the ClientContext in a nested way we have to allow concurrency
+	cctx.SetConcurrency(true)
 	provider := &TestNested3Provider2{ctx, cctx, cctx.Uri, 0}
+
 	// Register handler
 	invokeHandler := func(msg *Message, t Transaction) error {
 		if msg != nil {

@@ -137,6 +137,8 @@ func TestNested2(t *testing.T) {
 		t.Fatal("Error creating client context, ", err)
 		return
 	}
+	// In order to use the ClientContext in a nested way we have to allow concurrency
+	cctx.SetConcurrency(true)
 
 	provider2, err := newTestNested2Provider2(cctx)
 	if err != nil {

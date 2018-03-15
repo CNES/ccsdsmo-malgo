@@ -62,6 +62,8 @@ func newTestNested1Provider1(p2uri *URI) (*TestNested1Provider1, error) {
 	if err != nil {
 		return nil, err
 	}
+	// In order to use the ClientContext in a nested way we have to allow concurrency
+	cctx.SetConcurrency(true)
 	provider := &TestNested1Provider1{ctx, cctx, cctx.Uri, p2uri, 0}
 
 	// Register handler
@@ -75,13 +77,11 @@ func newTestNested1Provider1(p2uri *URI) (*TestNested1Provider1, error) {
 			op := provider.cctx.NewInvokeOperation(provider.p2uri, 200, 1, 2, 2)
 			_, err := op.Invoke([]byte("message from provider1"))
 			if err != nil {
-				//			t.Fatal("Error during invoke, ", err)
 				return errors.New("Error during invoke")
 			}
-
+			fmt.Println("\t&&&&& Nested Invoke1: Ack from provider2")
 			reply, err := op.GetResponse()
 			if err != nil {
-				//			t.Fatal("Error getting response, ", err)
 				return errors.New("Error getting response")
 			}
 			fmt.Println("\t&&&&& Nested Invoke1: OK, ", string(reply.Body))
@@ -119,6 +119,8 @@ func newTestNested1Provider2() (*TestNested1Provider2, error) {
 	if err != nil {
 		return nil, err
 	}
+	// In order to use the ClientContext in a nested way we have to allow concurrency
+	cctx.SetConcurrency(true)
 	provider := &TestNested1Provider2{ctx, cctx, cctx.Uri, 0}
 
 	// Register handler
