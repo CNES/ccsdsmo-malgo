@@ -148,12 +148,37 @@ requests. It allows consumers to create operations to initiate and manage intera
 
 ###Initialization and configuration
 
-A **ClientContext** is created and initialized from a call to **NewClientContext** function (package mal/api). This function takes in parameter the
-underlying MAL context, and the name of the service (last part of the MAL URI for the corresponding end-point).
+A **ClientContext** is created and initialized from a call to **NewClientContext** function (package github.com/ccsdsmo/malgo/mal/api).
+This function takes in parameter the underlying MAL context, and the name of the service (last part of the MAL URI for the corresponding end-point).
 
 ```go
 func NewClientContext(ctx *Context, service string) (*ClientContext, error)
 ```
+
+After creation the client context can be initialized through a set of primitives allowing to fix various MAL message attributes:
+
+```go
+func (cctx *ClientContext) SetAuthenticationId(AuthenticationId Blob) *ClientContext
+func (cctx *ClientContext) SetEncodingId(EncodingId UOctet) *ClientContext
+func (cctx *ClientContext) SetQoSLevel(QoSLevel QoSLevel) *ClientContext
+func (cctx *ClientContext) SetPriority(Priority UInteger) *ClientContext
+func (cctx *ClientContext) SetDomain(Domain IdentifierList) *ClientContext
+func (cctx *ClientContext) SetNetworkZone(NetworkZone Identifier) *ClientContext
+func (cctx *ClientContext) SetSession(Session SessionType) *ClientContext
+func (cctx *ClientContext) SetSessionName(SessionName Identifier) *ClientContext
+```
+
+###ClientContext concurrency
+
+By default handling of incoming messages is done by the thread of underlying MAL Context. This feature ensures the order of message processing,
+however such behavior can lead to deadlocks in case of nested calls (direct or indirect). When the **Concurrency** attribute is set each message
+processing is executed in a separate goroutine. It is then the responsibility of the supplier to ensure the synchronization and the order of
+processing of requests.
+
+```go
+func (cctx *ClientContext) SetConcurrency(multi bool) *ClientContext
+```
+
 
 ###Registering provider's handler
 
@@ -333,9 +358,14 @@ The definition of operation entities are:
 
 ```go
 type Operation interface {
+	// Get current TransactionId
 	GetTid() ULong
-	Close() error
+	// Interrupt the operation during a blocking processing.
+	Interrupt()
+	// Reset the operation in order to reuse it
 	Reset() error
+	// Close the operation
+	Close() error
 }
 
 type SendOperation interface {
@@ -432,7 +462,7 @@ The end-point is created using the **NewEndPoint** function, the parameters are:
   - the service name (the service URI will be built by concatenation of MAL context URI with this name).
   - an optional channel (if nil a channel is created during the end-point initialization).
 
-A code sample is available in the TCP transport tests (mal/transport/tcp/transport_test.go).
+A code sample is available in the TCP transport tests (github.com/ccsdsmo/malgo/mal/transport/tcp/transport_test.go).
 
 ```go
 service, err := NewEndPoint(ctx, "service", nil)
@@ -465,7 +495,7 @@ Using the High level API
 ###Implementing a Provider
 
 The example below shows a provider handling a unique progress interaction.
-Code samples are available in the MAL API tests (mal/api/*_test.go).
+Code samples are available in the MAL API tests (github.com/ccsdsmo/malgo/mal/api/*_test.go).
 
 ```go
 // Provider context containing its datas
@@ -571,4 +601,21 @@ if err != nil {
 	return err
 }
 ```
-  
+
+###Using a MAL broker
+
+A simple implementation of a MAL broker is available in github.com/ccsdsmo/malgo/mal/broker package. This implementation is based
+on the high-level API describes above.
+
+```go
+// Creates a new broker
+func NewBroker(ctx *Context, name string) (*BrokerImpl, error)
+
+// Get broker URI
+func (handler *BrokerImpl) Uri() *URI
+// Gets the underlying ClientContext used by the broker.
+func (handler *BrokerImpl) ClientContext() *ClientContext
+// Closes the Broker
+func (handler *BrokerImpl) Close()
+```
+
