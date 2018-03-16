@@ -1,7 +1,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2017 CNES
+ * Copyright (c) 2017 - 2018 CNES
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -41,7 +41,7 @@ func NewPair() *Pair {
 // ================================================================================
 // Defines MAL Pair type as a MAL Composite
 
-func (pair *Pair) composite() Composite {
+func (pair *Pair) Composite() Composite {
 	return pair
 }
 

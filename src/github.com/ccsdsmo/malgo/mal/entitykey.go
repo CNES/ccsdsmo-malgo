@@ -1,7 +1,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2017 CNES
+ * Copyright (c) 2017 - 2018 CNES
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -84,7 +84,7 @@ func NewEntityKey() *EntityKey {
 // ================================================================================
 // Defines MAL EntityKey type as a MAL Composite
 
-func (key *EntityKey) composite() Composite {
+func (key *EntityKey) Composite() Composite {
 	return key
 }
 

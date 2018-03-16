@@ -1,7 +1,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2017 CNES
+ * Copyright (c) 2017 - 2018 CNES
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -45,7 +45,7 @@ func NewNamedValue() *NamedValue {
 // ================================================================================
 // Defines MAL NamedValue type as a MAL Composite
 
-func (pair *NamedValue) composite() Composite {
+func (pair *NamedValue) Composite() Composite {
 	return pair
 }
 

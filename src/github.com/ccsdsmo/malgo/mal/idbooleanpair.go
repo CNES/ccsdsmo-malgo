@@ -1,7 +1,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2017 CNES
+ * Copyright (c) 2017 - 2018 CNES
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -45,7 +45,7 @@ func NewIdBooleanPair() *IdBooleanPair {
 // ================================================================================
 // Defines MAL IdBooleanPair type as a MAL Composite
 
-func (pair *IdBooleanPair) composite() Composite {
+func (pair *IdBooleanPair) Composite() Composite {
 	return pair
 }
 
