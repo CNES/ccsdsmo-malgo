@@ -42,12 +42,17 @@ const (
 )
 
 type Operation interface {
-	GetTid() ULong
 	verify(msg *Message) bool
 	finalize()
+
+	// Get current TransactionId
+	GetTid() ULong
+	// Interrupt the operation during a blocking processing.
 	Interrupt()
-	Close() error
+	// Reset the operation in order to reuse it
 	Reset() error
+	// Close the operation
+	Close() error
 }
 
 type OperationX struct {
