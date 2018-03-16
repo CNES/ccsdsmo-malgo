@@ -5,7 +5,7 @@ import (
 	. "github.com/ccsdsmo/malgo/mal"
 	_ "github.com/ccsdsmo/malgo/mal/transport/invm"
 	_ "github.com/ccsdsmo/malgo/mal/transport/tcp"
-	. "malactor"
+	. "github.com/ccsdsmo/malgo/malactor"
 	"testing"
 	"time"
 )
