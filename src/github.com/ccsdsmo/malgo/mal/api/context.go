@@ -212,7 +212,7 @@ func (cctx *ClientContext) cleanOps() {
 	cctx.operations = nil
 }
 
-func (cctx *ClientContext) cleanHandlers() error {
+func (cctx *ClientContext) cleanHandlers() {
 	cctx.handlers = nil
 }
 
