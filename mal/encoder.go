@@ -28,8 +28,7 @@ import ()
 // ================================================================================
 // Encoding interface, implemented by specific encoding technology.
 type Encoder interface {
-	// TODO (AF): ?
-	//	addEncodingLengthBoolean(att Boolean) error
+	Body() []byte
 
 	EncodeNull() error
 

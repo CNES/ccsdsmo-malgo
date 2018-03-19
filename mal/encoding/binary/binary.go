@@ -1,7 +1,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2017 CNES
+ * Copyright (c) 2017 - 2018 CNES
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,9 +23,36 @@
  */
 package binary
 
-import ()
+import (
+	. "github.com/ccsdsmo/malgo/mal"
+)
 
 const (
 	TRUE  byte = 1
 	FALSE byte = 0
 )
+
+var (
+	FixedBinaryEncodingFactory  *FixedBinaryEncoding  = nil
+	VarintBinaryEncodingFactory *VarintBinaryEncoding = nil
+)
+
+type FixedBinaryEncoding struct{}
+
+func (*FixedBinaryEncoding) NewEncoder(buf []byte) Encoder {
+	return NewBinaryEncoder(buf, false)
+}
+
+func (*FixedBinaryEncoding) NewDecoder(buf []byte) Decoder {
+	return NewBinaryDecoder(buf, false)
+}
+
+type VarintBinaryEncoding struct{}
+
+func (*VarintBinaryEncoding) NewEncoder(buf []byte) Encoder {
+	return NewBinaryEncoder(buf, true)
+}
+
+func (*VarintBinaryEncoding) NewDecoder(buf []byte) Decoder {
+	return NewBinaryDecoder(buf, true)
+}

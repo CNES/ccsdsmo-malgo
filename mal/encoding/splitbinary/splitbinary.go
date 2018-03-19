@@ -23,4 +23,20 @@
  */
 package splitbinary
 
-import ()
+import (
+	. "github.com/ccsdsmo/malgo/mal"
+)
+
+type SplitBinaryEncoding struct{}
+
+var (
+	SplitBinaryEncodingFactory *SplitBinaryEncoding = nil
+)
+
+func (*SplitBinaryEncoding) NewEncoder(buf []byte) Encoder {
+	return NewSplitBinaryEncoder(buf, make([]byte, 0, 8))
+}
+
+func (*SplitBinaryEncoding) NewDecoder(buf []byte) Decoder {
+	return NewSplitBinaryDecoder(buf)
+}

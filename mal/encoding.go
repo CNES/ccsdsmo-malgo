@@ -47,3 +47,8 @@ type Buffer interface {
 	// Returns the part of buffer that still needs to be decoded
 	Remaining() ([]byte, error)
 }
+
+type EncodingFactory interface {
+	NewEncoder(buf []byte) Encoder
+	NewDecoder(buf []byte) Decoder
+}
