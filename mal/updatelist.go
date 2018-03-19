@@ -1,7 +1,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2017 CNES
+ * Copyright (c) 2017  2018 CNES
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -29,6 +29,9 @@ import ()
 // Defines MAL UpdateList type
 // ################################################################################
 
+/**
+ * This type is needed to create generic broker (cf. CCSDS 524.1-B-1 3.5.3.3.1 p 3-15).
+ */
 type UpdateList []*Blob
 
 var (
