@@ -196,6 +196,14 @@ type Decoder interface {
 	// @return The decoded Element or null.
 	DecodeNullableElement(element Element) (Element, error)
 
+	// Decodes an abstract Element using polymorphism.
+	// @return The decoded Element.
+	DecodeAbstractElement() (Element, error)
+
+	// Decodes an abstract Element that may be null using polymorphism.
+	// @return The decoded Element or null.
+	DecodeNullableAbstractElement() (Element, error)
+
 	// Decodes the short form of an attribute.
 	// @return The short form of the attribute.
 	DecodeAttributeType() (Integer, error)
@@ -491,6 +499,31 @@ func (decoder *GenDecoder) DecodeNullableElement(element Element) (Element, erro
 		return element.Null(), nil
 	} else {
 		return element.Decode(decoder)
+	}
+}
+
+// Decodes an abstract Element using polymorphism.
+// @return The decoded Element.
+func (decoder *GenDecoder) DecodeAbstractElement() (Element, error) {
+	shortForm, err := decoder.DecodeLong()
+	if err != nil {
+		return nil, err
+	}
+	element, err := LookupMALElement(*shortForm)
+	return element.Decode(decoder)
+}
+
+// Decodes an abstract Element that may be null using polymorphism.
+// @return The decoded Element or null.
+func (decoder *GenDecoder) DecodeNullableAbstractElement() (Element, error) {
+	null, err := decoder.IsNull()
+	if err != nil {
+		return nil, err
+	}
+	if null {
+		return NullElement, nil
+	} else {
+		return decoder.DecodeAbstractElement()
 	}
 }
 

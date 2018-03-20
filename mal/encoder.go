@@ -197,6 +197,14 @@ type Encoder interface {
 	// @param element The Element to encode.
 	EncodeNullableElement(element Element) error
 
+	// Encodes a non-null abstract Element (use for polymorphism).
+	// @param element The Element to encode.
+	EncodeAbstractElement(element Element) error
+
+	// Encodes an abstract Element that may be null (use for polymorphism).
+	// @param element The Element to encode.
+	EncodeNullableAbstractElement(element Element) error
+
 	// Encodes the short form of an attribute.
 	EncodeAttributeType(Integer) error
 
@@ -491,6 +499,31 @@ func (encoder *GenEncoder) EncodeNullableElement(element Element) error {
 			return err
 		}
 		return element.Encode(encoder)
+	}
+}
+
+// Encodes a non-null abstract Element (use for polymorphism).
+// @param element The Element to encode.
+func (encoder *GenEncoder) EncodeAbstractElement(element Element) error {
+	shortForm := element.GetShortForm()
+	err := encoder.EncodeLong(&shortForm)
+	if err != nil {
+		return err
+	}
+	return element.Encode(encoder)
+}
+
+// Encodes an abstract Element that may be null (use for polymorphism).
+// @param element The Element to encode.
+func (encoder *GenEncoder) EncodeNullableAbstractElement(element Element) error {
+	if element == element.Null() { // element.IsNull()
+		return encoder.EncodeNull()
+	} else {
+		err := encoder.EncodeNotNull()
+		if err != nil {
+			return err
+		}
+		return encoder.EncodeAbstractElement(element)
 	}
 }
 
