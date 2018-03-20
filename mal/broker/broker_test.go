@@ -54,7 +54,8 @@ func TestPubSub(t *testing.T) {
 		return
 	}
 
-	broker, err := NewBroker(ctx, "broker")
+	updtHandler := NewBlobUpdateValueHandler()
+	broker, err := NewBroker(ctx, "broker", updtHandler)
 	if err != nil {
 		t.Fatal("Error creating broker, ", err)
 		return

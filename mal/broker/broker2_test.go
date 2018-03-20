@@ -74,7 +74,8 @@ func newTest2Broker() error {
 		return err
 	}
 
-	test2_broker, err = NewBroker(test2_broker_ctx, "broker")
+	updtHandler := NewBlobUpdateValueHandler()
+	test2_broker, err = NewBroker(test2_broker_ctx, "broker", updtHandler)
 	if err != nil {
 		return err
 	}

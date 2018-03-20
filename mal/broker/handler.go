@@ -183,13 +183,66 @@ type BrokerImpl struct {
 	ctx  *Context
 	cctx *ClientContext
 
+	updtHandler UpdateValueHandler
+
 	// Map of all active subscribers
 	subs map[string]*BrokerSub
 	// Map o fall active publishers
 	pubs map[string]*BrokerPub
 }
 
-func NewBroker(ctx *Context, name string) (*BrokerImpl, error) {
+type UpdateValueHandler interface {
+	DecodeUpdateValueList(decoder Decoder) error
+	UpdateValueListSize() int
+	AppendValue(idx int)
+	EncodeUpdateValueList(encoder Encoder) error
+	ResetValues()
+}
+
+type BlobUpdateValueHandler struct {
+	list   *BlobList
+	values BlobList
+}
+
+func NewBlobUpdateValueHandler() *BlobUpdateValueHandler {
+	return new(BlobUpdateValueHandler)
+}
+
+func (handler *BlobUpdateValueHandler) DecodeUpdateValueList(decoder Decoder) error {
+	list, err := DecodeBlobList(decoder)
+	if err != nil {
+		return err
+	}
+	logger.Infof("Broker.Publish, DecodeUpdateValueList -> %d %v", len([]*Blob(*list)), list)
+
+	handler.list = list
+	handler.values = BlobList(make([]*Blob, 0, handler.list.Size()))
+
+	return nil
+}
+
+func (handler *BlobUpdateValueHandler) UpdateValueListSize() int {
+	return handler.list.Size()
+}
+
+func (handler *BlobUpdateValueHandler) AppendValue(idx int) {
+	handler.values = append(handler.values, ([]*Blob)(*handler.list)[idx])
+}
+
+func (handler *BlobUpdateValueHandler) EncodeUpdateValueList(encoder Encoder) error {
+	err := handler.values.Encode(encoder)
+	if err != nil {
+		return err
+	}
+	handler.values = handler.values[:0]
+	return nil
+}
+
+func (handler *BlobUpdateValueHandler) ResetValues() {
+	handler.values = handler.values[:0]
+}
+
+func NewBroker(ctx *Context, name string, updtHandler UpdateValueHandler) (*BrokerImpl, error) {
 	cctx, err := NewClientContext(ctx, name)
 	if err != nil {
 		return nil, err
@@ -197,7 +250,7 @@ func NewBroker(ctx *Context, name string) (*BrokerImpl, error) {
 
 	subs := make(map[string]*BrokerSub)
 	pubs := make(map[string]*BrokerPub)
-	broker := &BrokerImpl{ctx, cctx, subs, pubs}
+	broker := &BrokerImpl{ctx, cctx, updtHandler, subs, pubs}
 
 	brokerHandler := func(msg *Message, t Transaction) error {
 		if msg.InteractionStage == MAL_IP_STAGE_PUBSUB_PUBLISH_REGISTER {
@@ -355,29 +408,32 @@ func (handler *BrokerImpl) publish(pub *Message, transaction PublisherTransactio
 		return err
 	}
 	logger.Infof("Broker.Publish, DecodeUpdateHeaderList -> %+v", uhlist)
-	uvlist, err := DecodeUpdateList(decoder)
+	handler.updtHandler.DecodeUpdateValueList(decoder)
 	if err != nil {
 		// TODO (AF): Returns a PublishError MAL message to publisher
 		return err
 	}
-	logger.Infof("Broker.Publish, DecodeUpdateList -> %d %v", len([]*Blob(*uvlist)), uvlist)
+	logger.Infof("Broker.Publish, DecodeUpdateList -> %d", handler.updtHandler.UpdateValueListSize())
 
-	if len(*uhlist) != len(*uvlist) {
+	if len(*uhlist) != handler.updtHandler.UpdateValueListSize() {
 		return errors.New("Bad header and value list lengths")
 	}
+
+	// TODO (AF): Verify the publication validity see 3.5.6.8 e, f
+
 	for _, sub := range handler.subs {
 		var headers UpdateHeaderList = make([]*UpdateHeader, 0, len(*uhlist))
-		var values UpdateList = make([]*Blob, 0, len(*uhlist))
 		for idx, hdr := range *uhlist {
 			if sub.matches(pub, hdr.Key) {
 				logger.Warnf("Broker.Publish match !!")
 				// Adds the update to the notify message for this subscription
 				headers = append(headers, hdr)
-				values = append(values, (*uvlist)[idx])
+				handler.updtHandler.AppendValue(idx)
 			}
 		}
 		if len(headers) == 0 {
 			// there is no update matching this subscription
+			handler.updtHandler.ResetValues()
 			continue
 		}
 
@@ -385,7 +441,7 @@ func (handler *BrokerImpl) publish(pub *Message, transaction PublisherTransactio
 		encoder := binary.NewBinaryEncoder(buf, varint)
 		encoder.EncodeIdentifier(&sub.subid)
 		headers.Encode(encoder)
-		values.Encode(encoder)
+		handler.updtHandler.EncodeUpdateValueList(encoder)
 		sub.transaction.Notify(encoder.Body(), false)
 	}
 	return nil
