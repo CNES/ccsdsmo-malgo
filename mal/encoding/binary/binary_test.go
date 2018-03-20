@@ -1500,3 +1500,145 @@ func TestOctetElementList(t *testing.T) {
 		t.Errorf("Bad decoding, got: %t, want: %t", y, list)
 	}
 }
+
+// Test polymorphism
+
+func TestAbstractElement(t *testing.T) {
+	var length uint32 = 8192
+	buf := make([]byte, 0, length)
+	encoder := binary.NewBinaryEncoder(buf, VARINT)
+
+	var list = []Element{
+		NewBoolean(false),
+		NewBoolean(true),
+		NewDuration(12.34E56),
+		NewDuration(1000),
+		NewFloat(123.45E12),
+		NewDouble(12345.67E89),
+		NewIdentifier("BOOM"),
+		NewOctet(-127),
+		NewUOctet(255),
+		NewShort(-32767),
+		NewUShort(65535),
+		NewInteger(123456789),
+		NewUInteger(987654321),
+		NewLong(-1),
+		NewULong(9223372036854775807),
+		NewString("Hello world"),
+		NewDouble(9.99999E99),
+		NewOctet(0),
+		NewURI("http://www.scalagent.com"),
+		NewUOctet(0),
+		&Blob{0, 1, 2, 3, 4, 5, 6, 7, 8, 9},
+		&Blob{9, 8, 7, 6, 5, 4, 3, 2, 1, 0},
+		NewTime(time.Now().Truncate(time.Millisecond)),
+		NewTime(time.Unix(int64(rand.Intn(2429913600)), int64(rand.Intn(999))*1000000)),
+		NewFineTime(time.Now().Truncate(time.Nanosecond)),
+		NewFineTime(time.Unix(int64(rand.Intn(2429913600)), int64(rand.Intn(999999999)))),
+		&BooleanList{NewBoolean(true), NewBoolean(false), NewBoolean(false), NewBoolean(true)},
+		&LongList{NewLong(-1), NewLong(65536), NewLong(-65536)},
+	}
+	for _, x := range list {
+		err := encoder.EncodeAbstractElement(x)
+		if err != nil {
+			t.Fatalf("Error during encode: %s", err)
+		}
+	}
+
+	buf = encoder.Body()
+	decoder := binary.NewBinaryDecoder(buf, VARINT)
+	for i, x := range list {
+		y, err := decoder.DecodeAbstractElement()
+		if err != nil {
+			t.Fatalf("Error during decode: %d", i)
+
+		}
+		if reflect.DeepEqual(&x, y) {
+			t.Errorf("Bad decoding, got: %t, want: %t", y, x)
+		}
+	}
+}
+
+func TestNullableAbstractElement(t *testing.T) {
+	var length uint32 = 8192
+	buf := make([]byte, 0, length)
+	encoder := binary.NewBinaryEncoder(buf, VARINT)
+
+	var list = []Element{
+		NewBoolean(false),
+		NullBlob,
+		NewBoolean(true),
+		NewDuration(12.34E56),
+		NullBoolean,
+		NullURI,
+		NewDuration(1000),
+		NewFloat(123.45E12),
+		NewDouble(12345.67E89),
+		NullString,
+		NewIdentifier("BOOM"),
+		NewOctet(-127),
+		NewUOctet(255),
+		NewShort(-32767),
+		NewUShort(65535),
+		NewInteger(123456789),
+		NullOctet,
+		NullBlob,
+		NullInteger,
+		NewUInteger(987654321),
+		NewLong(-1),
+		NewULong(9223372036854775807),
+		NewString("Hello world"),
+		NewDouble(9.99999E99),
+		NewOctet(0),
+		NewURI("http://www.scalagent.com"),
+		NewUOctet(0),
+		NullBlobList,
+		NullStringList,
+		NullBlobList,
+		NewDuration(12.34E56),
+		NewDuration(1000),
+		NewFloat(123.45E12),
+		NewDouble(12345.67E89),
+		NewIdentifier("BOOM"),
+		NewOctet(-127),
+		NewUOctet(255),
+		NewShort(-32767),
+		NewUShort(65535),
+		NewInteger(123456789),
+		NewUInteger(987654321),
+		NewLong(-1),
+		NewULong(9223372036854775807),
+		NewString("Hello world"),
+		NewDouble(9.99999E99),
+		NewOctet(0),
+		NewURI("http://www.scalagent.com"),
+		NewUOctet(0),
+		&Blob{0, 1, 2, 3, 4, 5, 6, 7, 8, 9},
+		&Blob{9, 8, 7, 6, 5, 4, 3, 2, 1, 0},
+		NewTime(time.Now().Truncate(time.Millisecond)),
+		NewTime(time.Unix(int64(rand.Intn(2429913600)), int64(rand.Intn(999))*1000000)),
+		NewFineTime(time.Now().Truncate(time.Nanosecond)),
+		NewFineTime(time.Unix(int64(rand.Intn(2429913600)), int64(rand.Intn(999999999)))),
+		&BooleanList{NewBoolean(true), NewBoolean(false), NewBoolean(false), NewBoolean(true)},
+		&LongList{NewLong(-1), NewLong(65536), NewLong(-65536)},
+	}
+	for _, x := range list {
+		t.Log("Encode: ", x)
+		err := encoder.EncodeNullableAbstractElement(x)
+		if err != nil {
+			t.Fatalf("Error during encode: %s", err)
+		}
+	}
+
+	buf = encoder.Body()
+	decoder := binary.NewBinaryDecoder(buf, VARINT)
+	for i, x := range list {
+		y, err := decoder.DecodeNullableAbstractElement()
+		if err != nil {
+			t.Fatalf("Error during decode: %d", i)
+		}
+		if reflect.DeepEqual(&x, y) {
+			t.Errorf("Bad decoding, got: %t, want: %t", y, x)
+		}
+	}
+}
