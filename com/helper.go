@@ -27,7 +27,9 @@ import (
 	. "github.com/ccsdsmo/malgo/mal"
 )
 
-const COM_AREA_NUMBER UShort = 0x02
-const COM_AREA_VERSION UOctet = 0x01
+const (
+	COM_AREA_NUMBER  UShort = 0x02
+	COM_AREA_VERSION UOctet = 0x01
 
-const COM_AREA_NAME = Identifier("COM")
+	COM_AREA_NAME = Identifier("COM")
+)
