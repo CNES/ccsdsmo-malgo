@@ -1,7 +1,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2017 CNES
+ * Copyright (c) 2017 - 2018 CNES
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -38,6 +38,13 @@ var (
 func NewBlobList(size int) *BlobList {
 	var blob BlobList = BlobList(make([]*Blob, size))
 	return &blob
+}
+
+func (list *BlobList) Size() int {
+	if list != nil {
+		return len(([]*Blob)(*list))
+	}
+	return -1
 }
 
 // ================================================================================
