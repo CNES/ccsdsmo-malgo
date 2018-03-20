@@ -51,6 +51,11 @@ func (pair *Pair) Composite() Composite {
 const MAL_PAIR_TYPE_SHORT_FORM Integer = 0x1C
 const MAL_PAIR_SHORT_FORM Long = 0x100000100001C
 
+// Registers MAL Pair type for polymorpsism handling
+func init() {
+	RegisterMALElement(MAL_PAIR_SHORT_FORM, NullPair)
+}
+
 // Returns the absolute short form of the element type.
 func (*Pair) GetShortForm() Long {
 	return MAL_PAIR_SHORT_FORM

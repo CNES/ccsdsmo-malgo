@@ -1,7 +1,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2017 CNES
+ * Copyright (c) 2017 - 2018 CNES
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -58,6 +58,11 @@ func (l *Long) attribute() Attribute {
 const MAL_LONG_TYPE_SHORT_FORM Integer = 0x0D
 const MAL_LONG_SHORT_FORM Long = 0x100000100000D
 
+// Registers MAL Long type for polymorpsism handling
+func init() {
+	RegisterMALElement(MAL_LONG_SHORT_FORM, NullLong)
+}
+
 // Returns the absolute short form of the element type.
 func (*Long) GetShortForm() Long {
 	return MAL_LONG_SHORT_FORM
@@ -92,7 +97,7 @@ func (l *Long) Encode(encoder Encoder) error {
 // Decodes an instance of this element type using the supplied decoder.
 // @param decoder The decoder to use, must not be null.
 // @return the decoded instance, may be not the same instance as this Element.
-func (l Long) Decode(decoder Decoder) (Element, error) {
+func (l *Long) Decode(decoder Decoder) (Element, error) {
 	return decoder.DecodeLong()
 }
 

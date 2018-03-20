@@ -1,7 +1,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2017 CNES
+ * Copyright (c) 2017 - 2018 CNES
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -45,6 +45,11 @@ func NewPairList(size int) *PairList {
 
 const MAL_PAIR_LIST_TYPE_SHORT_FORM Integer = -0x1C
 const MAL_PAIR_LIST_SHORT_FORM Long = 0x1000001FFFF1C
+
+// Registers MAL PairList type for polymorpsism handling
+func init() {
+	RegisterMALElement(MAL_PAIR_LIST_SHORT_FORM, NullPairList)
+}
 
 // Returns the absolute short form of the element type.
 func (*PairList) GetShortForm() Long {

@@ -1,7 +1,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2017 CNES
+ * Copyright (c) 2017 - 2018 CNES
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -45,6 +45,11 @@ func NewFineTimeList(size int) *FineTimeList {
 
 const MAL_FINETIME_LIST_TYPE_SHORT_FORM Integer = -0x11
 const MAL_FINETIME_LIST_SHORT_FORM Long = 0x1000001FFFFEF
+
+// Registers MAL BlobList type for polymorpsism handling
+func init() {
+	RegisterMALElement(MAL_FINETIME_LIST_SHORT_FORM, NullFineTimeList)
+}
 
 // Returns the absolute short form of the element type.
 func (*FineTimeList) GetShortForm() Long {

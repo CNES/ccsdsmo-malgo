@@ -52,6 +52,11 @@ func (subs *Subscription) Composite() Composite {
 // ================================================================================
 // Defines MAL Subscription type as a MAL Element
 
+// Registers MAL Subscription type for polymorpsism handling
+func init() {
+	RegisterMALElement(MAL_SUBSCRIPTION_SHORT_FORM, NullSubscription)
+}
+
 const MAL_SUBSCRIPTION_TYPE_SHORT_FORM Integer = 0x17
 const MAL_SUBSCRIPTION_SHORT_FORM Long = 0x1000001000017
 

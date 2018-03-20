@@ -1,7 +1,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2017 CNES
+ * Copyright (c) 2017 - 2018 CNES
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -45,6 +45,11 @@ func NewIdBooleanPairList(size int) *IdBooleanPairList {
 
 const MAL_ID_BOOLEAN_PAIR_LIST_TYPE_SHORT_FORM Integer = -0x1B
 const MAL_ID_BOOLEAN_PAIR_LIST_SHORT_FORM Long = 0x1000001FFFF1B
+
+// Registers MAL IdBooleanList type for polymorpsism handling
+func init() {
+	RegisterMALElement(MAL_ID_BOOLEAN_PAIR_LIST_SHORT_FORM, NullIdBooleanPairList)
+}
 
 // Returns the absolute short form of the element type.
 func (*IdBooleanPairList) GetShortForm() Long {

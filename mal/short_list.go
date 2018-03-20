@@ -1,7 +1,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2017 CNES
+ * Copyright (c) 2017 - 2018 CNES
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -45,6 +45,11 @@ func NewShortList(size int) *ShortList {
 
 const MAL_SHORT_LIST_TYPE_SHORT_FORM Integer = -0x09
 const MAL_SHORT_LIST_SHORT_FORM Long = 0x1000001FFFFF7
+
+// Registers MAL ShortList type for polymorpsism handling
+func init() {
+	RegisterMALElement(MAL_SHORT_LIST_SHORT_FORM, NullShortList)
+}
 
 // Returns the absolute short form of the element type.
 func (*ShortList) GetShortForm() Long {

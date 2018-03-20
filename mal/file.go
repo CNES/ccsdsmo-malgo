@@ -60,6 +60,11 @@ func (file *File) Composite() Composite {
 const MAL_FILE_TYPE_SHORT_FORM Integer = 0x1E
 const MAL_FILE_SHORT_FORM Long = 0x100000100001E
 
+// Registers MAL File type for polymorpsism handling
+func init() {
+	RegisterMALElement(MAL_FILE_SHORT_FORM, NullFile)
+}
+
 // Returns the absolute short form of the element type.
 func (*File) GetShortForm() Long {
 	return MAL_FILE_SHORT_FORM

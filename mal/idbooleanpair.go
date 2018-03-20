@@ -55,6 +55,11 @@ func (pair *IdBooleanPair) Composite() Composite {
 const MAL_ID_BOOLEAN_PAIR_TYPE_SHORT_FORM Integer = 0x1B
 const MAL_ID_BOOLEAN_PAIR_SHORT_FORM Long = 0x100000100001B
 
+// Registers MAL IdBooleanPair type for polymorpsism handling
+func init() {
+	RegisterMALElement(MAL_ID_BOOLEAN_PAIR_SHORT_FORM, NullIdBooleanPair)
+}
+
 // Returns the absolute short form of the element type.
 func (*IdBooleanPair) GetShortForm() Long {
 	return MAL_ID_BOOLEAN_PAIR_SHORT_FORM

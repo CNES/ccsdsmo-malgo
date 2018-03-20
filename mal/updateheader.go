@@ -57,6 +57,11 @@ func (u *UpdateHeader) Composite() Composite {
 const MAL_UPDATE_HEADER_TYPE_SHORT_FORM Integer = 0x1A
 const MAL_UPDATE_HEADER_SHORT_FORM Long = 0x100000100001A
 
+// Registers MAL UpdateHeader type for polymorpsism handling
+func init() {
+	RegisterMALElement(MAL_UPDATE_HEADER_SHORT_FORM, NullUpdateHeader)
+}
+
 // Returns the absolute short form of the element type.
 func (*UpdateHeader) GetShortForm() Long {
 	return MAL_UPDATE_HEADER_SHORT_FORM

@@ -59,6 +59,11 @@ func (key *EntityRequest) Composite() Composite {
 const MAL_ENTITY_REQUEST_TYPE_SHORT_FORM Integer = 0x18
 const MAL_ENTITY_REQUEST_SHORT_FORM Long = 0x1000001000018
 
+// Registers MAL EntityRequest type for polymorpsism handling
+func init() {
+	RegisterMALElement(MAL_ENTITY_REQUEST_SHORT_FORM, NullEntityRequest)
+}
+
 // Returns the absolute short form of the element type.
 func (*EntityRequest) GetShortForm() Long {
 	return MAL_ENTITY_REQUEST_SHORT_FORM

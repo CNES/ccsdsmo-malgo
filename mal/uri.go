@@ -57,9 +57,13 @@ func (uri *URI) attribute() Attribute {
 // ================================================================================
 // Defines MAL URI type as a MAL Element
 
-const URI_TYPE_SHORT_FORM byte = 0x12
 const MAL_URI_TYPE_SHORT_FORM Integer = 0x12
 const MAL_URI_SHORT_FORM Long = 0x1000001000012
+
+// Registers MAL URI type for polymorpsism handling
+func init() {
+	RegisterMALElement(MAL_URI_SHORT_FORM, NullURI)
+}
 
 // Returns the absolute short form of the element type.
 func (*URI) GetShortForm() Long {

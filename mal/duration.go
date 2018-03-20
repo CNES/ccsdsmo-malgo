@@ -1,7 +1,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2017 CNES
+ * Copyright (c) 2017 - 2018 CNES
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -52,6 +52,11 @@ func (d *Duration) attribute() Attribute {
 
 const MAL_DURATION_TYPE_SHORT_FORM Integer = 0x03
 const MAL_DURATION_SHORT_FORM Long = 0x1000001000003
+
+// Registers MAL Duration type for polymorpsism handling
+func init() {
+	RegisterMALElement(MAL_DURATION_SHORT_FORM, NullDuration)
+}
 
 // Returns the absolute short form of the element type.
 func (*Duration) GetShortForm() Long {

@@ -1,7 +1,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2017 CNES
+ * Copyright (c) 2017 - 2018 CNES
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -45,6 +45,11 @@ func NewUIntegerList(size int) *UIntegerList {
 
 const MAL_UINTEGER_LIST_TYPE_SHORT_FORM Integer = -0x0C
 const MAL_UINTEGER_LIST_SHORT_FORM Long = 0x1000001FFFFF4
+
+// Registers MAL UOctet type for polymorpsism handling
+func init() {
+	RegisterMALElement(MAL_UINTEGER_LIST_SHORT_FORM, NullUIntegerList)
+}
 
 // Returns the absolute short form of the element type.
 func (*UIntegerList) GetShortForm() Long {

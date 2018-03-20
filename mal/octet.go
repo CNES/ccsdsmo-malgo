@@ -1,7 +1,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2017 CNES
+ * Copyright (c) 2017 - 2018 CNES
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -57,6 +57,11 @@ func (o *Octet) attribute() Attribute {
 
 const MAL_OCTET_TYPE_SHORT_FORM Integer = 0x07
 const MAL_OCTET_SHORT_FORM Long = 0x1000001000007
+
+// Registers MAL Octet type for polymorpsism handling
+func init() {
+	RegisterMALElement(MAL_OCTET_SHORT_FORM, NullOctet)
+}
 
 // Returns the absolute short form of the element type.
 func (*Octet) GetShortForm() Long {

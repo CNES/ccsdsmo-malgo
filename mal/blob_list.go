@@ -53,6 +53,11 @@ func (list *BlobList) Size() int {
 const MAL_BLOB_LIST_TYPE_SHORT_FORM Integer = -0x01
 const MAL_BLOB_LIST_SHORT_FORM Long = 0x1000001FFFFFF
 
+// Registers MAL BlobList type for polymorpsism handling
+func init() {
+	RegisterMALElement(MAL_BLOB_LIST_SHORT_FORM, NullBlobList)
+}
+
 // Returns the absolute short form of the element type.
 func (*BlobList) GetShortForm() Long {
 	return MAL_BLOB_LIST_SHORT_FORM

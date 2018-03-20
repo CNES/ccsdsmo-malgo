@@ -94,6 +94,11 @@ func (key *EntityKey) Composite() Composite {
 const MAL_ENTITY_KEY_TYPE_SHORT_FORM Integer = 0x19
 const MAL_ENTITY_KEY_SHORT_FORM Long = 0x1000001000019
 
+// Registers MAL EntityKey type for polymorpsism handling
+func init() {
+	RegisterMALElement(MAL_ENTITY_KEY_SHORT_FORM, NullEntityKey)
+}
+
 // Returns the absolute short form of the element type.
 func (*EntityKey) GetShortForm() Long {
 	return MAL_ENTITY_KEY_SHORT_FORM

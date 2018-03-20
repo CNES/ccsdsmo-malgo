@@ -69,6 +69,11 @@ func (blob *Blob) attribute() Attribute {
 const MAL_BLOB_TYPE_SHORT_FORM Integer = 0x01
 const MAL_BLOB_SHORT_FORM Long = 0x1000001000001
 
+// Registers MAL Blob type for polymorpsism handling
+func init() {
+	RegisterMALElement(MAL_BLOB_SHORT_FORM, NullBlob)
+}
+
 // Returns the absolute short form of the element type.
 func (*Blob) GetShortForm() Long {
 	return MAL_BLOB_SHORT_FORM

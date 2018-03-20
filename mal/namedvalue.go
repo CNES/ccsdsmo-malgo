@@ -55,6 +55,11 @@ func (pair *NamedValue) Composite() Composite {
 const MAL_NAMED_VALUE_TYPE_SHORT_FORM Integer = 0x1D
 const MAL_NAMED_VALUE_SHORT_FORM Long = 0x100000100001D
 
+// Registers MAL NamedValue type for polymorpsism handling
+func init() {
+	RegisterMALElement(MAL_NAMED_VALUE_SHORT_FORM, NullNamedValue)
+}
+
 // Returns the absolute short form of the element type.
 func (*NamedValue) GetShortForm() Long {
 	return MAL_NAMED_VALUE_SHORT_FORM

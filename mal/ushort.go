@@ -1,7 +1,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2017 CNES
+ * Copyright (c) 2017 - 2018 CNES
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -57,6 +57,11 @@ func (s *UShort) attribute() Attribute {
 
 const MAL_USHORT_TYPE_SHORT_FORM Integer = 0x0A
 const MAL_USHORT_SHORT_FORM Long = 0x100000100000A
+
+// Registers MAL UShort type for polymorpsism handling
+func init() {
+	RegisterMALElement(MAL_USHORT_SHORT_FORM, NullUShort)
+}
 
 // Returns the absolute short form of the element type.
 func (*UShort) GetShortForm() Long {
