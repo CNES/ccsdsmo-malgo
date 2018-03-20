@@ -28,7 +28,6 @@ import (
 	. "github.com/ccsdsmo/malgo/mal"
 	. "github.com/ccsdsmo/malgo/mal/api"
 	"github.com/ccsdsmo/malgo/mal/debug"
-	"github.com/ccsdsmo/malgo/mal/encoding/binary"
 )
 
 const (
@@ -185,6 +184,8 @@ type BrokerImpl struct {
 
 	updtHandler UpdateValueHandler
 
+	encoding EncodingFactory
+
 	// Map of all active subscribers
 	subs map[string]*BrokerSub
 	// Map o fall active publishers
@@ -198,6 +199,9 @@ type UpdateValueHandler interface {
 	EncodeUpdateValueList(encoder Encoder) error
 	ResetValues()
 }
+
+// ################################################################################
+// Implements an UpdateValueHandler for Blob update value type
 
 type BlobUpdateValueHandler struct {
 	list   *BlobList
@@ -242,7 +246,9 @@ func (handler *BlobUpdateValueHandler) ResetValues() {
 	handler.values = handler.values[:0]
 }
 
-func NewBroker(ctx *Context, name string, updtHandler UpdateValueHandler) (*BrokerImpl, error) {
+// ################################################################################
+
+func NewBroker(ctx *Context, name string, updtHandler UpdateValueHandler, encoding EncodingFactory) (*BrokerImpl, error) {
 	cctx, err := NewClientContext(ctx, name)
 	if err != nil {
 		return nil, err
@@ -250,7 +256,7 @@ func NewBroker(ctx *Context, name string, updtHandler UpdateValueHandler) (*Brok
 
 	subs := make(map[string]*BrokerSub)
 	pubs := make(map[string]*BrokerPub)
-	broker := &BrokerImpl{ctx, cctx, updtHandler, subs, pubs}
+	broker := &BrokerImpl{ctx, cctx, updtHandler, encoding, subs, pubs}
 
 	brokerHandler := func(msg *Message, t Transaction) error {
 		if msg.InteractionStage == MAL_IP_STAGE_PUBSUB_PUBLISH_REGISTER {
@@ -289,7 +295,7 @@ func (handler *BrokerImpl) Close() {
 }
 
 func (handler *BrokerImpl) register(msg *Message, transaction SubscriberTransaction) error {
-	decoder := binary.NewBinaryDecoder(msg.Body, varint)
+	decoder := handler.encoding.NewDecoder(msg.Body)
 	sub, err := DecodeSubscription(decoder)
 	if err != nil {
 		return err
@@ -324,7 +330,7 @@ func (handler *BrokerImpl) OnRegister(msg *Message, transaction SubscriberTransa
 }
 
 func (handler *BrokerImpl) deregister(msg *Message, transaction SubscriberTransaction) error {
-	decoder := binary.NewBinaryDecoder(msg.Body, varint)
+	decoder := handler.encoding.NewDecoder(msg.Body)
 	list, err := DecodeIdentifierList(decoder)
 	if err != nil {
 		return err
@@ -348,7 +354,7 @@ func (handler *BrokerImpl) OnDeregister(msg *Message, transaction SubscriberTran
 }
 
 func (handler *BrokerImpl) publishRegister(msg *Message, transaction PublisherTransaction) error {
-	decoder := binary.NewBinaryDecoder(msg.Body, varint)
+	decoder := handler.encoding.NewDecoder(msg.Body)
 	list, err := DecodeEntityKeyList(decoder)
 	if err != nil {
 		return err
@@ -402,7 +408,7 @@ func (handler *BrokerImpl) OnPublishDeregister(msg *Message, transaction Publish
 func (handler *BrokerImpl) publish(pub *Message, transaction PublisherTransaction) error {
 	logger.Debugf("Broker.Publish -> %v", pub)
 
-	decoder := binary.NewBinaryDecoder(pub.Body, varint)
+	decoder := handler.encoding.NewDecoder(pub.Body)
 	uhlist, err := DecodeUpdateHeaderList(decoder)
 	if err != nil {
 		return err
@@ -438,7 +444,7 @@ func (handler *BrokerImpl) publish(pub *Message, transaction PublisherTransactio
 		}
 
 		buf := make([]byte, 0, 1024)
-		encoder := binary.NewBinaryEncoder(buf, varint)
+		encoder := handler.encoding.NewEncoder(buf)
 		encoder.EncodeIdentifier(&sub.subid)
 		headers.Encode(encoder)
 		handler.updtHandler.EncodeUpdateValueList(encoder)
