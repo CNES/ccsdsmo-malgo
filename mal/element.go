@@ -1,7 +1,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2017 CNES
+ * Copyright (c) 2017 - 2018 CNES
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,7 +23,47 @@
  */
 package mal
 
-import ()
+import (
+	"errors"
+	"github.com/ccsdsmo/malgo/mal/debug"
+)
+
+var rlogger debug.Logger = debug.GetLogger("mal.registry")
+var _MALElementRegistry = map[int64]Element{}
+
+var NullElement Element = nil
+
+func RegisterMALElement(shortForm Long, element Element) error {
+	rlogger.Debugf("MALElementRegistry.RegisterMALElement: %x", (int64)(shortForm))
+	_, ok := _MALElementRegistry[(int64)(shortForm)]
+	if ok {
+		rlogger.Errorf("MALElementRegistry.RegisterMALElement: %x already registered", (int64)(shortForm))
+		return errors.New("MALElementRegistry.RegisterMALElement: element already registered")
+	}
+	_MALElementRegistry[(int64)(shortForm)] = element
+	return nil
+}
+
+func LookupMALElement(shortForm Long) (Element, error) {
+	rlogger.Debugf("MALElementRegistry.LookupMALElement: %x", (int64)(shortForm))
+	element, ok := _MALElementRegistry[(int64)(shortForm)]
+	if !ok {
+		rlogger.Errorf("MALElementRegistry.LookupMALElement: unknown %x element", (int64)(shortForm))
+		return nil, errors.New("MALElementRegistry.LookupMALElement: unknown element")
+	}
+	return element, nil
+}
+
+func DeregisterMALElement(shortForm Long) error {
+	rlogger.Debugf("MALElementRegistry.DeregisterMALElement: %x", (int64)(shortForm))
+	_, ok := _MALElementRegistry[(int64)(shortForm)]
+	if !ok {
+		rlogger.Errorf("MALElementRegistry.DeregisterMALElement: %x not registered", (int64)(shortForm))
+		return errors.New("MALElementRegistry.DeregisterMALElement: element not registered")
+	}
+	delete(_MALElementRegistry, (int64)(shortForm))
+	return nil
+}
 
 // The Element interface represents the MAL Element type.
 type Element interface {
