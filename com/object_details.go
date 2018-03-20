@@ -66,6 +66,11 @@ func (details *ObjectDetails) Composite() Composite {
 const COM_OBJECT_DETAILS_TYPE_SHORT_FORM Integer = 0x04
 const COM_OBJECT_DETAILS_SHORT_FORM Long = 0x2000001000004
 
+// Registers COM ObjectDetails type for polymorpsism handling
+func init() {
+	RegisterMALElement(COM_OBJECT_DETAILS_SHORT_FORM, NullObjectDetails)
+}
+
 // Returns the absolute short form of the element type.
 func (*ObjectDetails) GetShortForm() Long {
 	return COM_OBJECT_DETAILS_SHORT_FORM

@@ -69,6 +69,11 @@ func (t *ObjectType) Composite() Composite {
 const COM_OBJECT_TYPE_TYPE_SHORT_FORM Integer = 0x01
 const COM_OBJECT_TYPE_SHORT_FORM Long = 0x2000001000001
 
+// Registers COM ObjectType type for polymorpsism handling
+func init() {
+	RegisterMALElement(COM_OBJECT_TYPE_SHORT_FORM, NullObjectType)
+}
+
 // Returns the absolute short form of the element type.
 func (*ObjectType) GetShortForm() Long {
 	return COM_OBJECT_TYPE_SHORT_FORM

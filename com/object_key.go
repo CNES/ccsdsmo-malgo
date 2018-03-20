@@ -63,6 +63,11 @@ func (key *ObjectKey) Composite() Composite {
 const COM_OBJECT_KEY_TYPE_SHORT_FORM Integer = 0x02
 const COM_OBJECT_KEY_SHORT_FORM Long = 0x2000001000002
 
+// Registers COM ObjectKey type for polymorpsism handling
+func init() {
+	RegisterMALElement(COM_OBJECT_KEY_SHORT_FORM, NullObjectKey)
+}
+
 // Returns the absolute short form of the element type.
 func (*ObjectKey) GetShortForm() Long {
 	return COM_OBJECT_KEY_SHORT_FORM

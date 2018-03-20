@@ -48,6 +48,11 @@ func NewObjectKeyList(size int) *ObjectKeyList {
 const COM_OBJECT_KEY_LIST_TYPE_SHORT_FORM Integer = -0x2
 const COM_OBJECT_KEY_LIST_SHORT_FORM Long = 0x2000001FFFFFE
 
+// Registers COM ObjectKeyList type for polymorpsism handling
+func init() {
+	RegisterMALElement(COM_OBJECT_KEY_LIST_SHORT_FORM, NullObjectKeyList)
+}
+
 // Returns the absolute short form of the element type.
 func (*ObjectKeyList) GetShortForm() Long {
 	return COM_OBJECT_KEY_LIST_SHORT_FORM

@@ -48,6 +48,11 @@ func NewInstanceBooleanPairList(size int) *InstanceBooleanPairList {
 const COM_INSTANCE_BOOLEAN_PAIR_LIST_TYPE_SHORT_FORM Integer = -0x5
 const COM_INSTANCE_BOOLEAN_PAIR_LIST_SHORT_FORM Long = 0x2000001FFFFFB
 
+// Registers COM InstanceBooleanPairList type for polymorpsism handling
+func init() {
+	RegisterMALElement(COM_INSTANCE_BOOLEAN_PAIR_LIST_SHORT_FORM, NullInstanceBooleanPairList)
+}
+
 // Returns the absolute short form of the element type.
 func (*InstanceBooleanPairList) GetShortForm() Long {
 	return COM_INSTANCE_BOOLEAN_PAIR_LIST_SHORT_FORM

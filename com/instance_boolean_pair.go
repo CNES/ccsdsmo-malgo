@@ -62,6 +62,11 @@ func (pair *InstanceBooleanPair) Composite() Composite {
 const COM_INSTANCE_BOOLEAN_PAIR_TYPE_SHORT_FORM Integer = 0x05
 const COM_INSTANCE_BOOLEAN_PAIR_SHORT_FORM Long = 0x2000001000005
 
+// Registers COM InstanceBooleanPair type for polymorpsism handling
+func init() {
+	RegisterMALElement(COM_INSTANCE_BOOLEAN_PAIR_SHORT_FORM, NullInstanceBooleanPair)
+}
+
 // Returns the absolute short form of the element type.
 func (*InstanceBooleanPair) GetShortForm() Long {
 	return COM_INSTANCE_BOOLEAN_PAIR_SHORT_FORM

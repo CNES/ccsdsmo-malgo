@@ -48,6 +48,11 @@ func NewObjectIdList(size int) *ObjectIdList {
 const COM_OBJECT_ID_LIST_TYPE_SHORT_FORM Integer = -0x3
 const COM_OBJECT_ID_LIST_SHORT_FORM Long = 0x2000001FFFFFD
 
+// Registers COM ObjectIdList type for polymorpsism handling
+func init() {
+	RegisterMALElement(COM_OBJECT_ID_LIST_SHORT_FORM, NullObjectIdList)
+}
+
 // Returns the absolute short form of the element type.
 func (*ObjectIdList) GetShortForm() Long {
 	return COM_OBJECT_ID_LIST_SHORT_FORM
