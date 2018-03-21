@@ -41,6 +41,16 @@ func NewDurationList(size int) *DurationList {
 }
 
 // ================================================================================
+// Defines MAL DurationList type as an ElementList
+
+func (list *DurationList) Size() int {
+	if list != nil {
+		return len(*list)
+	}
+	return -1
+}
+
+// ================================================================================
 // Defines MAL DurationList type as a MAL Element
 
 const MAL_DURATION_LIST_TYPE_SHORT_FORM Integer = -0x03

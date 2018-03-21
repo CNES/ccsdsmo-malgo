@@ -40,9 +40,12 @@ func NewBlobList(size int) *BlobList {
 	return &blob
 }
 
+// ================================================================================
+// Defines MAL BlobList type as an ElementList
+
 func (list *BlobList) Size() int {
 	if list != nil {
-		return len(([]*Blob)(*list))
+		return len(*list)
 	}
 	return -1
 }

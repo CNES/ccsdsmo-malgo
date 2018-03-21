@@ -41,6 +41,16 @@ func NewIdBooleanPairList(size int) *IdBooleanPairList {
 }
 
 // ================================================================================
+// Defines MAL IdBooleanPairList type as an ElementList
+
+func (list *IdBooleanPairList) Size() int {
+	if list != nil {
+		return len(*list)
+	}
+	return -1
+}
+
+// ================================================================================
 // Defines MAL IdBooleanPairList type as a MAL Element
 
 const MAL_ID_BOOLEAN_PAIR_LIST_TYPE_SHORT_FORM Integer = -0x1B

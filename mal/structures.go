@@ -25,11 +25,7 @@ package mal
 
 import ()
 
-// TODO (AF):
-
-type ElementList interface {
-	Composite
-}
+// TODO (AF): currently never used
 
 type AttributeList interface {
 }

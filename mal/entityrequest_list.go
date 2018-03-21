@@ -41,6 +41,16 @@ func NewEntityRequestList(size int) *EntityRequestList {
 }
 
 // ================================================================================
+// Defines MAL EntityRequestList type as an ElementList
+
+func (list *EntityRequestList) Size() int {
+	if list != nil {
+		return len(*list)
+	}
+	return -1
+}
+
+// ================================================================================
 // Defines MAL EntityRequestList type as a MAL Element
 
 const MAL_ENTITY_REQUEST_LIST_TYPE_SHORT_FORM Integer = -0x18

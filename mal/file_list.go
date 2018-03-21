@@ -41,6 +41,16 @@ func NewFileList(size int) *FileList {
 }
 
 // ================================================================================
+// Defines MAL FileList type as an ElementList
+
+func (list *FileList) Size() int {
+	if list != nil {
+		return len(*list)
+	}
+	return -1
+}
+
+// ================================================================================
 // Defines MAL FileList type as a MAL Element
 
 const MAL_FILE_LIST_TYPE_SHORT_FORM Integer = -0x1E

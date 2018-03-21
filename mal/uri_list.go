@@ -41,6 +41,16 @@ func NewURIList(size int) *URIList {
 }
 
 // ================================================================================
+// Defines MAL URIList type as an ElementList
+
+func (list *URIList) Size() int {
+	if list != nil {
+		return len(*list)
+	}
+	return -1
+}
+
+// ================================================================================
 // Defines MAL URIList type as a MAL Element
 
 const MAL_URI_LIST_TYPE_SHORT_FORM Integer = -0x12

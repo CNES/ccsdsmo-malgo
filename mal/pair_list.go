@@ -41,6 +41,16 @@ func NewPairList(size int) *PairList {
 }
 
 // ================================================================================
+// Defines MAL PairList type as an ElementList
+
+func (list *PairList) Size() int {
+	if list != nil {
+		return len(*list)
+	}
+	return -1
+}
+
+// ================================================================================
 // Defines MAL PairList type as a MAL Element
 
 const MAL_PAIR_LIST_TYPE_SHORT_FORM Integer = -0x1C

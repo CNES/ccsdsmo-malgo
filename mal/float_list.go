@@ -41,6 +41,16 @@ func NewFloatList(size int) *FloatList {
 }
 
 // ================================================================================
+// Defines MAL BooleanList type as an ElementList
+
+func (list *FloatList) Size() int {
+	if list != nil {
+		return len(*list)
+	}
+	return -1
+}
+
+// ================================================================================
 // Defines MAL FloatList type as a MAL Element
 
 const MAL_FLOAT_LIST_TYPE_SHORT_FORM Integer = -0x04

@@ -41,6 +41,16 @@ func NewShortList(size int) *ShortList {
 }
 
 // ================================================================================
+// Defines MAL ShortList type as an ElementList
+
+func (list *ShortList) Size() int {
+	if list != nil {
+		return len(*list)
+	}
+	return -1
+}
+
+// ================================================================================
 // Defines MAL ShortList type as a MAL Element
 
 const MAL_SHORT_LIST_TYPE_SHORT_FORM Integer = -0x09

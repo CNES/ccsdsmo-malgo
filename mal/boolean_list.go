@@ -41,6 +41,16 @@ func NewBooleanList(size int) *BooleanList {
 }
 
 // ================================================================================
+// Defines MAL BooleanList type as an ElementList
+
+func (list *BooleanList) Size() int {
+	if list != nil {
+		return len(*list)
+	}
+	return -1
+}
+
+// ================================================================================
 // Defines MAL BooleanList type as a MAL Element
 
 const MAL_BOOLEAN_LIST_TYPE_SHORT_FORM Integer = -0x02

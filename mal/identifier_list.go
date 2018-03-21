@@ -41,6 +41,16 @@ func NewIdentifierList(size int) *IdentifierList {
 }
 
 // ================================================================================
+// Defines MAL IdentifierList type as an ElementList
+
+func (list *IdentifierList) Size() int {
+	if list != nil {
+		return len(*list)
+	}
+	return -1
+}
+
+// ================================================================================
 // Defines MAL IdentifierList type as a MAL Element
 
 const MAL_IDENTIFIER_LIST_TYPE_SHORT_FORM Integer = -0x06

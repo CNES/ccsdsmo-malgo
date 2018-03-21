@@ -41,6 +41,16 @@ func NewEntityKeyList(size int) *EntityKeyList {
 }
 
 // ================================================================================
+// Defines MAL EntityKeyList type as an ElementList
+
+func (list *EntityKeyList) Size() int {
+	if list != nil {
+		return len(*list)
+	}
+	return -1
+}
+
+// ================================================================================
 // Defines MAL EntityKeyList type as a MAL Element
 
 const MAL_ENTITY_KEY_LIST_TYPE_SHORT_FORM Integer = -0x19

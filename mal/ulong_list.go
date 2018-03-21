@@ -41,6 +41,16 @@ func NewULongList(size int) *ULongList {
 }
 
 // ================================================================================
+// Defines MAL ULongList type as an ElementList
+
+func (list *ULongList) Size() int {
+	if list != nil {
+		return len(*list)
+	}
+	return -1
+}
+
+// ================================================================================
 // Defines MAL ULongList type as a MAL Element
 
 const MAL_ULONG_LIST_TYPE_SHORT_FORM Integer = -0x0E

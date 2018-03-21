@@ -41,6 +41,16 @@ func NewOctetList(size int) *OctetList {
 }
 
 // ================================================================================
+// Defines MAL OctetList type as an ElementList
+
+func (list *OctetList) Size() int {
+	if list != nil {
+		return len(*list)
+	}
+	return -1
+}
+
+// ================================================================================
 // Defines MAL OctetList type as a MAL Element
 
 const MAL_OCTET_LIST_TYPE_SHORT_FORM Integer = -0x07

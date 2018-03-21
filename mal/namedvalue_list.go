@@ -41,6 +41,16 @@ func NewNamedValueList(size int) *NamedValueList {
 }
 
 // ================================================================================
+// Defines MAL NamedValueList type as an ElementList
+
+func (list *NamedValueList) Size() int {
+	if list != nil {
+		return len(*list)
+	}
+	return -1
+}
+
+// ================================================================================
 // Defines MAL NamedValueList type as a MAL Element
 
 const MAL_NAMED_VALUE_LIST_TYPE_SHORT_FORM Integer = -0x1D

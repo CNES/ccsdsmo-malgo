@@ -41,6 +41,16 @@ func NewUOctetList(size int) *UOctetList {
 }
 
 // ================================================================================
+// Defines MAL UOctetList type as an ElementList
+
+func (list *UOctetList) Size() int {
+	if list != nil {
+		return len(*list)
+	}
+	return -1
+}
+
+// ================================================================================
 // Defines MAL UOctet type as a MAL Element
 
 const MAL_UOCTET_LIST_TYPE_SHORT_FORM Integer = -0x08

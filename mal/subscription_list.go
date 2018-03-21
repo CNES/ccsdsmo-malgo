@@ -41,6 +41,16 @@ func NewSubscriptionList(size int) *SubscriptionList {
 }
 
 // ================================================================================
+// Defines MAL SubscriptionList type as an ElementList
+
+func (list *SubscriptionList) Size() int {
+	if list != nil {
+		return len(*list)
+	}
+	return -1
+}
+
+// ================================================================================
 // Defines MAL SubscriptionList type as a MAL Element
 
 const MAL_SUBSCRIPTION_LIST_TYPE_SHORT_FORM Integer = -0x17

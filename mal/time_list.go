@@ -41,6 +41,16 @@ func NewTimeList(size int) *TimeList {
 }
 
 // ================================================================================
+// Defines MAL TimeList type as an ElementList
+
+func (list *TimeList) Size() int {
+	if list != nil {
+		return len(*list)
+	}
+	return -1
+}
+
+// ================================================================================
 // Defines MAL TimeList type as a MAL Element
 
 const MAL_TIME_LIST_TYPE_SHORT_FORM Integer = -0x10

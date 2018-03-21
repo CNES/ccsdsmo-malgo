@@ -41,6 +41,16 @@ func NewUpdateHeaderList(size int) *UpdateHeaderList {
 }
 
 // ================================================================================
+// Defines MAL UpdateHeaderList type as an ElementList
+
+func (list *UpdateHeaderList) Size() int {
+	if list != nil {
+		return len(*list)
+	}
+	return -1
+}
+
+// ================================================================================
 // Defines MAL UpdateHeaderList type as a MAL Element
 
 const MAL_UPDATE_HEADER_LIST_TYPE_SHORT_FORM Integer = -0x1A

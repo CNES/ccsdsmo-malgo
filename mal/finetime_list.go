@@ -41,6 +41,16 @@ func NewFineTimeList(size int) *FineTimeList {
 }
 
 // ================================================================================
+// Defines MAL FineTimeList type as an ElementList
+
+func (list *FineTimeList) Size() int {
+	if list != nil {
+		return len(*list)
+	}
+	return -1
+}
+
+// ================================================================================
 // Defines MAL FineTime type as a MAL Element
 
 const MAL_FINETIME_LIST_TYPE_SHORT_FORM Integer = -0x11

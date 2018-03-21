@@ -41,6 +41,16 @@ func NewUIntegerList(size int) *UIntegerList {
 }
 
 // ================================================================================
+// Defines MAL UIntegerList type as an ElementList
+
+func (list *UIntegerList) Size() int {
+	if list != nil {
+		return len(*list)
+	}
+	return -1
+}
+
+// ================================================================================
 // Defines MAL UIntegerList type as a MAL Element
 
 const MAL_UINTEGER_LIST_TYPE_SHORT_FORM Integer = -0x0C

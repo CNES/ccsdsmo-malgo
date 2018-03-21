@@ -41,6 +41,16 @@ func NewStringList(size int) *StringList {
 }
 
 // ================================================================================
+// Defines MAL StringList type as an ElementList
+
+func (list *StringList) Size() int {
+	if list != nil {
+		return len(*list)
+	}
+	return -1
+}
+
+// ================================================================================
 // Defines MAL StringList type as a MAL Element
 
 const MAL_STRING_LIST_TYPE_SHORT_FORM Integer = -0x0F

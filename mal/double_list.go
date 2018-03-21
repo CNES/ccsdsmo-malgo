@@ -41,6 +41,16 @@ func NewDoubleList(size int) *DoubleList {
 }
 
 // ================================================================================
+// Defines MAL DoubleList type as an ElementList
+
+func (list *DoubleList) Size() int {
+	if list != nil {
+		return len(*list)
+	}
+	return -1
+}
+
+// ================================================================================
 // Defines MAL DoubleList type as a MAL Element
 
 const MAL_DOUBLE_LIST_TYPE_SHORT_FORM Integer = -0x05
