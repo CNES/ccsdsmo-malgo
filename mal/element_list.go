@@ -32,8 +32,6 @@ import ()
 // ################################################################################
 
 type ElementList interface {
-	// TODO (AF): Should a list be a Composite?
-	// Composite
-	
+	Composite
 	Size() int
 }
