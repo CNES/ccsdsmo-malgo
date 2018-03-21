@@ -48,7 +48,7 @@ var (
 	running bool = true
 
 	test2_broker_ctx  *Context
-	test2_broker      *BrokerImpl
+	test2_broker      *BrokerHandler
 	test2_pub1_ctx    *Context
 	test2_publisher1  *ClientContext
 	test2_pub2_ctx    *Context
@@ -74,8 +74,13 @@ func newTest2Broker() error {
 		return err
 	}
 
+	cctx, err := NewClientContext(test2_broker_ctx, "broker")
+	if err != nil {
+		return err
+	}
+
 	updtHandler := NewBlobUpdateValueHandler()
-	test2_broker, err = NewBroker(test2_broker_ctx, "broker", updtHandler, binary.VarintBinaryEncodingFactory)
+	test2_broker, err = NewBroker(cctx, updtHandler, binary.VarintBinaryEncodingFactory)
 	if err != nil {
 		return err
 	}

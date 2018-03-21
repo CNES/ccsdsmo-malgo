@@ -54,8 +54,13 @@ func TestPubSub(t *testing.T) {
 		return
 	}
 
+	cctx, err := NewClientContext(ctx, "broker")
+	if err != nil {
+		t.Fatal("Error creating client context, ", err)
+	}
+
 	updtHandler := NewBlobUpdateValueHandler()
-	broker, err := NewBroker(ctx, "broker", updtHandler, binary.VarintBinaryEncodingFactory)
+	broker, err := NewBroker(cctx, updtHandler, binary.VarintBinaryEncodingFactory)
 	if err != nil {
 		t.Fatal("Error creating broker, ", err)
 		return
