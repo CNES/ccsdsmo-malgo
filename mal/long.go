@@ -115,5 +115,5 @@ func (l *Long) IsNull() bool {
 }
 
 func (*Long) Null() Element {
-	return NullULong
+	return NullLong
 }
