@@ -1623,7 +1623,6 @@ func TestNullableAbstractElement(t *testing.T) {
 		&LongList{NewLong(-1), NewLong(65536), NewLong(-65536)},
 	}
 	for _, x := range list {
-		t.Log("Encode: ", x)
 		err := encoder.EncodeNullableAbstractElement(x)
 		if err != nil {
 			t.Fatalf("Error during encode: %s", err)
@@ -1639,6 +1638,124 @@ func TestNullableAbstractElement(t *testing.T) {
 		}
 		if reflect.DeepEqual(&x, y) {
 			t.Errorf("Bad decoding, got: %t, want: %t", y, x)
+		}
+	}
+}
+
+func TestBrokerEncoding1(t *testing.T) {
+	var length uint32 = 8192
+	buf := make([]byte, 0, length)
+	encoder := binary.NewBinaryEncoder(buf, VARINT)
+
+	var list = &OctetList{
+		NewOctet(-128),
+		NullOctet,
+		NewOctet(0),
+		NewOctet(127),
+		NullOctet,
+	}
+	encoder.EncodeAbstractElement(list)
+
+	buf = encoder.Body()
+	decoder := binary.NewBinaryDecoder(buf, VARINT)
+
+	y, err := decoder.DecodeElementList()
+	if err != nil {
+		t.Fatalf("Error during decode:", err)
+	}
+
+	for i, x := range *list {
+		if x == NullOctet {
+			if y[i].(*Octet) != NullOctet {
+				t.Errorf("Bad decoding, got: [%d] %t, should be Null", i, *(y[i].(*Octet)))
+				break
+			}
+		} else if *x != *(y[i].(*Octet)) {
+			t.Errorf("Bad decoding, got: [%d] %t, want: %t", i, *(y[i].(*Octet)), *x)
+			break
+		}
+	}
+
+	encoder = binary.NewBinaryEncoder(buf, VARINT)
+	encoder.EncodeElementList(y)
+
+	buf = encoder.Body()
+	decoder = binary.NewBinaryDecoder(buf, VARINT)
+
+	z, err := decoder.DecodeAbstractElement()
+	if err != nil {
+		t.Fatalf("Error during decode:", err)
+	}
+	list2 := *(z.(*OctetList))
+
+	for i, x := range *list {
+		if x == NullOctet {
+			if list2[i] != NullOctet {
+				t.Errorf("Bad decoding, got: [%d] %t, should be Null", i, *list2[i])
+				break
+			}
+		} else if *x != *list2[i] {
+			t.Errorf("Bad decoding, got: [%d] %t, want: %t", i, *list2[i], *x)
+			break
+		}
+	}
+}
+
+func TestBrokerEncoding2(t *testing.T) {
+	var length uint32 = 8192
+	buf := make([]byte, 0, length)
+	encoder := binary.NewBinaryEncoder(buf, VARINT)
+
+	var list = &LongList{
+		NewLong(-128),
+		NewLong(0),
+		NullLong,
+		NewLong(127),
+		NullLong,
+	}
+	encoder.EncodeAbstractElement(list)
+
+	buf = encoder.Body()
+	decoder := binary.NewBinaryDecoder(buf, VARINT)
+
+	y, err := decoder.DecodeElementList()
+	if err != nil {
+		t.Fatalf("Error during decode:", err)
+	}
+
+	for i, x := range *list {
+		if x == NullLong {
+			if y[i].(*Long) != NullLong {
+				t.Errorf("Bad decoding, got: [%d] %t, should be Null", i, *(y[i].(*Long)))
+				break
+			}
+		} else if *x != *(y[i].(*Long)) {
+			t.Errorf("Bad decoding, got: [%d] %t, want: %t", i, *(y[i].(*Long)), *x)
+			break
+		}
+	}
+
+	encoder = binary.NewBinaryEncoder(buf, VARINT)
+	encoder.EncodeElementList(y)
+
+	buf = encoder.Body()
+	decoder = binary.NewBinaryDecoder(buf, VARINT)
+
+	z, err := decoder.DecodeAbstractElement()
+	if err != nil {
+		t.Fatalf("Error during decode:", err)
+	}
+	list2 := *(z.(*LongList))
+
+	for i, x := range *list {
+		if x == NullLong {
+			if list2[i] != NullLong {
+				t.Errorf("Bad decoding, got: [%d] %t, should be Null", i, *list2[i])
+				break
+			}
+		} else if *x != *list2[i] {
+			t.Errorf("Bad decoding, got: [%d] %t, want: %t", i, *list2[i], *x)
+			break
 		}
 	}
 }

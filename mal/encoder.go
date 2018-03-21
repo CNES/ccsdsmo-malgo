@@ -216,12 +216,10 @@ type Encoder interface {
 	// @param att The Attribute to encode.
 	EncodeNullableAttribute(att Attribute) error
 
-	/* TODO (AF):
-	    // Creates a list encoder for encoding a list element.
-	    // @param list The list to encode, java.lang.IllegalArgumentException exception thrown if null.
-	    // @return The new list encoder.
-	   MALListEncoder createListEncoder(List list) error
-	*/
+	// Encodes a list of Element given as a slice of Element.
+	// Should only use to encode List< <<Update Value Type>> > in Broker.
+	// @param list The list of Element to encode
+	EncodeElementList(list []Element) error
 }
 
 type GenEncoder struct {
@@ -551,9 +549,32 @@ func (encoder *GenEncoder) EncodeNullableAttribute(att Attribute) error {
 	}
 }
 
+// Encodes a list of Element given as a slice of Element.
+// Should only use to encode List< <<Update Value Type>> > in Broker.
+// @param list The list of Element to encode
+func (encoder *GenEncoder) EncodeElementList(list []Element) error {
+	// Computes the short form of the list.
+	shortForm := list[0].GetShortForm()
+	x := -int32((int64(shortForm) & 0x00FFFFFF) | 0xFF000000)
+	y := (int64(shortForm) & mask) | int64(x)
+	shortForm = Long(y)
+	err := encoder.EncodeLong(&shortForm)
+	if err != nil {
+		return err
+	}
+	err = encoder.EncodeUInteger(NewUInteger(uint32(len(list))))
+	if err != nil {
+		return err
+	}
+	for _, e := range list {
+		encoder.EncodeNullableElement(e)
+	}
+	return nil
+}
+
 // Note (AF): This code below provides a generic view of list as Element slices.
 // It must be enhanced in order to offer somes details (verification that all
-// ELement  implements the same concrete type fro exemple). It needs also to add
+// ELement  implements the same concrete type for exemple). It needs also to add
 // methods encoding list as generic types (writing the corresponding short form).
 // Finally it should not replace the actual list view, but rather offers an
 // alternative to developper.

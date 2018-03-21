@@ -216,12 +216,10 @@ type Decoder interface {
 	// @return The decoded Attribute or null.
 	DecodeNullableAttribute() (Attribute, error)
 
-	/* TODO (AF):
-	 // Creates a list decoder for decoding a list element.
-	 // @param list The list to decode, java.lang.IllegalArgumentException exception thrown if null.
-	 // @return The new list decoder.
-	MALListDecoder createListDecoder(List list) throws java.lang.IllegalArgumentException, MALException;
-	*/
+	// Decodes a list of Element as a slice of Element.
+	// Should only use to decode List< <<Update Value Type>> > in Broker.
+	// @return The decoded list ofElement
+	DecodeElementList() ([]Element, error)
 }
 
 type GenDecoder struct {
@@ -588,6 +586,36 @@ func (decoder *GenDecoder) DecodeNullableAttribute() (Attribute, error) {
 	} else {
 		return decoder.DecodeAttribute()
 	}
+}
+
+const mask int64 = -16777216 // 0xFFFFFFFFFF000000
+
+// Decodes a list of Element as a slice of Element.
+// Only use to decode List< <<Update Value Type>> > in Broker.
+// @return The decoded list ofElement
+func (decoder *GenDecoder) DecodeElementList() ([]Element, error) {
+	shortForm, err := decoder.DecodeLong()
+	if err != nil {
+		return nil, err
+	}
+	// This is the short form of the list, so we computes the short
+	// form of the list entry.
+	x := -int32((int64(*shortForm) & 0x00FFFFFF) | 0xFF000000)
+	y := (int64(*shortForm) & mask) | int64(x)
+	shortForm = NewLong(y)
+	element, err := LookupMALElement(*shortForm)
+	size, err := decoder.DecodeUInteger()
+	if err != nil {
+		return nil, err
+	}
+	list := make([]Element, int(*size))
+	for i := 0; i < len(list); i++ {
+		list[i], err = decoder.DecodeNullableElement(element)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return list, nil
 }
 
 // Note (AF): see corresponding comment in encoder about generic view for lists.
