@@ -178,8 +178,7 @@ type BrokerPub struct {
 
 // TODO (AF): Creates a client interface to handle broker implementation
 
-type BrokerImpl struct {
-	ctx  *Context
+type BrokerHandler struct {
 	cctx *ClientContext
 
 	updtHandler UpdateValueHandler
@@ -248,15 +247,10 @@ func (handler *BlobUpdateValueHandler) ResetValues() {
 
 // ################################################################################
 
-func NewBroker(ctx *Context, name string, updtHandler UpdateValueHandler, encoding EncodingFactory) (*BrokerImpl, error) {
-	cctx, err := NewClientContext(ctx, name)
-	if err != nil {
-		return nil, err
-	}
-
+func NewBroker(cctx *ClientContext, updtHandler UpdateValueHandler, encoding EncodingFactory) (*BrokerHandler, error) {
 	subs := make(map[string]*BrokerSub)
 	pubs := make(map[string]*BrokerPub)
-	broker := &BrokerImpl{ctx, cctx, updtHandler, encoding, subs, pubs}
+	broker := &BrokerHandler{cctx, updtHandler, encoding, subs, pubs}
 
 	brokerHandler := func(msg *Message, t Transaction) error {
 		if msg.InteractionStage == MAL_IP_STAGE_PUBSUB_PUBLISH_REGISTER {
@@ -280,21 +274,21 @@ func NewBroker(ctx *Context, name string, updtHandler UpdateValueHandler, encodi
 	return broker, nil
 }
 
-func (handler *BrokerImpl) Uri() *URI {
+func (handler *BrokerHandler) Uri() *URI {
 	return handler.cctx.Uri
 }
 
 // Gets the underlying ClientContext used by the broker.
-func (handler *BrokerImpl) ClientContext() *ClientContext {
+func (handler *BrokerHandler) ClientContext() *ClientContext {
 	return handler.cctx
 }
 
-func (handler *BrokerImpl) Close() {
+func (handler *BrokerHandler) Close() {
 	// TODO (AF): Removes all remaining subscribers and publishers
 	handler.cctx.Close()
 }
 
-func (handler *BrokerImpl) register(msg *Message, transaction SubscriberTransaction) error {
+func (handler *BrokerHandler) register(msg *Message, transaction SubscriberTransaction) error {
 	decoder := handler.encoding.NewDecoder(msg.Body)
 	sub, err := DecodeSubscription(decoder)
 	if err != nil {
@@ -319,7 +313,7 @@ func (handler *BrokerImpl) register(msg *Message, transaction SubscriberTransact
 	return nil
 }
 
-func (handler *BrokerImpl) OnRegister(msg *Message, transaction SubscriberTransaction) error {
+func (handler *BrokerHandler) OnRegister(msg *Message, transaction SubscriberTransaction) error {
 	err := handler.register(msg, transaction)
 	if err != nil {
 		return transaction.AckRegister(nil, true)
@@ -329,7 +323,7 @@ func (handler *BrokerImpl) OnRegister(msg *Message, transaction SubscriberTransa
 	}
 }
 
-func (handler *BrokerImpl) deregister(msg *Message, transaction SubscriberTransaction) error {
+func (handler *BrokerHandler) deregister(msg *Message, transaction SubscriberTransaction) error {
 	decoder := handler.encoding.NewDecoder(msg.Body)
 	list, err := DecodeIdentifierList(decoder)
 	if err != nil {
@@ -345,7 +339,7 @@ func (handler *BrokerImpl) deregister(msg *Message, transaction SubscriberTransa
 	return nil
 }
 
-func (handler *BrokerImpl) OnDeregister(msg *Message, transaction SubscriberTransaction) error {
+func (handler *BrokerHandler) OnDeregister(msg *Message, transaction SubscriberTransaction) error {
 	err := handler.deregister(msg, transaction)
 	if err == nil {
 		// TODO (AF): Logs an error message
@@ -353,7 +347,7 @@ func (handler *BrokerImpl) OnDeregister(msg *Message, transaction SubscriberTran
 	return transaction.AckDeregister(nil, true)
 }
 
-func (handler *BrokerImpl) publishRegister(msg *Message, transaction PublisherTransaction) error {
+func (handler *BrokerHandler) publishRegister(msg *Message, transaction PublisherTransaction) error {
 	decoder := handler.encoding.NewDecoder(msg.Body)
 	list, err := DecodeEntityKeyList(decoder)
 	if err != nil {
@@ -377,7 +371,7 @@ func (handler *BrokerImpl) publishRegister(msg *Message, transaction PublisherTr
 	return nil
 }
 
-func (handler *BrokerImpl) OnPublishRegister(msg *Message, transaction PublisherTransaction) error {
+func (handler *BrokerHandler) OnPublishRegister(msg *Message, transaction PublisherTransaction) error {
 	err := handler.publishRegister(msg, transaction)
 	if err != nil {
 		// TODO (AF): Builds and encode reply
@@ -388,7 +382,7 @@ func (handler *BrokerImpl) OnPublishRegister(msg *Message, transaction Publisher
 	}
 }
 
-func (handler *BrokerImpl) publishDeregister(msg *Message, transaction PublisherTransaction) error {
+func (handler *BrokerHandler) publishDeregister(msg *Message, transaction PublisherTransaction) error {
 	pubid := string(*msg.UriFrom)
 	logger.Infof("Broker.PublishDeregister: %v", pubid)
 	// TODDO (AF): May be we have to verify if the publisher is registered.
@@ -397,7 +391,7 @@ func (handler *BrokerImpl) publishDeregister(msg *Message, transaction Publisher
 	return nil
 }
 
-func (handler *BrokerImpl) OnPublishDeregister(msg *Message, transaction PublisherTransaction) error {
+func (handler *BrokerHandler) OnPublishDeregister(msg *Message, transaction PublisherTransaction) error {
 	err := handler.publishDeregister(msg, transaction)
 	if err == nil {
 		// TODO (AF): Logs an error message
@@ -405,7 +399,7 @@ func (handler *BrokerImpl) OnPublishDeregister(msg *Message, transaction Publish
 	return transaction.AckDeregister(nil, true)
 }
 
-func (handler *BrokerImpl) publish(pub *Message, transaction PublisherTransaction) error {
+func (handler *BrokerHandler) publish(pub *Message, transaction PublisherTransaction) error {
 	logger.Debugf("Broker.Publish -> %v", pub)
 
 	decoder := handler.encoding.NewDecoder(pub.Body)
@@ -453,7 +447,7 @@ func (handler *BrokerImpl) publish(pub *Message, transaction PublisherTransactio
 	return nil
 }
 
-func (handler *BrokerImpl) OnPublish(msg *Message, transaction PublisherTransaction) error {
+func (handler *BrokerHandler) OnPublish(msg *Message, transaction PublisherTransaction) error {
 	err := handler.publish(msg, transaction)
 	if err != nil {
 		// TODO (AF): Returns error
