@@ -43,6 +43,16 @@ func NewInstanceBooleanPairList(size int) *InstanceBooleanPairList {
 }
 
 // ================================================================================
+// Defines COM InstanceBooleanPairList type as an ElementList
+
+func (list *InstanceBooleanPairList) Size() int {
+	if list != nil {
+		return len(*list)
+	}
+	return -1
+}
+
+// ================================================================================
 // Defines COM InstanceBooleanPairList type as a MAL Element
 
 const COM_INSTANCE_BOOLEAN_PAIR_LIST_TYPE_SHORT_FORM Integer = -0x5

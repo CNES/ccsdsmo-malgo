@@ -43,6 +43,16 @@ func NewObjectKeyList(size int) *ObjectKeyList {
 }
 
 // ================================================================================
+// Defines COM ObjectKeyList type as an ElementList
+
+func (list *ObjectKeyList) Size() int {
+	if list != nil {
+		return len(*list)
+	}
+	return -1
+}
+
+// ================================================================================
 // Defines COM ObjectKeyList type as a MAL Element
 
 const COM_OBJECT_KEY_LIST_TYPE_SHORT_FORM Integer = -0x2

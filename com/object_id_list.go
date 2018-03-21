@@ -43,6 +43,16 @@ func NewObjectIdList(size int) *ObjectIdList {
 }
 
 // ================================================================================
+// Defines COM ObjectIdList type as an ElementList
+
+func (list *ObjectIdList) Size() int {
+	if list != nil {
+		return len(*list)
+	}
+	return -1
+}
+
+// ================================================================================
 // Defines COM ObjectIdList type as a MAL Element
 
 const COM_OBJECT_ID_LIST_TYPE_SHORT_FORM Integer = -0x3

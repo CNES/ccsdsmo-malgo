@@ -43,6 +43,16 @@ func NewObjectDetailsList(size int) *ObjectDetailsList {
 }
 
 // ================================================================================
+// Defines COM ObjectDetailsList type as an ElementList
+
+func (list *ObjectDetailsList) Size() int {
+	if list != nil {
+		return len(*list)
+	}
+	return -1
+}
+
+// ================================================================================
 // Defines COM ObjectDetailsList type as a MAL Element
 
 const COM_OBJECT_DETAILS_LIST_TYPE_SHORT_FORM Integer = -0x4
