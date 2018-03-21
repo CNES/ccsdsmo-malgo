@@ -914,14 +914,13 @@ func TestBooleanList(t *testing.T) {
 	buf := make([]byte, 0, length)
 	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
-	var idlist = []*Boolean{
+	var list = &BooleanList{
 		NewBoolean(true),
 		NewBoolean(false),
 		nil,
 		NewBoolean(true),
 	}
-	var x = BooleanList(idlist)
-	x.Encode(encoder)
+	list.Encode(encoder)
 
 	buf = encoder.Body()
 	decoder := binary.NewBinaryDecoder(buf, VARINT)
@@ -930,8 +929,8 @@ func TestBooleanList(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error during decode:", err)
 	}
-	if !reflect.DeepEqual(x, *y) {
-		t.Errorf("Bad decoding, got: %t, want: %t", y, x)
+	if !reflect.DeepEqual(*list, *y) {
+		t.Errorf("Bad decoding, got: %t, want: %t", *y, *list)
 	}
 }
 
