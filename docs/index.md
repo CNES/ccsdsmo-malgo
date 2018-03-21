@@ -609,7 +609,7 @@ on the high-level API describes above.
 
 ```go
 // Creates a new broker
-func NewBroker(ctx *Context, name string) (*BrokerImpl, error)
+func NewBroker(cctx *ClientContext, updtHandler UpdateValueHandler, encoding EncodingFactory) (*BrokerHandler, error)
 
 // Get broker URI
 func (handler *BrokerImpl) Uri() *URI
@@ -619,3 +619,25 @@ func (handler *BrokerImpl) ClientContext() *ClientContext
 func (handler *BrokerImpl) Close()
 ```
 
+The UpdateValueHandler interface allows the handling of list of specific <<Update Value Type>> by the broker.
+It allows the decoding of the <<Update Value Type>> lists received from the PUBLISH message and the construction
+and encoding of the resulting lists of each NOTIFY messages sent.
+
+```go
+type UpdateValueHandler interface {
+	// Decodes the lists for each type defined in the top level PUBSUB template
+	// (see CCSDS 521.0-B-2 3.5.6.8 l,m,n and o). 
+	DecodeUpdateValueList(decoder Decoder) error
+	// Returns the number of update value decoded in each list.
+	UpdateValueListSize() int
+	// Append the specified element of each <<Update Value Type>> lists received in
+	// the resulting list for the NOTIFY message under construction.
+	AppendValue(idx int)
+	// Encode the built list using the specified encoder.
+	EncodeUpdateValueList(encoder Encoder) error
+	// Reset the build list allowing a new cycle.
+	ResetValues()
+}
+```
+
+Examples of usage are available in the broker's tests, as well as in the implementation of the COM Event service.
