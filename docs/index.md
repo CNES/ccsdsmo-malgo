@@ -78,7 +78,7 @@ func NewContext(url string) (*Context, error)
 
 **Note:** Register a transport factory only needs to import for side effect the corresponding package in your program.
 
-###Configuration
+### Configuration
 
 There are 2 methods allowing to configure a MAL context:
 
@@ -90,7 +90,7 @@ func (ctx *Context) SetAccessControl(achdlr AccessControl)
 func (ctx *Context) SetErrorChannel(errch chan *MessageError)
 ```
 
-###Messages sending
+### Messages sending
 
 The **Context** defines the **Send** request method to transmit a message through the transport component.
 
@@ -98,7 +98,7 @@ The **Context** defines the **Send** request method to transmit a message throug
 func (ctx *Context) Send(msg *Message) error
 ```
 
-###Messages reception
+### Messages reception
 
 The **Context** defines the **Receive** indication method to handle incoming messages from the transport component. All incoming messages are pushed in the internal channel if the security check is ok. Then they can be delivered to registered listeners.
 
@@ -115,9 +115,9 @@ func (ctx *Context) RegisterEndPoint(uri *URI, listener Listener) error
 func (ctx *Context) UnregisterEndPoint(uri *URI) error
 ```
 
-###Access control
+### Access control
 
-###Message error
+### Message error
 
 MAL end-point
 -------------
@@ -146,7 +146,7 @@ The **ClientContext** entity is the entry point of the high level API. It corres
 underlying MAL context. The **ClientContext** entity manages the MAL TransactionId. It allows providers to register handlers to process consumer's
 requests. It allows consumers to create operations to initiate and manage interaction with providers.
 
-###Initialization and configuration
+### Initialization and configuration
 
 A **ClientContext** is created and initialized from a call to **NewClientContext** function (package github.com/ccsdsmo/malgo/mal/api).
 This function takes in parameter the underlying MAL context, and the name of the service (last part of the MAL URI for the corresponding end-point).
@@ -168,7 +168,7 @@ func (cctx *ClientContext) SetSession(Session SessionType) *ClientContext
 func (cctx *ClientContext) SetSessionName(SessionName Identifier) *ClientContext
 ```
 
-###ClientContext concurrency
+### ClientContext concurrency
 
 By default handling of incoming messages is done by the thread of underlying MAL Context. This feature ensures the order of message processing,
 however such behavior can lead to deadlocks in case of nested calls (direct or indirect). When the **Concurrency** attribute is set each message
@@ -180,7 +180,7 @@ func (cctx *ClientContext) SetConcurrency(multi bool) *ClientContext
 ```
 
 
-###Registering provider's handler
+### Registering provider's handler
 
 The **ClientContext** entity defines a set of 6 methods allowing providers to register handlers to process consumer's requests. Each method is dedicated
 to a particular MAL interaction, the corresponding handler receives in parameter a **Transaction** entity corresponding to the interaction. This entity
@@ -292,7 +292,7 @@ func (tx *PublisherTransactionX) AckDeregister(err error) error
 
 ```
 
-###Creating consumer's operation
+### Creating consumer's operation
 
 The **ClientContext** entity defines a set of 7 methods allowing consumers to create entities to request providers. Each created entity encapsulates
 the resources needed to enable a MAL consumer to initiate and manage interactions with a MAL provider or broker.
@@ -411,7 +411,7 @@ type PublisherOperation interface {
 }
 ```
 
-###Closing a client context
+### Closing a client context
 
 The **Close** method allows to close and unregister the context.s
 
@@ -471,7 +471,7 @@ if err != nil {
 }
 ```
 
-###Sending and Receiving a message
+### Sending and Receiving a message
 
 ```go
 msg := &Message{
@@ -492,7 +492,7 @@ if msg != nil {
 Using the High level API
 ------------------------
 
-###Implementing a Provider
+### Implementing a Provider
 
 The example below shows a provider handling a unique progress interaction.
 Code samples are available in the MAL API tests (github.com/ccsdsmo/malgo/mal/api/*_test.go).
@@ -561,7 +561,7 @@ if err != nil {
 defer provider.close()
 ```
 
-###Implementing a Consumer
+### Implementing a Consumer
 
 The code below shows how to request the progress interaction of the provider above.
 
@@ -602,7 +602,7 @@ if err != nil {
 }
 ```
 
-###Using a MAL broker
+### Using a MAL broker
 
 A simple implementation of a MAL broker is available in github.com/ccsdsmo/malgo/mal/broker package. This implementation is based
 on the high-level API describes above.
