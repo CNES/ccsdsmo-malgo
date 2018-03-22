@@ -51,6 +51,13 @@ func (list *BlobList) Size() int {
 }
 
 // ================================================================================
+// Defines MAL BlobList type as a MAL Composite
+
+func (list *BlobList) Composite() Composite {
+	return list
+}
+
+// ================================================================================
 // Defines MAL BlobList type as a MAL Element
 
 const MAL_BLOB_LIST_TYPE_SHORT_FORM Integer = -0x01

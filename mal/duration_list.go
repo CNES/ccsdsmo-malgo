@@ -51,6 +51,13 @@ func (list *DurationList) Size() int {
 }
 
 // ================================================================================
+// Defines MAL DurationList type as a MAL Composite
+
+func (list *DurationList) Composite() Composite {
+	return list
+}
+
+// ================================================================================
 // Defines MAL DurationList type as a MAL Element
 
 const MAL_DURATION_LIST_TYPE_SHORT_FORM Integer = -0x03

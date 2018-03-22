@@ -51,6 +51,13 @@ func (list *FloatList) Size() int {
 }
 
 // ================================================================================
+// Defines MAL FloatList type as a MAL Composite
+
+func (list *FloatList) Composite() Composite {
+	return list
+}
+
+// ================================================================================
 // Defines MAL FloatList type as a MAL Element
 
 const MAL_FLOAT_LIST_TYPE_SHORT_FORM Integer = -0x04

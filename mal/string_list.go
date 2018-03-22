@@ -51,6 +51,13 @@ func (list *StringList) Size() int {
 }
 
 // ================================================================================
+// Defines MAL StringList type as a MAL Composite
+
+func (list *StringList) Composite() Composite {
+	return list
+}
+
+// ================================================================================
 // Defines MAL StringList type as a MAL Element
 
 const MAL_STRING_LIST_TYPE_SHORT_FORM Integer = -0x0F

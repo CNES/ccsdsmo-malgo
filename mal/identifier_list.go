@@ -51,6 +51,13 @@ func (list *IdentifierList) Size() int {
 }
 
 // ================================================================================
+// Defines MAL IdentifierList type as a MAL Composite
+
+func (list *IdentifierList) Composite() Composite {
+	return list
+}
+
+// ================================================================================
 // Defines MAL IdentifierList type as a MAL Element
 
 const MAL_IDENTIFIER_LIST_TYPE_SHORT_FORM Integer = -0x06

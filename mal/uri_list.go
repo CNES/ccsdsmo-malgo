@@ -51,6 +51,13 @@ func (list *URIList) Size() int {
 }
 
 // ================================================================================
+// Defines MAL URIList type as a MAL Composite
+
+func (list *URIList) Composite() Composite {
+	return list
+}
+
+// ================================================================================
 // Defines MAL URIList type as a MAL Element
 
 const MAL_URI_LIST_TYPE_SHORT_FORM Integer = -0x12

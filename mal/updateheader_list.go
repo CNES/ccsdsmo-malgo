@@ -51,6 +51,13 @@ func (list *UpdateHeaderList) Size() int {
 }
 
 // ================================================================================
+// Defines MAL UpdateHeaderList type as a MAL Composite
+
+func (list *UpdateHeaderList) Composite() Composite {
+	return list
+}
+
+// ================================================================================
 // Defines MAL UpdateHeaderList type as a MAL Element
 
 const MAL_UPDATE_HEADER_LIST_TYPE_SHORT_FORM Integer = -0x1A

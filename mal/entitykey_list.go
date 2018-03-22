@@ -51,6 +51,13 @@ func (list *EntityKeyList) Size() int {
 }
 
 // ================================================================================
+// Defines MAL EntityKeyList type as a MAL Composite
+
+func (list *EntityKeyList) Composite() Composite {
+	return list
+}
+
+// ================================================================================
 // Defines MAL EntityKeyList type as a MAL Element
 
 const MAL_ENTITY_KEY_LIST_TYPE_SHORT_FORM Integer = -0x19

@@ -51,6 +51,13 @@ func (list *PairList) Size() int {
 }
 
 // ================================================================================
+// Defines MAL PairList type as a MAL Composite
+
+func (list *PairList) Composite() Composite {
+	return list
+}
+
+// ================================================================================
 // Defines MAL PairList type as a MAL Element
 
 const MAL_PAIR_LIST_TYPE_SHORT_FORM Integer = -0x1C

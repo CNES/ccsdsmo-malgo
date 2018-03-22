@@ -51,6 +51,13 @@ func (list *SubscriptionList) Size() int {
 }
 
 // ================================================================================
+// Defines MAL SubscriptionList type as a MAL Composite
+
+func (list *SubscriptionList) Composite() Composite {
+	return list
+}
+
+// ================================================================================
 // Defines MAL SubscriptionList type as a MAL Element
 
 const MAL_SUBSCRIPTION_LIST_TYPE_SHORT_FORM Integer = -0x17

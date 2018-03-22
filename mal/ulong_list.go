@@ -51,6 +51,13 @@ func (list *ULongList) Size() int {
 }
 
 // ================================================================================
+// Defines MAL ULongList type as a MAL Composite
+
+func (list *ULongList) Composite() Composite {
+	return list
+}
+
+// ================================================================================
 // Defines MAL ULongList type as a MAL Element
 
 const MAL_ULONG_LIST_TYPE_SHORT_FORM Integer = -0x0E

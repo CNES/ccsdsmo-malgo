@@ -51,6 +51,13 @@ func (list *UOctetList) Size() int {
 }
 
 // ================================================================================
+// Defines MAL UOctetList type as a MAL Composite
+
+func (list *UOctetList) Composite() Composite {
+	return list
+}
+
+// ================================================================================
 // Defines MAL UOctet type as a MAL Element
 
 const MAL_UOCTET_LIST_TYPE_SHORT_FORM Integer = -0x08

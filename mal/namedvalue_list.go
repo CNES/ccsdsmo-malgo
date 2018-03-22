@@ -51,6 +51,13 @@ func (list *NamedValueList) Size() int {
 }
 
 // ================================================================================
+// Defines MAL NamedValueList type as a MAL Composite
+
+func (list *NamedValueList) Composite() Composite {
+	return list
+}
+
+// ================================================================================
 // Defines MAL NamedValueList type as a MAL Element
 
 const MAL_NAMED_VALUE_LIST_TYPE_SHORT_FORM Integer = -0x1D

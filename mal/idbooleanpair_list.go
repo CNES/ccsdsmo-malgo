@@ -51,6 +51,13 @@ func (list *IdBooleanPairList) Size() int {
 }
 
 // ================================================================================
+// Defines MAL IdBooleanPairList type as a MAL Composite
+
+func (list *IdBooleanPairList) Composite() Composite {
+	return list
+}
+
+// ================================================================================
 // Defines MAL IdBooleanPairList type as a MAL Element
 
 const MAL_ID_BOOLEAN_PAIR_LIST_TYPE_SHORT_FORM Integer = -0x1B

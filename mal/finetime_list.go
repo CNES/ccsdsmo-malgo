@@ -51,6 +51,13 @@ func (list *FineTimeList) Size() int {
 }
 
 // ================================================================================
+// Defines MAL FineTimeList type as a MAL Composite
+
+func (list *FineTimeList) Composite() Composite {
+	return list
+}
+
+// ================================================================================
 // Defines MAL FineTime type as a MAL Element
 
 const MAL_FINETIME_LIST_TYPE_SHORT_FORM Integer = -0x11

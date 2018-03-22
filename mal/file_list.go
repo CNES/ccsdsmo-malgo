@@ -51,6 +51,13 @@ func (list *FileList) Size() int {
 }
 
 // ================================================================================
+// Defines MAL FileList type as a MAL Composite
+
+func (list *FileList) Composite() Composite {
+	return list
+}
+
+// ================================================================================
 // Defines MAL FileList type as a MAL Element
 
 const MAL_FILE_LIST_TYPE_SHORT_FORM Integer = -0x1E

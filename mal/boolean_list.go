@@ -51,6 +51,13 @@ func (list *BooleanList) Size() int {
 }
 
 // ================================================================================
+// Defines MAL BooleanList type as a MAL Composite
+
+func (list *BooleanList) Composite() Composite {
+	return list
+}
+
+// ================================================================================
 // Defines MAL BooleanList type as a MAL Element
 
 const MAL_BOOLEAN_LIST_TYPE_SHORT_FORM Integer = -0x02

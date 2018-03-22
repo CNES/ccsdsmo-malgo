@@ -51,6 +51,13 @@ func (list *OctetList) Size() int {
 }
 
 // ================================================================================
+// Defines MAL OctetList type as a MAL Composite
+
+func (list *OctetList) Composite() Composite {
+	return list
+}
+
+// ================================================================================
 // Defines MAL OctetList type as a MAL Element
 
 const MAL_OCTET_LIST_TYPE_SHORT_FORM Integer = -0x07

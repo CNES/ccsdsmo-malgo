@@ -51,6 +51,13 @@ func (list *DoubleList) Size() int {
 }
 
 // ================================================================================
+// Defines MAL DoubleList type as a MAL Composite
+
+func (list *DoubleList) Composite() Composite {
+	return list
+}
+
+// ================================================================================
 // Defines MAL DoubleList type as a MAL Element
 
 const MAL_DOUBLE_LIST_TYPE_SHORT_FORM Integer = -0x05

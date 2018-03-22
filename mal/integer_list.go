@@ -51,6 +51,13 @@ func (list *IntegerList) Size() int {
 }
 
 // ================================================================================
+// Defines MAL IntegerList type as a MAL Composite
+
+func (list *IntegerList) Composite() Composite {
+	return list
+}
+
+// ================================================================================
 // Defines MAL IntegerList type as a MAL Element
 
 const MAL_INTEGER_LIST_TYPE_SHORT_FORM Integer = -0x0B

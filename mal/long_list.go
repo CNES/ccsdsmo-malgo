@@ -51,6 +51,13 @@ func (list *LongList) Size() int {
 }
 
 // ================================================================================
+// Defines MAL LongList type as a MAL Composite
+
+func (list *LongList) Composite() Composite {
+	return list
+}
+
+// ================================================================================
 // Defines MAL LongList type as a MAL Element
 
 const MAL_LONG_LIST_TYPE_SHORT_FORM Integer = -0x0D

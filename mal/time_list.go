@@ -51,6 +51,13 @@ func (list *TimeList) Size() int {
 }
 
 // ================================================================================
+// Defines MAL TimeList type as a MAL Composite
+
+func (list *TimeList) Composite() Composite {
+	return list
+}
+
+// ================================================================================
 // Defines MAL TimeList type as a MAL Element
 
 const MAL_TIME_LIST_TYPE_SHORT_FORM Integer = -0x10

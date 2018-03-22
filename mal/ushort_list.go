@@ -51,6 +51,13 @@ func (list *UShortList) Size() int {
 }
 
 // ================================================================================
+// Defines MAL UShortList type as a MAL Composite
+
+func (list *UShortList) Composite() Composite {
+	return list
+}
+
+// ================================================================================
 // Defines MAL UShortList type as a MAL Element
 
 const MAL_USHORT_LIST_TYPE_SHORT_FORM Integer = -0x0A

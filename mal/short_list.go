@@ -51,6 +51,13 @@ func (list *ShortList) Size() int {
 }
 
 // ================================================================================
+// Defines MAL ShortList type as a MAL Composite
+
+func (list *ShortList) Composite() Composite {
+	return list
+}
+
+// ================================================================================
 // Defines MAL ShortList type as a MAL Element
 
 const MAL_SHORT_LIST_TYPE_SHORT_FORM Integer = -0x09
