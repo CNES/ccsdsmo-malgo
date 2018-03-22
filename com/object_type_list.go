@@ -53,6 +53,13 @@ func (list *ObjectTypeList) Size() int {
 }
 
 // ================================================================================
+// Defines COM ObjectTypeList type as a MAL Composite
+
+func (list *ObjectTypeList) Composite() Composite {
+	return list
+}
+
+// ================================================================================
 // Defines COM ObjectTypeList type as a MAL Element
 
 const COM_OBJECT_TYPE_LIST_TYPE_SHORT_FORM Integer = -0x1

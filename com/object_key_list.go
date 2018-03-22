@@ -53,6 +53,13 @@ func (list *ObjectKeyList) Size() int {
 }
 
 // ================================================================================
+// Defines MAL ObjectKeyList type as a MAL Composite
+
+func (list *ObjectKeyList) Composite() Composite {
+	return list
+}
+
+// ================================================================================
 // Defines COM ObjectKeyList type as a MAL Element
 
 const COM_OBJECT_KEY_LIST_TYPE_SHORT_FORM Integer = -0x2

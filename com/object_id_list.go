@@ -53,6 +53,13 @@ func (list *ObjectIdList) Size() int {
 }
 
 // ================================================================================
+// Defines MAL ObjectIdList type as a MAL Composite
+
+func (list *ObjectIdList) Composite() Composite {
+	return list
+}
+
+// ================================================================================
 // Defines COM ObjectIdList type as a MAL Element
 
 const COM_OBJECT_ID_LIST_TYPE_SHORT_FORM Integer = -0x3

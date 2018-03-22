@@ -53,6 +53,13 @@ func (list *ObjectDetailsList) Size() int {
 }
 
 // ================================================================================
+// Defines MAL ObjectDetailsList type as a MAL Composite
+
+func (list *ObjectDetailsList) Composite() Composite {
+	return list
+}
+
+// ================================================================================
 // Defines COM ObjectDetailsList type as a MAL Element
 
 const COM_OBJECT_DETAILS_LIST_TYPE_SHORT_FORM Integer = -0x4

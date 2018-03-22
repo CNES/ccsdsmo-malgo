@@ -53,6 +53,13 @@ func (list *InstanceBooleanPairList) Size() int {
 }
 
 // ================================================================================
+// Defines COM InstanceBooleanPairList type as a MAL Composite
+
+func (list *InstanceBooleanPairList) Composite() Composite {
+	return list
+}
+
+// ================================================================================
 // Defines COM InstanceBooleanPairList type as a MAL Element
 
 const COM_INSTANCE_BOOLEAN_PAIR_LIST_TYPE_SHORT_FORM Integer = -0x5
