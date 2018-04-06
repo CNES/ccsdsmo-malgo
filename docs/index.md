@@ -155,7 +155,7 @@ This function takes in parameter the underlying MAL context, and the name of the
 func NewClientContext(ctx *Context, service string) (*ClientContext, error)
 ```
 
-After creation the client context can be initialized through a set of primitives allowing to fix various MAL message attributes:
+After creation the client context can be configured through a set of primitives allowing to fix various MAL message attributes:
 
 ```go
 func (cctx *ClientContext) SetAuthenticationId(AuthenticationId Blob) *ClientContext
@@ -182,12 +182,10 @@ func (cctx *ClientContext) SetConcurrency(multi bool) *ClientContext
 
 ### Registering provider's handler
 
-The **ClientContext** entity defines a set of 6 methods allowing providers to register handlers to process consumer's requests. Each method is dedicated
-to a particular MAL interaction, the corresponding handler receives in parameter a **Transaction** entity corresponding to the interaction. This entity
-provides methods to handle the interaction.
+The **ClientContext** entity defines a set of 6 methods allowing providers to register handlers to process consumer's requests. Each method is dedicated to a particular MAL interaction.
+When invoked the corresponding handler receives in parameter a **Transaction** entity corresponding to the interaction. This entity provides methods to handle the interaction.
 
-  - **RegisterSendHandler** allows to register an handler for a Send interaction. When called the handler function receives a **SendTransaction** parameter
-  with no method.
+  - **RegisterSendHandler** allows to register an handler for a Send interaction. When called the handler function receives a **SendTransaction** parameter with no method.
   - **RegisterSubmitHandler** allows to register an handler for a Submit interaction. When called the handler function receives a **SubmitTransaction** parameter that provides an **Ack** method allowing to acknowledge the consumer.
   - **RegisterRequestHandler** allows to register an handler for a Request interaction. When called the handler function receives a **RequestTransaction** parameter that provides an **Reply** method allowing to reply to the consumer.
   - **RegisterInvokeHandler** allows to register an handler for a Invoke interaction. When called the handler function receives an **InvokeTransaction** parameter that provides 2 methods. The **Ack** method to acknowledge the the incoming message, and the **Reply** method to reply to the consumer.
@@ -200,33 +198,32 @@ The definition of handler interface is:
 type ProviderHandler func(*Message, Transaction) error
 
 // Register an handler for Send interaction
-func (cctx *ClientContext) RegisterSendHandler(area UShort, areaVersion UOctet, service UShort, operation UShort,
-                                               handler ProviderHandler) error
-                                               
+func (cctx *ClientContext) RegisterSendHandler(area UShort, areaVersion UOctet, service UShort, operation UShort, handler ProviderHandler) error
+
 // Register an handler for Submit interaction
-func (cctx *ClientContext) RegisterSubmitHandler(area UShort, areaVersion UOctet, service UShort, operation UShort,
-                                                 handler ProviderHandler) error
-                                                 
+func (cctx *ClientContext) RegisterSubmitHandler(area UShort, areaVersion UOctet, service UShort, operation UShort, handler ProviderHandler) error
+
 // Register an handler for Request interaction
-func (cctx *ClientContext) RegisterRequestHandler(area UShort, areaVersion UOctet, service UShort, operation UShort,
-                                                  handler ProviderHandler) error
-                                                  
+func (cctx *ClientContext) RegisterRequestHandler(area UShort, areaVersion UOctet, service UShort, operation UShort, handler ProviderHandler) error
+
 // Register an handler for Invoke interaction
-func (cctx *ClientContext) RegisterInvokeHandler(area UShort, areaVersion UOctet, service UShort, operation UShort,
-                                                 handler ProviderHandler) error
-                                                 
+func (cctx *ClientContext) RegisterInvokeHandler(area UShort, areaVersion UOctet, service UShort, operation UShort, handler ProviderHandler) error
+
 // Register an handler for progress interaction
-func (cctx *ClientContext) RegisterProgressHandler(area UShort, areaVersion UOctet, service UShort, operation UShort,
-                                                   handler ProviderHandler) error
+func (cctx *ClientContext) RegisterProgressHandler(area UShort, areaVersion UOctet, service UShort, operation UShort, handler ProviderHandler) error
                                                    
 // Register an handler for PubSub interaction
-func (cctx *ClientContext) RegisterBrokerHandler(area UShort, areaVersion UOctet, service UShort, operation UShort,
-                                                 handler ProviderHandler) error
+func (cctx *ClientContext) RegisterBrokerHandler(area UShort, areaVersion UOctet, service UShort, operation UShort, handler ProviderHandler) error
 ```
 
 The definition of transactions entities are:
 
 ```go
+type Transaction interface {
+	getTid() ULong
+}
+
+// MAL Send interaction
 type SendTransaction interface {
 	Transaction
 }
@@ -234,62 +231,47 @@ type SendTransaction interface {
 // MAL Submit interaction
 type SubmitTransaction interface {
 	Transaction
-	Ack(err error) error
+	Ack(body []byte, isError bool) error
 }
-
-
-func (tx *SubmitTransactionX) Ack(err error) error
 
 // MAL Request interaction
 type RequestTransaction interface {
-	Reply([]byte, error) error
+	Transaction
+	Reply(body []byte, isError bool) error
 }
-
-
-func (tx *RequestTransactionX) Reply(body []byte, err error) error
 
 // MAL Invoke interaction
 type InvokeTransaction interface {
-	Ack(error) error
-	Reply([]byte, error) error
+	Transaction
+	Ack(body []byte, isError bool) error
+	Reply(body []byte, isError bool) error
 }
-
-func (tx *InvokeTransactionX) Ack(err error) error
-func (tx *InvokeTransactionX) Reply(body []byte, err error) error
 
 // MAL Progress interaction
 type ProgressTransaction interface {
-	Ack(error) error
-	Update([]byte, error) error
-	Reply([]byte, error) error
+	Transaction
+	Ack(body []byte, isError bool) error
+	Update(body []byte, isError bool) error
+	Reply(body []byte, isError bool) error
 }
 
-func (tx *ProgressTransactionX) Ack(err error) error
-func (tx *ProgressTransactionX) Update(body []byte, err error) error
-func (tx *ProgressTransactionX) Reply(body []byte, err error) error
+// MAL Pub/Sub interaction
+type BrokerTransaction interface {
+	Transaction
+	AckRegister(body []byte, isError bool) error
+	AckDeregister(body []byte, isError bool) error
+}
 
 // SubscriberTransaction
 type SubscriberTransaction interface {
-	Transaction
-	AckRegister(error) error
-	AckDeregister(error) error
-	Notify([]byte, error) error
+	BrokerTransaction
+	Notify(body []byte, isError bool) error
 }
-
-func (tx *SubscriberTransactionX) AckRegister(err error) error
-func (tx *SubscriberTransactionX) Notify(body []byte, err error) error
-func (tx *SubscriberTransactionX) AckDeregister(err error) error
 
 // PublisherTransaction
 type PublisherTransaction interface {
-	Transaction
-	AckRegister(error) error
-	AckDeregister(error) error
+	BrokerTransaction
 }
-
-func (tx *PublisherTransactionX) AckRegister(err error) error
-func (tx *PublisherTransactionX) AckDeregister(err error) error
-
 ```
 
 ### Creating consumer's operation
