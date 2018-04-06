@@ -274,6 +274,11 @@ type PublisherTransaction interface {
 }
 ```
 
+#### Handling errors in provider's handler
+
+The body of an error message must consist of an error number followed by extra information. Each service specification must define which error numbers may be returned for a given operation and the nature of the additional information (possibly missing).
+Depending on the operation being processed, you must encode the error message according to the information described in the specification. Then at the API level, you must use the transaction's method that corresponds to your current interaction (Ack, Reply, Update, etc.) to send this message and specify that it is an error using the isError parameter (set to true).
+
 ### Creating consumer's operation
 
 The **ClientContext** entity defines a set of 7 methods allowing consumers to create entities to request providers. Each created entity encapsulates
