@@ -60,7 +60,7 @@ func (provider *EventProvider) monitorEventPublish(updtHdr *UpdateHeaderList, up
 	encoder := provider.factory.NewEncoder(make([]byte, 0, 8192))
 	updtHdr.Encode(encoder)
 	updtDetails.Encode(encoder)
-	updtValues.Encode(encoder)
+	encoder.EncodeAbstractElement(updtValues)
 	msg, err := provider.pub.Register(encoder.Body())
 	if err != nil {
 		// TODO (AF): Get errors in reply then log a message.
