@@ -42,9 +42,6 @@ const (
 )
 
 type Operation interface {
-	verify(msg *Message) bool
-	finalize()
-
 	// Get current TransactionId
 	GetTid() ULong
 	// Interrupt the operation during a blocking processing.
