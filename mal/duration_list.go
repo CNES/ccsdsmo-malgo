@@ -50,7 +50,7 @@ func (list *DurationList) Size() int {
 
 func (list *DurationList) GetElementAt(i int) Element {
 	if list != nil {
-		if i <= list.Size() {
+		if i < list.Size() {
 			return (*list)[i]
 		}
 		return nil

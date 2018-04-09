@@ -50,7 +50,7 @@ func (list *StringList) Size() int {
 
 func (list *StringList) GetElementAt(i int) Element {
 	if list != nil {
-		if i <= list.Size() {
+		if i < list.Size() {
 			return (*list)[i]
 		}
 		return nil

@@ -50,7 +50,7 @@ func (list *PairList) Size() int {
 
 func (list *PairList) GetElementAt(i int) Element {
 	if list != nil {
-		if i <= list.Size() {
+		if i < list.Size() {
 			return (*list)[i]
 		}
 		return nil
