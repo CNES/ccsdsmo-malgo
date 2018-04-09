@@ -52,6 +52,16 @@ func (list *ObjectTypeList) Size() int {
 	return -1
 }
 
+func (list *ObjectTypeList) GetElementAt(i int) Element {
+	if list != nil {
+		if i <= list.Size() {
+			return (*list)[i]
+		}
+		return nil
+	}
+	return nil
+}
+
 // ================================================================================
 // Defines COM ObjectTypeList type as a MAL Composite
 

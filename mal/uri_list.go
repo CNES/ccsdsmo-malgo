@@ -23,8 +23,6 @@
  */
 package mal
 
-import ()
-
 // ################################################################################
 // Defines MAL URIList type
 // ################################################################################
@@ -48,6 +46,16 @@ func (list *URIList) Size() int {
 		return len(*list)
 	}
 	return -1
+}
+
+func (list *URIList) GetElementAt(i int) Element {
+	if list != nil {
+		if i <= list.Size() {
+			return (*list)[i]
+		}
+		return nil
+	}
+	return nil
 }
 
 // ================================================================================

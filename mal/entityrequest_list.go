@@ -23,8 +23,6 @@
  */
 package mal
 
-import ()
-
 // ################################################################################
 // Defines MAL EntityRequestList type
 // ################################################################################
@@ -48,6 +46,16 @@ func (list *EntityRequestList) Size() int {
 		return len(*list)
 	}
 	return -1
+}
+
+func (list *EntityRequestList) GetElementAt(i int) Element {
+	if list != nil {
+		if i <= list.Size() {
+			return (*list)[i]
+		}
+		return nil
+	}
+	return nil
 }
 
 // ================================================================================
