@@ -121,7 +121,7 @@ func DecodeObjectDetails(decoder Decoder) (*ObjectDetails, error) {
 	if err != nil {
 		return nil, err
 	}
-	source, err := decoder.DecodeNullableElement(NullObjectDetails)
+	source, err := decoder.DecodeNullableElement(NullObjectId)
 	if err != nil {
 		return nil, err
 	}
