@@ -23,8 +23,6 @@
  */
 package mal
 
-import ()
-
 // ################################################################################
 // Defines MAL ElementList type
 // It corresponds to a list of abstract elements.
@@ -34,4 +32,5 @@ import ()
 type ElementList interface {
 	Composite
 	Size() int
+	GetElementAt(i int) Element
 }
