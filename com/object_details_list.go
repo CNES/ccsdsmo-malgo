@@ -52,6 +52,16 @@ func (list *ObjectDetailsList) Size() int {
 	return -1
 }
 
+func (list *ObjectDetailsList) GetElementAt(i int) Element {
+	if list != nil {
+		if i < list.Size() {
+			return (*list)[i]
+		}
+		return nil
+	}
+	return nil
+}
+
 // ================================================================================
 // Defines MAL ObjectDetailsList type as a MAL Composite
 

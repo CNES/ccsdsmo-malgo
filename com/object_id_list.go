@@ -52,6 +52,16 @@ func (list *ObjectIdList) Size() int {
 	return -1
 }
 
+func (list *ObjectIdList) GetElementAt(i int) Element {
+	if list != nil {
+		if i < list.Size() {
+			return (*list)[i]
+		}
+		return nil
+	}
+	return nil
+}
+
 // ================================================================================
 // Defines MAL ObjectIdList type as a MAL Composite
 

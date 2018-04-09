@@ -23,8 +23,6 @@
  */
 package mal
 
-import ()
-
 // ################################################################################
 // Defines MAL PairList type
 // ################################################################################
@@ -48,6 +46,16 @@ func (list *PairList) Size() int {
 		return len(*list)
 	}
 	return -1
+}
+
+func (list *PairList) GetElementAt(i int) Element {
+	if list != nil {
+		if i < list.Size() {
+			return (*list)[i]
+		}
+		return nil
+	}
+	return nil
 }
 
 // ================================================================================

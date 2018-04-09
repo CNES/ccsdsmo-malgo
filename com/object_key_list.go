@@ -52,6 +52,16 @@ func (list *ObjectKeyList) Size() int {
 	return -1
 }
 
+func (list *ObjectKeyList) GetElementAt(i int) Element {
+	if list != nil {
+		if i < list.Size() {
+			return (*list)[i]
+		}
+		return nil
+	}
+	return nil
+}
+
 // ================================================================================
 // Defines MAL ObjectKeyList type as a MAL Composite
 
