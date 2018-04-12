@@ -62,6 +62,12 @@ func (list *InstanceBooleanPairList) GetElementAt(i int) Element {
 	return nil
 }
 
+func (list *InstanceBooleanPairList) AppendElement(element Element) {
+	if list != nil {
+		*list = append(*list, element.(*InstanceBooleanPair))
+	}
+}
+
 // ================================================================================
 // Defines COM InstanceBooleanPairList type as a MAL Composite
 

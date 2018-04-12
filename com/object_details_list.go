@@ -62,6 +62,12 @@ func (list *ObjectDetailsList) GetElementAt(i int) Element {
 	return nil
 }
 
+func (list *ObjectDetailsList) AppendElement(element Element) {
+	if list != nil {
+		*list = append(*list, element.(*ObjectDetails))
+	}
+}
+
 // ================================================================================
 // Defines MAL ObjectDetailsList type as a MAL Composite
 

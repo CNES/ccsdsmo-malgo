@@ -58,6 +58,12 @@ func (list *EntityKeyList) GetElementAt(i int) Element {
 	return nil
 }
 
+func (list *EntityKeyList) AppendElement(element Element) {
+	if list != nil {
+		*list = append(*list, element.(*EntityKey))
+	}
+}
+
 // ================================================================================
 // Defines MAL EntityKeyList type as a MAL Composite
 

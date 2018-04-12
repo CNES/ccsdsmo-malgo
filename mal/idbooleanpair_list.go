@@ -58,6 +58,12 @@ func (list *IdBooleanPairList) GetElementAt(i int) Element {
 	return nil
 }
 
+func (list *IdBooleanPairList) AppendElement(element Element) {
+	if list != nil {
+		*list = append(*list, element.(*IdBooleanPair))
+	}
+}
+
 // ================================================================================
 // Defines MAL IdBooleanPairList type as a MAL Composite
 

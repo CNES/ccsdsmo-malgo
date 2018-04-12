@@ -33,4 +33,5 @@ type ElementList interface {
 	Composite
 	Size() int
 	GetElementAt(i int) Element
+	AppendElement(element Element)
 }

@@ -58,6 +58,12 @@ func (list *IdentifierList) GetElementAt(i int) Element {
 	return nil
 }
 
+func (list *IdentifierList) AppendElement(element Element) {
+	if list != nil {
+		*list = append(*list, element.(*Identifier))
+	}
+}
+
 // ================================================================================
 // Defines MAL IdentifierList type as a MAL Composite
 

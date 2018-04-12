@@ -58,6 +58,12 @@ func (list *FloatList) GetElementAt(i int) Element {
 	return nil
 }
 
+func (list *FloatList) AppendElement(element Element) {
+	if list != nil {
+		*list = append(*list, element.(*Float))
+	}
+}
+
 // ================================================================================
 // Defines MAL FloatList type as a MAL Composite
 

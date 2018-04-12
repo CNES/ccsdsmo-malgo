@@ -58,6 +58,12 @@ func (list *PairList) GetElementAt(i int) Element {
 	return nil
 }
 
+func (list *PairList) AppendElement(element Element) {
+	if list != nil {
+		*list = append(*list, element.(*Pair))
+	}
+}
+
 // ================================================================================
 // Defines MAL PairList type as a MAL Composite
 

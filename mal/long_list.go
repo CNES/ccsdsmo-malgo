@@ -58,6 +58,12 @@ func (list *LongList) GetElementAt(i int) Element {
 	return nil
 }
 
+func (list *LongList) AppendElement(element Element) {
+	if list != nil {
+		*list = append(*list, element.(*Long))
+	}
+}
+
 // ================================================================================
 // Defines MAL LongList type as a MAL Composite
 

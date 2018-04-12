@@ -58,6 +58,12 @@ func (list *FileList) GetElementAt(i int) Element {
 	return nil
 }
 
+func (list *FileList) AppendElement(element Element) {
+	if list != nil {
+		*list = append(*list, element.(*File))
+	}
+}
+
 // ================================================================================
 // Defines MAL FileList type as a MAL Composite
 

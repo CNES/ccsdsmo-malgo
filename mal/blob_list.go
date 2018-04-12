@@ -58,6 +58,12 @@ func (list *BlobList) GetElementAt(i int) Element {
 	return nil
 }
 
+func (list *BlobList) AppendElement(element Element) {
+	if list != nil {
+		*list = append(*list, element.(*Blob))
+	}
+}
+
 // ================================================================================
 // Defines MAL BlobList type as a MAL Composite
 

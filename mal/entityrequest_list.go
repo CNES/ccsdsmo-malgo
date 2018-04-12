@@ -58,6 +58,12 @@ func (list *EntityRequestList) GetElementAt(i int) Element {
 	return nil
 }
 
+func (list *EntityRequestList) AppendElement(element Element) {
+	if list != nil {
+		*list = append(*list, element.(*EntityRequest))
+	}
+}
+
 // ================================================================================
 // Defines MAL EntityRequestList type as a MAL Composite
 

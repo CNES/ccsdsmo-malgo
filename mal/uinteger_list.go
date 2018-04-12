@@ -58,6 +58,12 @@ func (list *UIntegerList) GetElementAt(i int) Element {
 	return nil
 }
 
+func (list *UIntegerList) AppendElement(element Element) {
+	if list != nil {
+		*list = append(*list, element.(*UInteger))
+	}
+}
+
 // ================================================================================
 // Defines MAL UIntegerList type as a MAL Composite
 

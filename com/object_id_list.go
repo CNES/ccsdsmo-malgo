@@ -62,6 +62,12 @@ func (list *ObjectIdList) GetElementAt(i int) Element {
 	return nil
 }
 
+func (list *ObjectIdList) AppendElement(element Element) {
+	if list != nil {
+		*list = append(*list, element.(*ObjectId))
+	}
+}
+
 // ================================================================================
 // Defines MAL ObjectIdList type as a MAL Composite
 
