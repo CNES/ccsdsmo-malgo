@@ -58,6 +58,12 @@ func (list *UOctetList) GetElementAt(i int) Element {
 	return nil
 }
 
+func (list *UOctetList) AppendElement(element Element) {
+	if list != nil {
+		*list = append(*list, element.(*UOctet))
+	}
+}
+
 // ================================================================================
 // Defines MAL UOctetList type as a MAL Composite
 

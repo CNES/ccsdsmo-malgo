@@ -58,6 +58,12 @@ func (list *IntegerList) GetElementAt(i int) Element {
 	return nil
 }
 
+func (list *IntegerList) AppendElement(element Element) {
+	if list != nil {
+		*list = append(*list, element.(*Integer))
+	}
+}
+
 // ================================================================================
 // Defines MAL IntegerList type as a MAL Composite
 

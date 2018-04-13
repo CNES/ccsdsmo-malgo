@@ -58,6 +58,12 @@ func (list *URIList) GetElementAt(i int) Element {
 	return nil
 }
 
+func (list *URIList) AppendElement(element Element) {
+	if list != nil {
+		*list = append(*list, element.(*URI))
+	}
+}
+
 // ================================================================================
 // Defines MAL URIList type as a MAL Composite
 

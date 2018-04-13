@@ -58,6 +58,12 @@ func (list *SubscriptionList) GetElementAt(i int) Element {
 	return nil
 }
 
+func (list *SubscriptionList) AppendElement(element Element) {
+	if list != nil {
+		*list = append(*list, element.(*Subscription))
+	}
+}
+
 // ================================================================================
 // Defines MAL SubscriptionList type as a MAL Composite
 

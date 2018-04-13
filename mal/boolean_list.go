@@ -58,6 +58,12 @@ func (list *BooleanList) GetElementAt(i int) Element {
 	return nil
 }
 
+func (list *BooleanList) AppendElement(element Element) {
+	if list != nil {
+		*list = append(*list, element.(*Boolean))
+	}
+}
+
 // ================================================================================
 // Defines MAL BooleanList type as a MAL Composite
 

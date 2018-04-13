@@ -58,6 +58,12 @@ func (list *UpdateHeaderList) GetElementAt(i int) Element {
 	return nil
 }
 
+func (list *UpdateHeaderList) AppendElement(element Element) {
+	if list != nil {
+		*list = append(*list, element.(*UpdateHeader))
+	}
+}
+
 // ================================================================================
 // Defines MAL UpdateHeaderList type as a MAL Composite
 

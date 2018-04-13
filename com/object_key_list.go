@@ -62,6 +62,12 @@ func (list *ObjectKeyList) GetElementAt(i int) Element {
 	return nil
 }
 
+func (list *ObjectKeyList) AppendElement(element Element) {
+	if list != nil {
+		*list = append(*list, element.(*ObjectKey))
+	}
+}
+
 // ================================================================================
 // Defines MAL ObjectKeyList type as a MAL Composite
 

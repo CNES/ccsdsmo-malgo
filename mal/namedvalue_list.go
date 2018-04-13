@@ -58,6 +58,12 @@ func (list *NamedValueList) GetElementAt(i int) Element {
 	return nil
 }
 
+func (list *NamedValueList) AppendElement(element Element) {
+	if list != nil {
+		*list = append(*list, element.(*NamedValue))
+	}
+}
+
 // ================================================================================
 // Defines MAL NamedValueList type as a MAL Composite
 

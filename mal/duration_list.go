@@ -58,6 +58,12 @@ func (list *DurationList) GetElementAt(i int) Element {
 	return nil
 }
 
+func (list *DurationList) AppendElement(element Element) {
+	if list != nil {
+		*list = append(*list, element.(*Duration))
+	}
+}
+
 // ================================================================================
 // Defines MAL DurationList type as a MAL Composite
 

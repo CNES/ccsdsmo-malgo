@@ -58,6 +58,12 @@ func (list *OctetList) GetElementAt(i int) Element {
 	return nil
 }
 
+func (list *OctetList) AppendElement(element Element) {
+	if list != nil {
+		*list = append(*list, element.(*Octet))
+	}
+}
+
 // ================================================================================
 // Defines MAL OctetList type as a MAL Composite
 

@@ -58,6 +58,12 @@ func (list *TimeList) GetElementAt(i int) Element {
 	return nil
 }
 
+func (list *TimeList) AppendElement(element Element) {
+	if list != nil {
+		*list = append(*list, element.(*Time))
+	}
+}
+
 // ================================================================================
 // Defines MAL TimeList type as a MAL Composite
 

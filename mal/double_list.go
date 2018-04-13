@@ -58,6 +58,12 @@ func (list *DoubleList) GetElementAt(i int) Element {
 	return nil
 }
 
+func (list *DoubleList) AppendElement(element Element) {
+	if list != nil {
+		*list = append(*list, element.(*Double))
+	}
+}
+
 // ================================================================================
 // Defines MAL DoubleList type as a MAL Composite
 

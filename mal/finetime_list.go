@@ -58,6 +58,12 @@ func (list *FineTimeList) GetElementAt(i int) Element {
 	return nil
 }
 
+func (list *FineTimeList) AppendElement(element Element) {
+	if list != nil {
+		*list = append(*list, element.(*FineTime))
+	}
+}
+
 // ================================================================================
 // Defines MAL FineTimeList type as a MAL Composite
 

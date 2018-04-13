@@ -58,6 +58,12 @@ func (list *StringList) GetElementAt(i int) Element {
 	return nil
 }
 
+func (list *StringList) AppendElement(element Element) {
+	if list != nil {
+		*list = append(*list, element.(*String))
+	}
+}
+
 // ================================================================================
 // Defines MAL StringList type as a MAL Composite
 

@@ -58,6 +58,12 @@ func (list *ShortList) GetElementAt(i int) Element {
 	return nil
 }
 
+func (list *ShortList) AppendElement(element Element) {
+	if list != nil {
+		*list = append(*list, element.(*Short))
+	}
+}
+
 // ================================================================================
 // Defines MAL ShortList type as a MAL Composite
 

@@ -62,6 +62,12 @@ func (list *ObjectTypeList) GetElementAt(i int) Element {
 	return nil
 }
 
+func (list *ObjectTypeList) AppendElement(element Element) {
+	if list != nil {
+		*list = append(*list, element.(*ObjectType))
+	}
+}
+
 // ================================================================================
 // Defines COM ObjectTypeList type as a MAL Composite
 
