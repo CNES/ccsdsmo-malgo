@@ -1,9 +1,9 @@
 # malgo
-CCSDS MO MAL GO API
+CCSDS MO MAL GO API AND IMPLEMENTATION
 
 This project is an implementation of the [CCSDS MO Message Abstraction Layer (MAL) Standard](https://en.wikipedia.org/wiki/CCSDS_Mission_Operations) in Go language.
 
-CCSDS Mission Operation implementations for other languages (e.g. Go, Java, etc.) can be found on the [CCSDS MO WebSite](http://ccsdsmo.github.io/)
+CCSDS Mission Operation implementations for other languages (e.g. C, Java, etc.) can be found on the [CCSDS MO WebSite](http://ccsdsmo.github.io/)
 
 Complete MAL specification can be found on the [CCSDS website](http://public.ccsds.org/publications/BlueBooks.aspx) in the *published documents* section.
 
