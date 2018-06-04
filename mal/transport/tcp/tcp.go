@@ -30,6 +30,7 @@ import (
 	"net"
 	"net/url"
 	"strconv"
+	"sync"
 )
 
 const (
@@ -63,7 +64,10 @@ type TCPTransport struct {
 	ends chan bool
 
 	listen net.Listener
-	conns  map[string]net.Conn
+	// Map containing all TCP connection, this map should always be acceded though
+	// synchronized functions: addConnection, delConnection and getConnection.
+	conns     map[string]net.Conn
+	connslock sync.RWMutex
 
 	optimizeURI bool
 
@@ -171,6 +175,34 @@ func (transport *TCPTransport) start() error {
 	return nil
 }
 
+// ################################################################################
+// Defines synchronized functions handling conenctions map.
+// ################################################################################
+
+func (transport *TCPTransport) addConnection(uri string, cnx net.Conn) {
+	transport.connslock.Lock()
+	transport.conns[uri] = cnx
+	transport.connslock.Unlock()
+}
+
+func (transport *TCPTransport) delConnection(uri string) {
+	transport.connslock.Lock()
+	delete(transport.conns, uri)
+	transport.connslock.Unlock()
+}
+
+func (transport *TCPTransport) getConnection(uri string) net.Conn {
+	transport.connslock.RLock()
+	cnx, ok := transport.conns[uri]
+	transport.connslock.RUnlock()
+	if !ok {
+		return nil
+	}
+	return cnx
+}
+
+// ################################################################################
+
 func (transport *TCPTransport) handleConn(listen net.Listener) {
 	for {
 		cnx, err := listen.Accept()
@@ -211,7 +243,7 @@ func isEOF(err error) bool {
 func (transport *TCPTransport) handleIn(cnx net.Conn) {
 	// Registers the new connection
 	uri := cnx.RemoteAddr().String()
-	transport.conns[uri] = cnx
+	transport.addConnection(uri, cnx)
 
 	for transport.running {
 		logger.Debugf("TCPTransport.HandleIn(%s), wait for message.", cnx.RemoteAddr())
@@ -231,8 +263,8 @@ func (transport *TCPTransport) handleIn(cnx net.Conn) {
 	}
 	// Closes the connection
 	cnx.Close()
-	// Removes connection from transport.conns
-	delete(transport.conns, uri)
+	// Removes connection from list of existing connections
+	transport.delConnection(uri)
 	logger.Infof("TCPTransport.HandleIn(%s) exited: %s", cnx.RemoteAddr(), cnx.RemoteAddr())
 }
 
@@ -304,8 +336,8 @@ func (transport *TCPTransport) handleOut() {
 			}
 			urito := u.Host
 
-			cnx, ok := transport.conns[urito]
-			if !ok {
+			cnx := transport.getConnection(urito)
+			if cnx == nil {
 				logger.Debugf("TCPTransport.handleOut, creates connection to %s", urito)
 				cnx, err = net.Dial("tcp", urito)
 				if err != nil {
@@ -313,8 +345,9 @@ func (transport *TCPTransport) handleOut() {
 					// TODO (AF): Handles the faulty message, forwards it to error listener
 					continue
 				}
-				// Registers the created connection
-				transport.conns[urito] = cnx
+				// Registers the created connection..
+				transport.addConnection(urito, cnx)
+				// .. and creates a routine to wait message from remote.
 				go transport.handleIn(cnx)
 			}
 			logger.Debugf("TCPTransport.handleOut, send message to %s", *msg.UriTo)
@@ -324,8 +357,8 @@ func (transport *TCPTransport) handleOut() {
 				logger.Debugf("TCPTransport.handleOut, error sending message: %s", err.Error())
 				// Closes the connection to retrieve a clean state
 				cnx.Close()
-				// Removes connection from transport.conns
-				delete(transport.conns, urito)
+				// Removes connection from list of existing connections
+				transport.delConnection(urito)
 				// try to send anew the message
 				if nbtry < 3 {
 					continue
@@ -387,10 +420,12 @@ func (transport *TCPTransport) Close() error {
 	transport.running = false
 	close(transport.ch)
 	transport.listen.Close()
+	// Closes all existing connections
 	for id, cnx := range transport.conns {
 		logger.Debugf("Transport.Close, close connection: %s", id)
 		cnx.Close()
 	}
+	transport.conns = nil
 	// TODO (AF):
 	return nil
 }
