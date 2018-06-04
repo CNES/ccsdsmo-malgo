@@ -421,11 +421,13 @@ func (transport *TCPTransport) Close() error {
 	close(transport.ch)
 	transport.listen.Close()
 	// Closes all existing connections
+	transport.connslock.Lock()
 	for id, cnx := range transport.conns {
 		logger.Debugf("Transport.Close, close connection: %s", id)
 		cnx.Close()
 	}
 	transport.conns = nil
+	transport.connslock.Unlock()
 	// TODO (AF):
 	return nil
 }
