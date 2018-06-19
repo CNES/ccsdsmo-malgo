@@ -268,6 +268,10 @@ func (transport *TCPTransport) handleIn(cnx net.Conn) {
 	logger.Infof("TCPTransport.HandleIn(%s) exited: %s", cnx.RemoteAddr(), cnx.RemoteAddr())
 }
 
+func read32(buf []byte) uint32 {
+	return uint32(buf[3]) | (uint32(buf[2]) << 8) | (uint32(buf[1]) << 16) | (uint32(buf[0]) << 24)
+}
+
 func (transport *TCPTransport) readMessage(cnx net.Conn) (*Message, error) {
 	var buf []byte = make([]byte, FIXED_HEADER_LENGTH)
 
@@ -287,9 +291,7 @@ func (transport *TCPTransport) readMessage(cnx net.Conn) (*Message, error) {
 	}
 
 	// Get the variable length of message
-	length := FIXED_HEADER_LENGTH +
-		uint32(buf[VARIABLE_LENGTH_OFFSET+3]) | uint32(buf[VARIABLE_LENGTH_OFFSET+2])<<8 |
-		uint32(buf[VARIABLE_LENGTH_OFFSET+1])<<16 | uint32(buf[VARIABLE_LENGTH_OFFSET])<<24
+	length := FIXED_HEADER_LENGTH + read32(buf[VARIABLE_LENGTH_OFFSET:VARIABLE_LENGTH_OFFSET+4])
 	logger.Debugf("Reads message header, length: %d", length)
 
 	// Allocate a new buffer and copy the fixed part of MAL message header
