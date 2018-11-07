@@ -81,7 +81,7 @@ func TestFixedBinaryEncoding(t *testing.T) {
 	}
 
 	if !deepCompare(t, "gofixedbinary.data", "gofixedbinary.ref") {
-		t.Fatalf("TestFixedBinaryEncoding, files differ: %s")
+		t.Fatalf("TestFixedBinaryEncoding, files differ.")
 	}
 }
 
@@ -112,7 +112,7 @@ func TestVarintBinaryEncoding(t *testing.T) {
 	}
 
 	if !deepCompare(t, "govarintbinary.data", "govarintbinary.ref") {
-		t.Fatalf("TestVarintBinaryEncoding, files differ: %s")
+		t.Fatalf("TestVarintBinaryEncoding, files differ.")
 	}
 }
 
@@ -144,7 +144,7 @@ func TestSplitBinaryEncoding(t *testing.T) {
 	}
 
 	if !deepCompare(t, "gosplitbinary.data", "gosplitbinary.ref") {
-		t.Fatalf("TestSplitBinaryEncoding, files differ: %s")
+		t.Fatalf("TestSplitBinaryEncoding, files differ.")
 	}
 }
 
@@ -421,14 +421,14 @@ func testLong(t *testing.T, decoder Decoder, ref Long) {
 func writeFloat(t *testing.T, encoder Encoder, o Float) {
 	err := encoder.EncodeFloat(&o)
 	if err != nil {
-		t.Fatalf("Error during encode: %d", o)
+		t.Fatalf("Error during encode: %f", o)
 	}
 }
 
 func testFloat(t *testing.T, decoder Decoder, ref Float) {
 	o, err := decoder.DecodeFloat()
 	if err != nil {
-		t.Fatalf("Error during decode: %d", ref)
+		t.Fatalf("Error during decode: %f", ref)
 	}
 	if *o != ref {
 		t.Errorf("Bad decoded value: %f != %f", *o, ref)
@@ -438,14 +438,14 @@ func testFloat(t *testing.T, decoder Decoder, ref Float) {
 func writeDouble(t *testing.T, encoder Encoder, o Double) {
 	err := encoder.EncodeDouble(&o)
 	if err != nil {
-		t.Fatalf("Error during encode: %d", o)
+		t.Fatalf("Error during encode: %f", o)
 	}
 }
 
 func testDouble(t *testing.T, decoder Decoder, ref Double) {
 	o, err := decoder.DecodeDouble()
 	if err != nil {
-		t.Fatalf("Error during decode: %d", ref)
+		t.Fatalf("Error during decode: %f", ref)
 	}
 	if *o != ref {
 		t.Errorf("Bad decoded value: %f != %f", *o, ref)
@@ -455,17 +455,17 @@ func testDouble(t *testing.T, decoder Decoder, ref Double) {
 func writeBlob(t *testing.T, encoder Encoder, o Blob) {
 	err := encoder.EncodeBlob(&o)
 	if err != nil {
-		t.Fatalf("Error during encode: %t", o)
+		t.Fatalf("Error during encode: %v", o)
 	}
 }
 
 func testBlob(t *testing.T, decoder Decoder, ref Blob) {
 	o, err := decoder.DecodeBlob()
 	if err != nil {
-		t.Fatalf("Error during decode: %t", ref)
+		t.Fatalf("Error during decode: %v", ref)
 	}
 	if !reflect.DeepEqual(o, &ref) {
-		t.Errorf("Bad decoding, got: %t, want: %t", o, ref)
+		t.Errorf("Bad decoding, got: %v, want: %v", o, ref)
 	}
 }
 
@@ -479,44 +479,44 @@ func writeString(t *testing.T, encoder Encoder, o String) {
 func testString(t *testing.T, decoder Decoder, ref String) {
 	o, err := decoder.DecodeString()
 	if err != nil {
-		t.Fatalf("Error during decode: %t", ref)
+		t.Fatalf("Error during decode: %s", ref)
 	}
 	if *o != ref {
-		t.Errorf("Bad decoding, got: %t, want: %t", o, ref)
+		t.Errorf("Bad decoding, got: %s, want: %s", *o, ref)
 	}
 }
 
 func writeTime(t *testing.T, encoder Encoder, o Time) {
 	err := encoder.EncodeTime(&o)
 	if err != nil {
-		t.Fatalf("Error during encode: %s", o)
+		t.Fatalf("Error during encode: %v", o)
 	}
 }
 
 func testTime(t *testing.T, decoder Decoder, ref Time) {
 	o, err := decoder.DecodeTime()
 	if err != nil {
-		t.Fatalf("Error during decode: %t", ref)
+		t.Fatalf("Error during decode: %v", ref)
 	}
 	if (time.Time(*o).UnixNano() / 1000000) != (time.Time(ref).UnixNano() / 1000000) {
-		t.Errorf("Bad decoding, got: %t, want: %t", *o, ref)
+		t.Errorf("Bad decoding, got: %v, want: %v", *o, ref)
 	}
 }
 
 func writeFineTime(t *testing.T, encoder Encoder, o FineTime) {
 	err := encoder.EncodeFineTime(&o)
 	if err != nil {
-		t.Fatalf("Error during encode: %s", o)
+		t.Fatalf("Error during encode: %v", o)
 	}
 }
 
 func testFineTime(t *testing.T, decoder Decoder, ref FineTime) {
 	o, err := decoder.DecodeFineTime()
 	if err != nil {
-		t.Fatalf("Error during decode: %t", ref)
+		t.Fatalf("Error during decode: %v", ref)
 	}
 	if (time.Time(*o).UnixNano() / 1000000) != (time.Time(ref).UnixNano() / 1000000) {
-		t.Errorf("Bad decoding, got: %t, want: %t", *o, ref)
+		t.Errorf("Bad decoding, got: %v, want: %v", *o, ref)
 	}
 }
 

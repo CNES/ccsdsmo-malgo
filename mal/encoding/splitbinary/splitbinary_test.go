@@ -100,10 +100,10 @@ func Test1(t *testing.T) {
 	}
 
 	var buffer *splitbinary.SplitBinaryBuffer = encoder.Out.(*splitbinary.SplitBinaryBuffer)
-	t.Logf("SplitBinaryBuffer=", buffer.Buf, buffer.Offset, buffer.Bitfield, buffer.Bitfield_len, buffer.Bitfield_idx)
+	t.Logf("SplitBinaryBuffer=%v %v %v %v %v", buffer.Buf, buffer.Offset, buffer.Bitfield, buffer.Bitfield_len, buffer.Bitfield_idx)
 	//	decoder := splitbinary.NewSplitBinaryDecoder2(buffer.Buf, buffer.Bitfield, buffer.Bitfield_len)
 	buf = encoder.Body()
-	t.Logf("SplitBinaryBuffer=", buf)
+	t.Logf("SplitBinaryBuffer=%v", buf)
 	decoder := splitbinary.NewSplitBinaryDecoder(buf)
 
 	i, err = decoder.DecodeInteger()
@@ -462,7 +462,7 @@ func TestFloat(t *testing.T) {
 	for _, x := range list {
 		err := encoder.EncodeFloat(&x)
 		if err != nil {
-			t.Fatalf("Error during encode: %d", x)
+			t.Fatalf("Error during encode: %v", x)
 		}
 	}
 
@@ -472,10 +472,10 @@ func TestFloat(t *testing.T) {
 	for i, x := range list {
 		y, err := decoder.DecodeFloat()
 		if err != nil {
-			t.Fatalf("Error during decode: %d", i)
+			t.Fatalf("Error during decode: %v", i)
 		}
 		if x != *y {
-			t.Errorf("Bad decoding, got: %d, want: %d", x, *y)
+			t.Errorf("Bad decoding, got: %v, want: %v", x, *y)
 		}
 	}
 }
@@ -495,7 +495,7 @@ func TestDouble(t *testing.T) {
 	for _, x := range list {
 		err := encoder.EncodeDouble(&x)
 		if err != nil {
-			t.Fatalf("Error during encode: %d", x)
+			t.Fatalf("Error during encode: %v", x)
 		}
 	}
 
@@ -505,10 +505,10 @@ func TestDouble(t *testing.T) {
 	for i, x := range list {
 		y, err := decoder.DecodeDouble()
 		if err != nil {
-			t.Fatalf("Error during decode: %d", i)
+			t.Fatalf("Error during decode: %v", i)
 		}
 		if x != *y {
-			t.Errorf("Bad decoding, got: %d, want: %d", x, *y)
+			t.Errorf("Bad decoding, got: %v, want: %v", x, *y)
 		}
 	}
 }
@@ -531,7 +531,7 @@ func TestBlob(t *testing.T) {
 	for _, x := range list {
 		err := encoder.EncodeBlob(&x)
 		if err != nil {
-			t.Fatalf("Error during encode: %d", x)
+			t.Fatalf("Error during encode: %v", x)
 		}
 	}
 
@@ -541,11 +541,11 @@ func TestBlob(t *testing.T) {
 	for i, x := range list {
 		y, err := decoder.DecodeBlob()
 		if err != nil {
-			t.Fatalf("Error during decode: %d", i)
+			t.Fatalf("Error during decode: %v", i)
 		}
 		// NOTE (AF): Be careful the DeepEqual method is costly :-(
 		if !reflect.DeepEqual(x, *y) {
-			t.Errorf("Bad decoding, got: %d, want: %d", x, y)
+			t.Errorf("Bad decoding, got: %v, want: %v", x, y)
 			return
 		}
 	}
@@ -569,7 +569,7 @@ func TestString(t *testing.T) {
 	for _, x := range list {
 		err := encoder.EncodeString(&x)
 		if err != nil {
-			t.Fatalf("Error during encode: %d", x)
+			t.Fatalf("Error during encode: %v", x)
 		}
 	}
 
@@ -579,10 +579,10 @@ func TestString(t *testing.T) {
 	for i, x := range list {
 		y, err := decoder.DecodeString()
 		if err != nil {
-			t.Fatalf("Error during decode: %d", i)
+			t.Fatalf("Error during decode: %v", i)
 		}
 		if x != *y {
-			t.Errorf("Bad decoding, got: %d, want: %d", x, *y)
+			t.Errorf("Bad decoding, got: %v, want: %v", x, *y)
 		}
 	}
 }
@@ -608,7 +608,7 @@ func TestNullableString(t *testing.T) {
 	for _, x := range list {
 		err := encoder.EncodeNullableString(x)
 		if err != nil {
-			t.Fatalf("Error during encode: %d", x)
+			t.Fatalf("Error during encode: %v", x)
 		}
 	}
 
@@ -622,13 +622,13 @@ func TestNullableString(t *testing.T) {
 		}
 		if x == nil {
 			if y != nil {
-				t.Errorf("Bad decoding #%d, got: %d, want: nil", i, *y)
+				t.Errorf("Bad decoding #%d, got: %v, want: nil", i, *y)
 			}
 			continue
 		}
 
 		if *x != *y {
-			t.Errorf("Bad decoding, got: %d, want: %d", x, *y)
+			t.Errorf("Bad decoding, got: %v, want: %v", x, *y)
 		}
 	}
 }
@@ -660,7 +660,7 @@ func TestTime(t *testing.T) {
 			t.Fatalf("Error during decode: %d", i)
 		}
 		if (time.Time(x).UnixNano() / 1000000) != (time.Time(*y).UnixNano() / 1000000) {
-			t.Errorf("Bad decoding, got: %d, want: %d", *y, x)
+			t.Errorf("Bad decoding, got: %v, want: %v", *y, x)
 		}
 	}
 }
@@ -694,7 +694,7 @@ func TestFineTime(t *testing.T) {
 			t.Fatalf("Error during decode: %d", i)
 		}
 		if (time.Time(x).UnixNano()) != (time.Time(*y).UnixNano()) {
-			t.Errorf("Bad decoding, got: %d, want: %d", *y, x)
+			t.Errorf("Bad decoding, got: %v, want: %v", *y, x)
 		}
 	}
 }
@@ -747,10 +747,10 @@ func TestAttribute(t *testing.T) {
 			t.Fatalf("Error during decode: %d", i)
 		}
 		//		if x != y {
-		//			t.Errorf("Bad decoding, got: %t, want: %t", y, x)
+		//			t.Errorf("Bad decoding, got: %v, want: %v", y, x)
 		//		}
 		if reflect.DeepEqual(&x, y) {
-			t.Errorf("Bad decoding, got: %t, want: %t", y, x)
+			t.Errorf("Bad decoding, got: %v, want: %v", y, x)
 		}
 	}
 }
@@ -805,10 +805,10 @@ func TestNullableAttribute(t *testing.T) {
 			t.Fatalf("Error during decode: %d", i)
 		}
 		//		if x != y {
-		//			t.Errorf("Bad decoding, got: %t, want: %t", y, x)
+		//			t.Errorf("Bad decoding, got: %v, want: %v", y, x)
 		//		}
 		if reflect.DeepEqual(&x, y) {
-			t.Errorf("Bad decoding, got: %t, want: %t", y, x)
+			t.Errorf("Bad decoding, got: %v, want: %v", y, x)
 		}
 	}
 }
@@ -858,7 +858,7 @@ func TestElement(t *testing.T) {
 
 		}
 		if reflect.DeepEqual(&x, y) {
-			t.Errorf("Bad decoding, got: %t, want: %t", y, x)
+			t.Errorf("Bad decoding, got: %v, want: %v", y, x)
 		}
 	}
 }
@@ -918,7 +918,7 @@ func TestNullableElement(t *testing.T) {
 			t.Fatalf("Error during decode: %d", i)
 		}
 		if reflect.DeepEqual(&x, y) {
-			t.Errorf("Bad decoding, got: %t, want: %t", y, x)
+			t.Errorf("Bad decoding, got: %v, want: %v", y, x)
 		}
 	}
 }
@@ -949,7 +949,7 @@ func TestBlobAttribute(t *testing.T) {
 			t.Fatalf("Error during decode: %d", i)
 		}
 		if !reflect.DeepEqual(x, y) {
-			t.Errorf("Bad decoding, got: %t, want: %t", y, x)
+			t.Errorf("Bad decoding, got: %v, want: %v", y, x)
 		}
 	}
 }
@@ -988,7 +988,7 @@ func TestTimeAttribute(t *testing.T) {
 			t.Fatalf("Error during decode: %d", i)
 		}
 		if !reflect.DeepEqual(x, y) {
-			t.Errorf("Bad decoding #%d, got: %t, want: %t", i, y, x)
+			t.Errorf("Bad decoding #%d, got: %v, want: %v", i, y, x)
 		}
 	}
 }
@@ -1015,10 +1015,10 @@ func TestBooleanList(t *testing.T) {
 
 	y, err := DecodeBooleanList(decoder)
 	if err != nil {
-		t.Fatalf("Error during decode:", err)
+		t.Fatalf("Error during decode: %v", err)
 	}
 	if !reflect.DeepEqual(x, *y) {
-		t.Errorf("Bad decoding, got: %t, want: %t", y, x)
+		t.Errorf("Bad decoding, got: %v, want: %v", y, x)
 	}
 }
 
@@ -1043,10 +1043,10 @@ func TestOctetList(t *testing.T) {
 
 	y, err := DecodeOctetList(decoder)
 	if err != nil {
-		t.Fatalf("Error during decode:", err)
+		t.Fatalf("Error during decode: %v", err)
 	}
 	if !reflect.DeepEqual(x, *y) {
-		t.Errorf("Bad decoding, got: %t, want: %t", y, x)
+		t.Errorf("Bad decoding, got: %v, want: %v", y, x)
 	}
 }
 
@@ -1071,10 +1071,10 @@ func TestUOctetList(t *testing.T) {
 
 	y, err := DecodeUOctetList(decoder)
 	if err != nil {
-		t.Fatalf("Error during decode:", err)
+		t.Fatalf("Error during decode: %v", err)
 	}
 	if !reflect.DeepEqual(x, *y) {
-		t.Errorf("Bad decoding, got: %t, want: %t", y, x)
+		t.Errorf("Bad decoding, got: %v, want: %v", y, x)
 	}
 }
 
@@ -1099,10 +1099,10 @@ func TestShortList(t *testing.T) {
 
 	y, err := DecodeShortList(decoder)
 	if err != nil {
-		t.Fatalf("Error during decode:", err)
+		t.Fatalf("Error during decode: %v", err)
 	}
 	if !reflect.DeepEqual(x, *y) {
-		t.Errorf("Bad decoding, got: %t, want: %t", y, x)
+		t.Errorf("Bad decoding, got: %v, want: %v", y, x)
 	}
 }
 
@@ -1127,10 +1127,10 @@ func TestUShortList(t *testing.T) {
 
 	y, err := DecodeUShortList(decoder)
 	if err != nil {
-		t.Fatalf("Error during decode:", err)
+		t.Fatalf("Error during decode: %v", err)
 	}
 	if !reflect.DeepEqual(x, *y) {
-		t.Errorf("Bad decoding, got: %t, want: %t", y, x)
+		t.Errorf("Bad decoding, got: %v, want: %v", y, x)
 	}
 }
 
@@ -1155,10 +1155,10 @@ func TestIntegerList(t *testing.T) {
 
 	y, err := DecodeIntegerList(decoder)
 	if err != nil {
-		t.Fatalf("Error during decode:", err)
+		t.Fatalf("Error during decode: %v", err)
 	}
 	if !reflect.DeepEqual(x, *y) {
-		t.Errorf("Bad decoding, got: %t, want: %t", y, x)
+		t.Errorf("Bad decoding, got: %v, want: %v", y, x)
 	}
 }
 
@@ -1183,10 +1183,10 @@ func TestUIntegerList(t *testing.T) {
 
 	y, err := DecodeUIntegerList(decoder)
 	if err != nil {
-		t.Fatalf("Error during decode:", err)
+		t.Fatalf("Error during decode: %v", err)
 	}
 	if !reflect.DeepEqual(x, *y) {
-		t.Errorf("Bad decoding, got: %t, want: %t", y, x)
+		t.Errorf("Bad decoding, got: %v, want: %v", y, x)
 	}
 }
 
@@ -1211,10 +1211,10 @@ func TestLongList(t *testing.T) {
 
 	y, err := DecodeLongList(decoder)
 	if err != nil {
-		t.Fatalf("Error during decode:", err)
+		t.Fatalf("Error during decode: %v", err)
 	}
 	if !reflect.DeepEqual(x, *y) {
-		t.Errorf("Bad decoding, got: %t, want: %t", y, x)
+		t.Errorf("Bad decoding, got: %v, want: %v", y, x)
 	}
 }
 
@@ -1239,10 +1239,10 @@ func TestULongList(t *testing.T) {
 
 	y, err := DecodeULongList(decoder)
 	if err != nil {
-		t.Fatalf("Error during decode:", err)
+		t.Fatalf("Error during decode: %v", err)
 	}
 	if !reflect.DeepEqual(x, *y) {
-		t.Errorf("Bad decoding, got: %t, want: %t", y, x)
+		t.Errorf("Bad decoding, got: %v, want: %v", y, x)
 	}
 }
 
@@ -1267,10 +1267,10 @@ func TestFloatList(t *testing.T) {
 
 	y, err := DecodeFloatList(decoder)
 	if err != nil {
-		t.Fatalf("Error during decode:", err)
+		t.Fatalf("Error during decode: %v", err)
 	}
 	if !reflect.DeepEqual(x, *y) {
-		t.Errorf("Bad decoding, got: %t, want: %t", y, x)
+		t.Errorf("Bad decoding, got: %v, want: %v", y, x)
 	}
 }
 
@@ -1295,10 +1295,10 @@ func TestTimeList(t *testing.T) {
 
 	y, err := DecodeTimeList(decoder)
 	if err != nil {
-		t.Fatalf("Error during decode:", err)
+		t.Fatalf("Error during decode: %v", err)
 	}
 	if !reflect.DeepEqual(x, *y) {
-		t.Errorf("Bad decoding, got: %t, want: %t", y, x)
+		t.Errorf("Bad decoding, got: %v, want: %v", y, x)
 	}
 }
 
@@ -1323,10 +1323,10 @@ func TestFineTimeList(t *testing.T) {
 
 	y, err := DecodeFineTimeList(decoder)
 	if err != nil {
-		t.Fatalf("Error during decode:", err)
+		t.Fatalf("Error during decode: %v", err)
 	}
 	if !reflect.DeepEqual(x, *y) {
-		t.Errorf("Bad decoding, got: %t, want: %t", y, x)
+		t.Errorf("Bad decoding, got: %v, want: %v", y, x)
 	}
 }
 
@@ -1351,10 +1351,10 @@ func TestIdentifierList(t *testing.T) {
 
 	y, err := DecodeIdentifierList(decoder)
 	if err != nil {
-		t.Fatalf("Error during decode:", err)
+		t.Fatalf("Error during decode: %v", err)
 	}
 	if !reflect.DeepEqual(x, *y) {
-		t.Errorf("Bad decoding, got: %t, want: %t", y, x)
+		t.Errorf("Bad decoding, got: %v, want: %v", y, x)
 	}
 }
 
@@ -1387,7 +1387,7 @@ func TestEntityKey(t *testing.T) {
 			t.Fatalf("Error during decode: %d", i)
 		}
 		if !reflect.DeepEqual(x, y) {
-			t.Errorf("Bad decoding, got: %t, want: %t", y, x)
+			t.Errorf("Bad decoding, got: %v, want: %v", y, x)
 			t.Log(*x.FirstSubKey, *y.(*EntityKey).FirstSubKey)
 		}
 	}
@@ -1424,10 +1424,10 @@ func TestEntityKeyList(t *testing.T) {
 
 	y, err := DecodeEntityKeyList(decoder)
 	if err != nil {
-		t.Fatalf("Error during decode:", err)
+		t.Fatalf("Error during decode: %v", err)
 	}
 	if !reflect.DeepEqual(x, *y) {
-		t.Errorf("Bad decoding, got: %t, want: %t", y, x)
+		t.Errorf("Bad decoding, got: %v, want: %v", y, x)
 	}
 }
 
@@ -1495,7 +1495,7 @@ func TestEntityRequest(t *testing.T) {
 			t.Fatalf("Error during decode: %d", i)
 		}
 		if !reflect.DeepEqual(x, y) {
-			t.Errorf("Bad decoding, got: %t, want: %t", y, x)
+			t.Errorf("Bad decoding, got: %v, want: %v", y, x)
 		}
 	}
 }
@@ -1569,10 +1569,10 @@ func TestEntityRequestList(t *testing.T) {
 
 	y, err := DecodeEntityRequestList(decoder)
 	if err != nil {
-		t.Fatalf("Error during decode:", err)
+		t.Fatalf("Error during decode: %v", err)
 	}
 	if !reflect.DeepEqual(x, *y) {
-		t.Errorf("Bad decoding, got: %t, want: %t", y, x)
+		t.Errorf("Bad decoding, got: %v, want: %v", y, x)
 	}
 }
 
@@ -1600,9 +1600,9 @@ func TestOctetElementList(t *testing.T) {
 
 	y, err := decoder.DecodeList(NewOctet(0))
 	if err != nil {
-		t.Fatalf("Error during decode:", err)
+		t.Fatalf("Error during decode: %v", err)
 	}
 	if !reflect.DeepEqual(list, y) {
-		t.Errorf("Bad decoding, got: %t, want: %t", y, list)
+		t.Errorf("Bad decoding, got: %v, want: %v", y, list)
 	}
 }

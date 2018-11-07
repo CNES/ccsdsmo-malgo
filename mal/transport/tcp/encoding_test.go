@@ -90,7 +90,7 @@ func TestMessage(t *testing.T) {
 	}
 	// NOTE (AF): Be careful the DeepEqual method is costly :-(
 	if !messageEqual(t, msg1, msg2) {
-		t.Errorf("Bad decoding, got: %d, want: %d", msg1, msg2)
+		t.Errorf("Bad decoding, got: %v, want: %v", msg1, msg2)
 	}
 }
 
@@ -104,15 +104,15 @@ func messageEqual(t *testing.T, msg1 *Message, msg2 *Message) bool {
 		return false
 	}
 	if (time.Time(msg1.Timestamp).UnixNano() / 1000000) != (time.Time(msg2.Timestamp).UnixNano() / 1000000) {
-		t.Logf("Timestamp different, got %s, expect %s\n", msg2.Timestamp, msg1.Timestamp)
+		t.Logf("Timestamp different, got %v, expect %v\n", msg2.Timestamp, msg1.Timestamp)
 		return false
 	}
 	if msg1.InteractionType != msg2.InteractionType {
-		t.Logf("InteractionType different, got %s, expect %s\n", msg2.InteractionType, msg1.InteractionType)
+		t.Logf("InteractionType different, got %v, expect %v\n", msg2.InteractionType, msg1.InteractionType)
 		return false
 	}
 	if msg1.InteractionStage != msg2.InteractionStage {
-		t.Logf("InteractionStage different, got %s, expect %s\n", msg2.InteractionStage, msg1.InteractionStage)
+		t.Logf("InteractionStage different, got %v, expect %v\n", msg2.InteractionStage, msg1.InteractionStage)
 		return false
 	}
 	return true
