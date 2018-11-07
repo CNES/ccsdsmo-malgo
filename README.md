@@ -33,6 +33,7 @@ This GO API basically includes 4 packages:
 ### MAL/GO QUICK INSTALLATION
 
 ```
+go get github.com/juju/loggo
 go get github.com/ccsdsmo/malgo
 ```
 ### MAL/GO TEST
