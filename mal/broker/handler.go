@@ -25,9 +25,9 @@ package broker
 
 import (
 	"errors"
-	. "github.com/ccsdsmo/malgo/mal"
-	. "github.com/ccsdsmo/malgo/mal/api"
-	"github.com/ccsdsmo/malgo/mal/debug"
+	. "github.com/CNES/ccsdsmo-malgo/mal"
+	. "github.com/CNES/ccsdsmo-malgo/mal/api"
+	"github.com/CNES/ccsdsmo-malgo/mal/debug"
 )
 
 const (

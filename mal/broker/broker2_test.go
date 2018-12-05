@@ -25,11 +25,11 @@ package broker_test
 
 import (
 	"fmt"
-	. "github.com/ccsdsmo/malgo/mal"
-	. "github.com/ccsdsmo/malgo/mal/api"
-	. "github.com/ccsdsmo/malgo/mal/broker"
-	"github.com/ccsdsmo/malgo/mal/encoding/binary"
-	_ "github.com/ccsdsmo/malgo/mal/transport/tcp" // Needed to initialize TCP transport factory
+	. "github.com/CNES/ccsdsmo-malgo/mal"
+	. "github.com/CNES/ccsdsmo-malgo/mal/api"
+	. "github.com/CNES/ccsdsmo-malgo/mal/broker"
+	"github.com/CNES/ccsdsmo-malgo/mal/encoding/binary"
+	_ "github.com/CNES/ccsdsmo-malgo/mal/transport/tcp" // Needed to initialize TCP transport factory
 	"testing"
 	"time"
 )

@@ -24,7 +24,7 @@
 package binary
 
 import (
-	. "github.com/ccsdsmo/malgo/mal"
+	. "github.com/CNES/ccsdsmo-malgo/mal"
 )
 
 const (

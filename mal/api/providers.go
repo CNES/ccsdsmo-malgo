@@ -1,7 +1,7 @@
 package api
 
 import (
-	. "github.com/ccsdsmo/malgo/mal"
+	. "github.com/CNES/ccsdsmo-malgo/mal"
 )
 
 // Register an handler for Send interaction

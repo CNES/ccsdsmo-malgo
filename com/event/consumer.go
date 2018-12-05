@@ -24,9 +24,9 @@
 package event
 
 import (
-	. "github.com/ccsdsmo/malgo/com"
-	. "github.com/ccsdsmo/malgo/mal"
-	. "github.com/ccsdsmo/malgo/mal/api"
+	. "github.com/CNES/ccsdsmo-malgo/com"
+	. "github.com/CNES/ccsdsmo-malgo/mal"
+	. "github.com/CNES/ccsdsmo-malgo/mal/api"
 )
 
 type EventConsumer struct {

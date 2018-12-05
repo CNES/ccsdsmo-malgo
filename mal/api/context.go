@@ -25,8 +25,8 @@ package api
 
 import (
 	"errors"
-	. "github.com/ccsdsmo/malgo/mal"
-	"github.com/ccsdsmo/malgo/mal/debug"
+	. "github.com/CNES/ccsdsmo-malgo/mal"
+	"github.com/CNES/ccsdsmo-malgo/mal/debug"
 	"sync/atomic"
 )
 

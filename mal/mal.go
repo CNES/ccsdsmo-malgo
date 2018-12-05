@@ -24,7 +24,7 @@
 package mal
 
 import (
-	"github.com/ccsdsmo/malgo/mal/debug"
+	"github.com/CNES/ccsdsmo-malgo/mal/debug"
 )
 
 var (

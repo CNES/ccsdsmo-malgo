@@ -24,7 +24,7 @@
 package com
 
 import (
-	. "github.com/ccsdsmo/malgo/mal"
+	. "github.com/CNES/ccsdsmo-malgo/mal"
 )
 
 // ################################################################################

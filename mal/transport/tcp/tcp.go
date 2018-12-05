@@ -24,8 +24,8 @@
 package tcp
 
 import (
-	. "github.com/ccsdsmo/malgo/mal"
-	"github.com/ccsdsmo/malgo/mal/debug"
+	. "github.com/CNES/ccsdsmo-malgo/mal"
+	"github.com/CNES/ccsdsmo-malgo/mal/debug"
 	"io"
 	"net"
 	"net/url"

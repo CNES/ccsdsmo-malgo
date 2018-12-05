@@ -24,7 +24,7 @@
 package splitbinary
 
 import (
-	. "github.com/ccsdsmo/malgo/mal"
+	. "github.com/CNES/ccsdsmo-malgo/mal"
 )
 
 type SplitBinaryEncoding struct{}

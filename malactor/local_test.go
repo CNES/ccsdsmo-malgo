@@ -2,10 +2,10 @@ package malactor_test
 
 import (
 	"fmt"
-	. "github.com/ccsdsmo/malgo/mal"
-	_ "github.com/ccsdsmo/malgo/mal/transport/invm"
-	_ "github.com/ccsdsmo/malgo/mal/transport/tcp"
-	. "github.com/ccsdsmo/malgo/malactor"
+	. "github.com/CNES/ccsdsmo-malgo/mal"
+	_ "github.com/CNES/ccsdsmo-malgo/mal/transport/invm"
+	_ "github.com/CNES/ccsdsmo-malgo/mal/transport/tcp"
+	. "github.com/CNES/ccsdsmo-malgo/malactor"
 	"testing"
 	"time"
 )

@@ -25,9 +25,9 @@ package issue1
 
 import (
 	"fmt"
-	. "github.com/ccsdsmo/malgo/mal"
-	. "github.com/ccsdsmo/malgo/mal/api"
-	_ "github.com/ccsdsmo/malgo/mal/transport/tcp" // Needed to initialize TCP transport factory
+	. "github.com/CNES/ccsdsmo-malgo/mal"
+	. "github.com/CNES/ccsdsmo-malgo/mal/api"
+	_ "github.com/CNES/ccsdsmo-malgo/mal/transport/tcp" // Needed to initialize TCP transport factory
 	"testing"
 	"time"
 )

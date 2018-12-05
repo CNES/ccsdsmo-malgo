@@ -25,7 +25,7 @@ package mal
 
 import (
 	"errors"
-	"github.com/ccsdsmo/malgo/mal/debug"
+	"github.com/CNES/ccsdsmo-malgo/mal/debug"
 )
 
 var rlogger debug.Logger = debug.GetLogger("mal.registry")

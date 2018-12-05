@@ -24,7 +24,7 @@
 package splitbinary
 
 import (
-	"github.com/ccsdsmo/malgo/mal/encoding/binary"
+	"github.com/CNES/ccsdsmo-malgo/mal/encoding/binary"
 )
 
 var empty []byte

@@ -25,8 +25,8 @@ package tcp_test
 
 import (
 	"fmt"
-	. "github.com/ccsdsmo/malgo/mal"
-	_ "github.com/ccsdsmo/malgo/mal/transport/tcp" // Needed to initialize TCP transport factory
+	. "github.com/CNES/ccsdsmo-malgo/mal"
+	_ "github.com/CNES/ccsdsmo-malgo/mal/transport/tcp" // Needed to initialize TCP transport factory
 	"testing"
 	"time"
 )

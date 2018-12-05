@@ -25,8 +25,8 @@ package invm_test
 
 import (
 	"fmt"
-	. "github.com/ccsdsmo/malgo/mal"
-	_ "github.com/ccsdsmo/malgo/mal/transport/invm" // Needed to initialize InVM transport factory
+	. "github.com/CNES/ccsdsmo-malgo/mal"
+	_ "github.com/CNES/ccsdsmo-malgo/mal/transport/invm" // Needed to initialize InVM transport factory
 	"testing"
 	"time"
 )
