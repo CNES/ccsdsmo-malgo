@@ -35,3 +35,56 @@ type ElementList interface {
 	GetElementAt(i int) Element
 	AppendElement(element Element)
 }
+
+// ################################################################################
+// Defines a MAL ElementList generic implementation
+// ################################################################################
+
+type ElementListImpl []Element
+
+var (
+	NullElementList *ElementListImpl = nil
+)
+
+func NewElementListImpl(size int) *ElementListImpl {
+	var list ElementListImpl = ElementListImpl(make([]Element, size))
+	return &list
+}
+
+// ================================================================================
+// Defines MAL ElementList type as an ElementList
+
+func (list *ElementListImpl) Size() int {
+	if list != nil {
+		return len(*list)
+	}
+	return -1
+}
+
+func (list *ElementListImpl) GetElementAt(i int) Element {
+	if list != nil {
+		if i < list.Size() {
+			return (*list)[i]
+		}
+		return nil
+	}
+	return nil
+}
+
+// Encodes this element using the supplied encoder.
+// @param encoder The encoder to use, must not be null.
+func (list *ElementListImpl) Encode(encoder Encoder) error {
+	return encoder.EncodeElementList(*list)
+}
+
+// Decodes an instance of BlobList using the supplied decoder.
+// @param decoder The decoder to use, must not be null.
+// @return the decoded BlobList instance.
+func DecodeElementList(decoder Decoder) (*ElementListImpl, error) {
+	list, err := decoder.DecodeElementList()
+	if err != nil {
+		return nil, err
+	}
+	var list2 ElementListImpl = ElementListImpl(list)
+	return &list2, nil
+}
