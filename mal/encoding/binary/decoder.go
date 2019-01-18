@@ -327,6 +327,8 @@ func (decoder *BinaryDecoder) DecodeULong() (*ULong, error) {
 
 // TODO (AF): Declares this method in Decoder interface then implements
 // DecodeString, DecodeIdentifier and DecodeURI in GenDecoder.
+// Implements a readBuf method (see Encoder.encodeBuf) and uses it in readString
+// and decodeBlob.
 func (decoder *BinaryDecoder) readString() (string, error) {
 	var length uint32
 	if decoder.Varint {

@@ -220,6 +220,7 @@ func (encoder *BinaryEncoder) EncodeULong(att *ULong) error {
 // Encodes a buffer (String, Identifier, URI and Blob).
 // @param buf the buffer to encode.
 func (encoder *BinaryEncoder) encodeBuf(buf []byte) error {
+	// TODO (AF): Renames writeBuf ?
 	var err error
 	if encoder.Varint {
 		err = encoder.Out.WriteUVarInt(uint64(len(buf)))
