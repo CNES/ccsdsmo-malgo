@@ -75,7 +75,7 @@ func (list *EntityKeyList) Composite() Composite {
 // Defines MAL EntityKeyList type as a MAL Element
 
 const MAL_ENTITY_KEY_LIST_TYPE_SHORT_FORM Integer = -0x19
-const MAL_ENTITY_KEY_LIST_SHORT_FORM Long = 0x1000001FFFF19
+const MAL_ENTITY_KEY_LIST_SHORT_FORM Long = 0x1000001FFFFE7
 
 // Registers MAL EntityKeyList type for polymorpsism handling
 func init() {

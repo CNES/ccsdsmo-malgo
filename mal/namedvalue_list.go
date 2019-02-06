@@ -75,7 +75,7 @@ func (list *NamedValueList) Composite() Composite {
 // Defines MAL NamedValueList type as a MAL Element
 
 const MAL_NAMED_VALUE_LIST_TYPE_SHORT_FORM Integer = -0x1D
-const MAL_NAMED_VALUE_LIST_SHORT_FORM Long = 0x1000001FFFF1D
+const MAL_NAMED_VALUE_LIST_SHORT_FORM Long = 0x1000001FFFFE3
 
 // Registers MAL NamedValueList type for polymorpsism handling
 func init() {

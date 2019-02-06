@@ -24,6 +24,7 @@
 package com
 
 import (
+	"errors"
 	. "github.com/CNES/ccsdsmo-malgo/mal"
 )
 
@@ -159,4 +160,52 @@ func (t *ObjectType) IsNull() bool {
 
 func (*ObjectType) Null() Element {
 	return NullObjectType
+}
+
+// ================================================================================
+// A COM object holds a body made of a MAL object
+// The type of the MAL object is defined in the specification of the COM object type.
+// It must be made known to the system with a call to RegisterMALBodyType
+
+var comTypesMap = make(map[ObjectType]Long)
+
+func (t *ObjectType) RegisterMALBodyType(shortForm Long) error {
+	if t == nil {
+		return errors.New("Unexpected null type in RegisterMALBodyType")
+	}
+	if t.Area==0 || t.Version==0 || t.Number==0 {
+		return errors.New("Unexpected null type field in RegisterMALBodyType")
+	}
+	val := comTypesMap[*t]
+	if val != 0 {
+		return errors.New("A value has already been registered for type")
+	}
+	// check the MAL type corresponding to shortForm is known to the system
+	_, error := LookupMALElement(shortForm)
+	if error != nil {
+		return error
+	}
+	comTypesMap[*t] = shortForm
+	return nil
+}
+
+func (t *ObjectType) GetMALBodyType() Long {
+	if t == nil {
+		return 0
+	}
+	return comTypesMap[*t]
+}
+
+func (t *ObjectType) GetMALBodyListType() Long {
+	if t == nil {
+		return 0
+	}
+	shortForm := comTypesMap[*t]
+	if shortForm == 0 {
+		return 0
+	}
+	// this short form should never represent a list type
+	numberPart := ULong(shortForm & 0xFFFFFF)
+	numberListPart := ULong((-Long(numberPart)) & 0xFFFFFF)
+	return Long((ULong(shortForm) & 0xFFFFFFFFFF000000) | numberListPart)
 }

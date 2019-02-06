@@ -75,7 +75,7 @@ func (list *EntityRequestList) Composite() Composite {
 // Defines MAL EntityRequestList type as a MAL Element
 
 const MAL_ENTITY_REQUEST_LIST_TYPE_SHORT_FORM Integer = -0x18
-const MAL_ENTITY_REQUEST_LIST_SHORT_FORM Long = 0x1000001FFFF18
+const MAL_ENTITY_REQUEST_LIST_SHORT_FORM Long = 0x1000001FFFFE8
 
 // Registers MAL EntityRequestList type for polymorpsism handling
 func init() {

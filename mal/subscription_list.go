@@ -75,7 +75,7 @@ func (list *SubscriptionList) Composite() Composite {
 // Defines MAL SubscriptionList type as a MAL Element
 
 const MAL_SUBSCRIPTION_LIST_TYPE_SHORT_FORM Integer = -0x17
-const MAL_SUBSCRIPTION_LIST_SHORT_FORM Long = 0x1000001FFFF17
+const MAL_SUBSCRIPTION_LIST_SHORT_FORM Long = 0x1000001FFFFE9
 
 // Registers MAL SubscriptionList type for polymorpsism handling
 func init() {

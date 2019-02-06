@@ -30,8 +30,8 @@ import ()
 // ################################################################################
 
 type NamedValue struct {
-	name  *Identifier
-	value Attribute
+	Name  *Identifier
+	Value Attribute
 }
 
 var (
@@ -88,11 +88,11 @@ func (*NamedValue) GetTypeShortForm() Integer {
 // Encodes this element using the supplied encoder.
 // @param encoder The encoder to use, must not be null.
 func (pair *NamedValue) Encode(encoder Encoder) error {
-	err := encoder.EncodeNullableIdentifier(pair.name)
+	err := encoder.EncodeNullableIdentifier(pair.Name)
 	if err != nil {
 		return err
 	}
-	return encoder.EncodeNullableAttribute(pair.value)
+	return encoder.EncodeNullableAttribute(pair.Value)
 }
 
 // Decodes an instance of this element type using the supplied decoder.

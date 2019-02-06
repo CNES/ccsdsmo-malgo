@@ -75,7 +75,7 @@ func (list *FileList) Composite() Composite {
 // Defines MAL FileList type as a MAL Element
 
 const MAL_FILE_LIST_TYPE_SHORT_FORM Integer = -0x1E
-const MAL_FILE_LIST_SHORT_FORM Long = 0x1000001FFFF1E
+const MAL_FILE_LIST_SHORT_FORM Long = 0x1000001FFFFE2
 
 // Registers MAL FileList type for polymorpsism handling
 func init() {

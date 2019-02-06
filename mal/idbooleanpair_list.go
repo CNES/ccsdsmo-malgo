@@ -75,7 +75,7 @@ func (list *IdBooleanPairList) Composite() Composite {
 // Defines MAL IdBooleanPairList type as a MAL Element
 
 const MAL_ID_BOOLEAN_PAIR_LIST_TYPE_SHORT_FORM Integer = -0x1B
-const MAL_ID_BOOLEAN_PAIR_LIST_SHORT_FORM Long = 0x1000001FFFF1B
+const MAL_ID_BOOLEAN_PAIR_LIST_SHORT_FORM Long = 0x1000001FFFFE5
 
 // Registers MAL IdBooleanList type for polymorpsism handling
 func init() {

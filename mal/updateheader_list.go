@@ -75,7 +75,7 @@ func (list *UpdateHeaderList) Composite() Composite {
 // Defines MAL UpdateHeaderList type as a MAL Element
 
 const MAL_UPDATE_HEADER_LIST_TYPE_SHORT_FORM Integer = -0x1A
-const MAL_UPDATE_HEADER_LIST_SHORT_FORM Long = 0x1000001FFFF1A
+const MAL_UPDATE_HEADER_LIST_SHORT_FORM Long = 0x1000001FFFFE6
 
 // Registers MAL UpdateHeaderList type for polymorpsism handling
 func init() {

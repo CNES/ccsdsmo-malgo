@@ -30,8 +30,8 @@ import ()
 // ################################################################################
 
 type IdBooleanPair struct {
-	id    *Identifier
-	value *Boolean
+	Id    *Identifier
+	Value *Boolean
 }
 
 var (
@@ -88,11 +88,11 @@ func (*IdBooleanPair) GetTypeShortForm() Integer {
 // Encodes this element using the supplied encoder.
 // @param encoder The encoder to use, must not be null.
 func (pair *IdBooleanPair) Encode(encoder Encoder) error {
-	err := encoder.EncodeNullableIdentifier(pair.id)
+	err := encoder.EncodeNullableIdentifier(pair.Id)
 	if err != nil {
 		return err
 	}
-	return encoder.EncodeNullableBoolean(pair.value)
+	return encoder.EncodeNullableBoolean(pair.Value)
 }
 
 // Decodes an instance of this element type using the supplied decoder.

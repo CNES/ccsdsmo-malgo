@@ -75,7 +75,7 @@ func (list *PairList) Composite() Composite {
 // Defines MAL PairList type as a MAL Element
 
 const MAL_PAIR_LIST_TYPE_SHORT_FORM Integer = -0x1C
-const MAL_PAIR_LIST_SHORT_FORM Long = 0x1000001FFFF1C
+const MAL_PAIR_LIST_SHORT_FORM Long = 0x1000001FFFFE4
 
 // Registers MAL PairList type for polymorpsism handling
 func init() {
