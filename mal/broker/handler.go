@@ -1,7 +1,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2017 - 2018 CNES
+ * Copyright (c) 2017 - 2019 CNES
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -192,10 +192,10 @@ type BrokerHandler struct {
 }
 
 type UpdateValueHandler interface {
-	DecodeUpdateValueList(decoder Decoder) error
+	DecodeUpdateValueList(body Body) error
 	UpdateValueListSize() int
 	AppendValue(idx int)
-	EncodeUpdateValueList(encoder Encoder) error
+	EncodeUpdateValueList(body Body) error
 	ResetValues()
 }
 
@@ -211,11 +211,13 @@ func NewBlobUpdateValueHandler() *BlobUpdateValueHandler {
 	return new(BlobUpdateValueHandler)
 }
 
-func (handler *BlobUpdateValueHandler) DecodeUpdateValueList(decoder Decoder) error {
-	list, err := DecodeBlobList(decoder)
+func (handler *BlobUpdateValueHandler) DecodeUpdateValueList(body Body) error {
+	p, err := body.DecodeLastParameter(NullBlobList, false)
+	//	list, err := DecodeBlobList(decoder)
 	if err != nil {
 		return err
 	}
+	list := p.(*BlobList)
 	logger.Infof("Broker.Publish, DecodeUpdateValueList -> %d %v", len([]*Blob(*list)), list)
 
 	handler.list = list
@@ -232,8 +234,9 @@ func (handler *BlobUpdateValueHandler) AppendValue(idx int) {
 	handler.values = append(handler.values, ([]*Blob)(*handler.list)[idx])
 }
 
-func (handler *BlobUpdateValueHandler) EncodeUpdateValueList(encoder Encoder) error {
-	err := handler.values.Encode(encoder)
+func (handler *BlobUpdateValueHandler) EncodeUpdateValueList(body Body) error {
+	//	err := handler.values.Encode(encoder)
+	err := body.EncodeLastParameter(&handler.values, false)
 	if err != nil {
 		return err
 	}
@@ -253,6 +256,7 @@ func NewBroker(cctx *ClientContext, updtHandler UpdateValueHandler, encoding Enc
 	broker := &BrokerHandler{cctx, updtHandler, encoding, subs, pubs}
 
 	brokerHandler := func(msg *Message, t Transaction) error {
+		//		fmt.Println("##########", msg.Body)
 		if msg.InteractionStage == MAL_IP_STAGE_PUBSUB_PUBLISH_REGISTER {
 			broker.OnPublishRegister(msg, t.(PublisherTransaction))
 		} else if msg.InteractionStage == MAL_IP_STAGE_PUBSUB_PUBLISH {
@@ -289,11 +293,14 @@ func (handler *BrokerHandler) Close() {
 }
 
 func (handler *BrokerHandler) register(msg *Message, transaction SubscriberTransaction) error {
-	decoder := handler.encoding.NewDecoder(msg.Body)
-	sub, err := DecodeSubscription(decoder)
+	p, err := msg.DecodeLastParameter(NullSubscription, false)
+	//	decoder := handler.encoding.NewDecoder(msg.Body)
+	//	sub, err := DecodeSubscription(decoder)
 	if err != nil {
 		return err
 	}
+	sub := p.(*Subscription)
+
 	subkey := subkey(string(*msg.UriFrom), string(sub.SubscriptionId))
 	logger.Infof("Broker.Register: %t -> %t", subkey, sub.Entities)
 
@@ -324,11 +331,13 @@ func (handler *BrokerHandler) OnRegister(msg *Message, transaction SubscriberTra
 }
 
 func (handler *BrokerHandler) deregister(msg *Message, transaction SubscriberTransaction) error {
-	decoder := handler.encoding.NewDecoder(msg.Body)
-	list, err := DecodeIdentifierList(decoder)
+	p, err := msg.DecodeLastParameter(NullIdentifierList, false)
+	//	decoder := handler.encoding.NewDecoder(msg.Body)
+	//	list, err := DecodeIdentifierList(decoder)
 	if err != nil {
 		return err
 	}
+	list := p.(*IdentifierList)
 
 	for _, id := range []*Identifier(*list) {
 		subkey := subkey(string(*msg.UriFrom), string(*id))
@@ -348,11 +357,13 @@ func (handler *BrokerHandler) OnDeregister(msg *Message, transaction SubscriberT
 }
 
 func (handler *BrokerHandler) publishRegister(msg *Message, transaction PublisherTransaction) error {
-	decoder := handler.encoding.NewDecoder(msg.Body)
-	list, err := DecodeEntityKeyList(decoder)
+	p, err := msg.DecodeLastParameter(NullEntityKeyList, false)
+	//	decoder := handler.encoding.NewDecoder(msg.Body)
+	//	list, err := DecodeEntityKeyList(decoder)
 	if err != nil {
 		return err
 	}
+	list := p.(*EntityKeyList)
 
 	logger.Infof("Broker.PublishRegister: %t", list)
 
@@ -402,13 +413,16 @@ func (handler *BrokerHandler) OnPublishDeregister(msg *Message, transaction Publ
 func (handler *BrokerHandler) publish(pub *Message, transaction PublisherTransaction) error {
 	logger.Debugf("Broker.Publish -> %v", pub)
 
-	decoder := handler.encoding.NewDecoder(pub.Body)
-	uhlist, err := DecodeUpdateHeaderList(decoder)
+	p1, err := pub.Body.DecodeParameter(NullUpdateHeaderList)
+	//	decoder := handler.encoding.NewDecoder(pub.Body)
+	//	uhlist, err := DecodeUpdateHeaderList(decoder)
 	if err != nil {
 		return err
 	}
+	uhlist := p1.(*UpdateHeaderList)
 	logger.Infof("Broker.Publish, DecodeUpdateHeaderList -> %+v", uhlist)
-	handler.updtHandler.DecodeUpdateValueList(decoder)
+
+	handler.updtHandler.DecodeUpdateValueList(pub.Body)
 	if err != nil {
 		// TODO (AF): Returns a PublishError MAL message to publisher
 		return err
@@ -437,12 +451,17 @@ func (handler *BrokerHandler) publish(pub *Message, transaction PublisherTransac
 			continue
 		}
 
-		buf := make([]byte, 0, 1024)
-		encoder := handler.encoding.NewEncoder(buf)
-		encoder.EncodeIdentifier(&sub.subid)
-		headers.Encode(encoder)
-		handler.updtHandler.EncodeUpdateValueList(encoder)
-		sub.transaction.Notify(encoder.Body(), false)
+		body := transaction.NewBody()
+		//		buf := make([][]byte, 1)
+		//		buf[0] = make([]byte, 0, 1024)
+		//		encoder := handler.encoding.NewEncoder(buf)
+		//		encoder.EncodeIdentifier(&sub.subid)
+		body.EncodeParameter(&sub.subid)
+		//		headers.Encode(encoder)
+		body.EncodeParameter(&headers)
+		handler.updtHandler.EncodeUpdateValueList(body)
+		//		sub.transaction.Notify(encoder.Body(), false)
+		sub.transaction.Notify(body, false)
 	}
 	return nil
 }
