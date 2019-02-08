@@ -1,7 +1,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2017 - 2018 CNES
+ * Copyright (c) 2017 - 2019 CNES
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -66,10 +66,11 @@ func newTestSendProvider() (*TestSendProvider, error) {
 	// Register handler
 	sendHandler := func(msg *Message, t Transaction) error {
 		if msg != nil {
-			fmt.Println("\t$$$$$ sendHandler receive: ", string(msg.Body))
+			par, err := msg.DecodeLastParameter(NullString, false)
+			fmt.Println("\t$$$$$ sendHandler receive: ", *par.(*String), err)
 			provider.nbmsg += 1
 		} else {
-			fmt.Println("receive: nil")
+			fmt.Println("\tERROR sendHandler receive: nil")
 		}
 		return nil
 	}
@@ -108,10 +109,14 @@ func TestSend(t *testing.T) {
 	}
 
 	op1 := consumer.NewSendOperation(provider.cctx.Uri, 200, 1, 1, 1)
-	op1.Send([]byte("message1"))
+	body := op1.NewBody()
+	body.EncodeLastParameter(NewString("message1"), false)
+	op1.Send(body)
 
 	op2 := consumer.NewSendOperation(provider.cctx.Uri, 200, 1, 1, 1)
-	op2.Send([]byte("message2"))
+	body = op2.NewBody()
+	body.EncodeLastParameter(NewString("message2"), false)
+	op2.Send(body)
 
 	// Waits for message reception
 	time.Sleep(250 * time.Millisecond)
@@ -147,7 +152,8 @@ func newTestSubmitProvider() (*TestSubmitProvider, error) {
 	submitHandler := func(msg *Message, t Transaction) error {
 		if msg != nil {
 			transaction := t.(SubmitTransaction)
-			fmt.Println("\t$$$$$ submitHandler receive: ", string(msg.Body))
+			par, err := msg.DecodeLastParameter(NullString, false)
+			fmt.Println("\t$$$$$ submitHandler receive: ", *par.(*String), err)
 			provider.nbmsg += 1
 			transaction.Ack(nil, false)
 		} else {
@@ -189,16 +195,20 @@ func TestSubmit(t *testing.T) {
 		return
 	}
 
+	body := consumer_ctx.NewBody()
+	body.EncodeLastParameter(NewString("message1"), false)
 	op1 := consumer.NewSubmitOperation(provider.cctx.Uri, 200, 1, 1, 1)
-	_, err = op1.Submit([]byte("message1"))
+	_, err = op1.Submit(body)
 	if err != nil {
 		t.Fatal("Error during submit, ", err)
 		return
 	}
 	fmt.Println("\t&&&&& Submit1: OK")
 
+	body.Reset(true)
+	body.EncodeLastParameter(NewString("message2"), false)
 	op2 := consumer.NewSubmitOperation(provider.cctx.Uri, 200, 1, 1, 1)
-	_, err = op2.Submit([]byte("message2"))
+	_, err = op2.Submit(body)
 	if err != nil {
 		t.Fatal("Error during submit, ", err)
 		return
@@ -222,7 +232,7 @@ type TestRequestProvider struct {
 }
 
 func newTestRequestProvider() (*TestRequestProvider, error) {
-	ctx, err := NewContext(nested1_provider2_url)
+	ctx, err := NewContext(provider_url)
 	if err != nil {
 		return nil, err
 	}
@@ -236,9 +246,12 @@ func newTestRequestProvider() (*TestRequestProvider, error) {
 	requestHandler := func(msg *Message, t Transaction) error {
 		if msg != nil {
 			transaction := t.(RequestTransaction)
-			fmt.Println("\t$$$$$ requestHandler receive: ", string(msg.Body))
+			par, err := msg.DecodeLastParameter(NullString, false)
+			fmt.Println("\t$$$$$ requestHandler receive: ", *par.(*String), err)
 			provider.nbmsg += 1
-			transaction.Reply([]byte("reply message"), false)
+			body := t.NewBody()
+			body.EncodeLastParameter(NewString("reply message"), false)
+			transaction.Reply(body, false)
 		} else {
 			fmt.Println("receive: nil")
 		}
@@ -279,20 +292,26 @@ func TestRequest(t *testing.T) {
 	}
 
 	op1 := consumer.NewRequestOperation(provider.cctx.Uri, 200, 1, 1, 1)
-	ret1, err := op1.Request([]byte("message1"))
+	body := op1.NewBody()
+	body.EncodeLastParameter(NewString("message1"), false)
+	ret1, err := op1.Request(body)
 	if err != nil {
 		t.Fatal("Error during request, ", err)
 		return
 	}
-	fmt.Println("\t&&&&& Request1: OK, ", string(ret1.Body))
+	par1, err := ret1.DecodeLastParameter(NullString, false)
+	fmt.Println("\t&&&&& Request1: OK, ", *par1.(*String))
 
 	op2 := consumer.NewRequestOperation(provider.cctx.Uri, 200, 1, 1, 1)
-	ret2, err := op2.Request([]byte("message2"))
+	body = op2.NewBody()
+	body.EncodeLastParameter(NewString("message2"), false)
+	ret2, err := op2.Request(body)
 	if err != nil {
 		t.Fatal("Error during request, ", err)
 		return
 	}
-	fmt.Println("\t&&&&& Request2: OK, ", string(ret2.Body))
+	par2, err := ret2.DecodeLastParameter(NullString, false)
+	fmt.Println("\t&&&&& Request2: OK, ", *par2.(*String))
 
 	if provider.nbmsg != 2 {
 		t.Errorf("Receives %d messages, expect %d ", provider.nbmsg, 2)
@@ -311,7 +330,7 @@ type TestInvokeProvider struct {
 }
 
 func newTestInvokeProvider() (*TestInvokeProvider, error) {
-	ctx, err := NewContext(nested1_provider2_url)
+	ctx, err := NewContext(provider_url)
 	if err != nil {
 		return nil, err
 	}
@@ -325,11 +344,18 @@ func newTestInvokeProvider() (*TestInvokeProvider, error) {
 	invokeHandler := func(msg *Message, t Transaction) error {
 		if msg != nil {
 			transaction := t.(InvokeTransaction)
-			fmt.Println("\t$$$$$ invokeProvider receive: ", string(msg.Body))
+			par, err := msg.DecodeLastParameter(NullString, false)
+			fmt.Println("\t$$$$$ invokeProvider receive: ", *par.(*String), err)
 			transaction.Ack(nil, false)
 			provider.nbmsg += 1
 			time.Sleep(250 * time.Millisecond)
-			//		transaction.Reply([]byte("reply message"), nil)
+
+			// Note (AF): Be careful, the body of a previously decoded message should be used in a
+			// newly message to send (the encoder is nil).
+
+			// body := ctx.NewBody()
+			//body.EncodeLastParameter(NewString("reply message"), false)
+
 			transaction.Reply(msg.Body, false)
 		} else {
 			fmt.Println("receive: nil")
@@ -370,8 +396,10 @@ func TestInvoke(t *testing.T) {
 		return
 	}
 
+	body := consumer_ctx.NewBody()
+	body.EncodeLastParameter(NewString("message1"), false)
 	op1 := consumer.NewInvokeOperation(provider.cctx.Uri, 200, 1, 1, 1)
-	_, err = op1.Invoke([]byte("message1"))
+	_, err = op1.Invoke(body)
 	if err != nil {
 		t.Fatal("Error during invoke, ", err)
 		return
@@ -382,10 +410,13 @@ func TestInvoke(t *testing.T) {
 		t.Fatal("Error getting response, ", err)
 		return
 	}
-	fmt.Println("\t&&&&& Invoke1: OK, ", string(r1.Body))
+	p1, err := r1.DecodeLastParameter(NullString, false)
+	fmt.Println("\t&&&&& Invoke1: OK, ", *p1.(*String))
 
+	body = consumer_ctx.NewBody()
+	body.EncodeLastParameter(NewString("message2"), false)
 	op2 := consumer.NewInvokeOperation(provider.cctx.Uri, 200, 1, 1, 1)
-	_, err = op2.Invoke([]byte("message2"))
+	_, err = op2.Invoke(body)
 	if err != nil {
 		t.Fatal("Error during invoke, ", err)
 		return
@@ -396,7 +427,8 @@ func TestInvoke(t *testing.T) {
 		t.Fatal("Error getting response, ", err)
 		return
 	}
-	fmt.Println("\t&&&&& Invoke2: OK, ", string(r2.Body))
+	p2, err := r2.DecodeLastParameter(NullString, false)
+	fmt.Println("\t&&&&& Invoke2: OK, ", *p2.(*String))
 
 	if provider.nbmsg != 2 {
 		t.Errorf("Receives %d messages, expect %d ", provider.nbmsg, 2)
@@ -432,13 +464,20 @@ func newTestProgressProvider() (*TestProgressProvider, error) {
 	progressHandler1 := func(msg *Message, t Transaction) error {
 		provider.nbmsg += 1
 		if msg != nil {
-			fmt.Println("\t$$$$$ progressHandler1 receive: ", string(msg.Body))
+			par, err := msg.DecodeLastParameter(NullString, false)
+			fmt.Println("\t$$$$$ progressHandler1 receive: ", *par.(*String), err)
 			transaction := t.(ProgressTransaction)
 			transaction.Ack(nil, false)
 			for i := 0; i < 10; i++ {
-				transaction.Update([]byte(fmt.Sprintf("messsage1.#%d", i)), false)
+				// Note (AF): Be careful, do not reuse a previously sent Body before you are
+				// sure that it is no longer used.
+				body := t.NewBody()
+				body.EncodeLastParameter(NewString(fmt.Sprintf("messsage1.#%d", i)), false)
+				transaction.Update(body, false)
 			}
-			transaction.Reply([]byte("last message1"), false)
+			body := t.NewBody()
+			body.EncodeLastParameter(NewString("last message"), false)
+			transaction.Reply(body, false)
 		} else {
 			fmt.Println("receive: nil")
 		}
@@ -451,13 +490,20 @@ func newTestProgressProvider() (*TestProgressProvider, error) {
 	progressHandler2 := func(msg *Message, t Transaction) error {
 		provider.nbmsg += 1
 		if msg != nil {
-			fmt.Println("\t$$$$$ progressHandler2 receive: ", string(msg.Body))
+			par, err := msg.DecodeLastParameter(NullString, false)
+			fmt.Println("\t$$$$$ progressHandler2 receive: ", *par.(*String), err)
 			transaction := t.(ProgressTransaction)
 			transaction.Ack(nil, false)
 			for i := 0; i < 5; i++ {
-				transaction.Update([]byte(fmt.Sprintf("messsage2.#%d", i)), false)
+				// Note (AF): Be careful, do not reuse a previously sent Body before you are
+				// sure that it is no longer used.
+				body := t.NewBody()
+				body.EncodeLastParameter(NewString(fmt.Sprintf("messsage2.#%d", i)), false)
+				transaction.Update(body, false)
 			}
-			transaction.Reply([]byte("last message2"), false)
+			body := t.NewBody()
+			body.EncodeLastParameter(NewString("last message2"), false)
+			transaction.Reply(body, false)
 		} else {
 			fmt.Println("receive: nil")
 		}
@@ -501,7 +547,9 @@ func TestProgress(t *testing.T) {
 	nbmsg := 0
 
 	op1 := consumer.NewProgressOperation(provider.cctx.Uri, 200, 1, 1, 1)
-	op1.Progress([]byte("message1"))
+	body := op1.NewBody()
+	body.EncodeLastParameter(NewString("message1"), false)
+	op1.Progress(body)
 	fmt.Println("\t&&&&& Progress1: OK")
 
 	updt, err := op1.GetUpdate()
@@ -510,7 +558,8 @@ func TestProgress(t *testing.T) {
 	}
 	for updt != nil {
 		nbmsg += 1
-		fmt.Println("\t&&&&& Progress1: Update -> ", string(updt.Body))
+		p, err := updt.DecodeLastParameter(NullString, false)
+		fmt.Println("\t&&&&& Progress1: Update -> ", *p.(*String))
 		updt, err = op1.GetUpdate()
 		if err != nil {
 			t.Error(err)
@@ -521,7 +570,8 @@ func TestProgress(t *testing.T) {
 		t.Error(err)
 	}
 	nbmsg += 1
-	fmt.Println("\t&&&&& Progress1: Response -> ", string(rep.Body))
+	p, err := rep.DecodeLastParameter(NullString, false)
+	fmt.Println("\t&&&&& Progress1: Response -> ", *p.(*String))
 
 	if nbmsg != 11 {
 		t.Errorf("Receives %d messages, expect %d ", nbmsg, 2)
@@ -529,7 +579,9 @@ func TestProgress(t *testing.T) {
 
 	// Call provider.Op2
 	op2 := consumer.NewProgressOperation(provider.uri, 200, 1, 1, 2)
-	op2.Progress([]byte("message2"))
+	body = op2.NewBody()
+	body.EncodeLastParameter(NewString("message2"), false)
+	op2.Progress(body)
 	fmt.Println("\t&&&&& Progress2: OK")
 
 	updt, err = op2.GetUpdate()
@@ -538,7 +590,8 @@ func TestProgress(t *testing.T) {
 	}
 	for updt != nil {
 		nbmsg += 1
-		fmt.Println("\t&&&&& Progress2: Update -> ", string(updt.Body))
+		p, err := updt.DecodeLastParameter(NullString, false)
+		fmt.Println("\t&&&&& Progress2: Update -> ", *p.(*String))
 		updt, err = op2.GetUpdate()
 		if err != nil {
 			t.Error(err)
@@ -549,7 +602,8 @@ func TestProgress(t *testing.T) {
 		t.Error(err)
 	}
 	nbmsg += 1
-	fmt.Println("\t&&&&& Progress2: Response -> ", string(rep.Body))
+	p, err = rep.DecodeLastParameter(NullString, false)
+	fmt.Println("\t&&&&& Progress2: Response -> ", *p.(*String))
 
 	if nbmsg != 17 {
 		t.Errorf("Receives %d messages, expect %d ", nbmsg, 17)
@@ -606,35 +660,47 @@ func (broker *TestPubSubProvider) close() {
 }
 
 func (broker *TestPubSubProvider) OnRegister(msg *Message, tx SubscriberTransaction) error {
-	fmt.Println("\t##########\n\t# OnRegister:")
+	par, err := msg.DecodeLastParameter(NullString, false)
+	fmt.Println("\t##########\n\t# OnRegister: ", *par.(*String), err)
 	broker.subs = tx
 	tx.AckRegister(nil, false)
 	return nil
 }
 
 func (broker *TestPubSubProvider) OnDeregister(msg *Message, tx SubscriberTransaction) error {
-	fmt.Println("\t##########\n\t# OnDeregister:")
+	par, err := msg.DecodeLastParameter(NullString, false)
+	fmt.Println("\t##########\n\t# OnDeregister: ", *par.(*String), err)
 	broker.subs = nil
 	tx.AckDeregister(nil, false)
 	return nil
 }
 
 func (broker *TestPubSubProvider) OnPublishRegister(msg *Message, tx PublisherTransaction) error {
-	fmt.Println("\t##########\n\t# OnPublishRegister:")
+	par, err := msg.DecodeLastParameter(NullString, false)
+	fmt.Println("\t##########\n\t# OnPublishRegister: ", *par.(*String), err)
 	tx.AckRegister(nil, false)
 	return nil
 }
 
 func (broker *TestPubSubProvider) OnPublish(msg *Message, tx PublisherTransaction) error {
-	fmt.Println("\t##########\n\t# OnPublish:")
+	par, err := msg.DecodeLastParameter(NullString, false)
+	fmt.Println("\t##########\n\t# OnPublish: ", *par.(*String), err)
 	if broker.subs != nil {
+		fmt.Println("\t##########\n\t# OnPublish: Notify")
+		//		body := tx.NewBody()
+		//		body.EncodeLastParameter(NewString("Notify message"), false)
+
+		// Note (AF): Be careful, the body of a previously decoded message should not be used in a
+		// newly message to send (the encoder is nil).
+
 		broker.subs.Notify(msg.Body, false)
 	}
 	return nil
 }
 
 func (broker *TestPubSubProvider) OnPublishDeregister(msg *Message, tx PublisherTransaction) error {
-	fmt.Println("\t##########\n\t# OnPublishDeregister:")
+	par, err := msg.DecodeLastParameter(NullString, false)
+	fmt.Println("\t##########\n\t# OnPublishDeregister: ", *par.(*String), err)
 	tx.AckDeregister(nil, false)
 	return nil
 }
@@ -665,9 +731,12 @@ func TestPubSub(t *testing.T) {
 		t.Fatal("Error creating publisher, ", err)
 		return
 	}
+
 	pubop := publisher.NewPublisherOperation(broker.cctx.Uri, 200, 1, 1, 1)
+	body := pubop.NewBody()
+	body.EncodeLastParameter(NewString("register#1"), false)
 	// TODO (AF): Build PublishRegister message
-	pubop.Register([]byte("register"))
+	pubop.Register(body)
 
 	sub_ctx, err := NewContext(subscriber_url)
 	if err != nil {
@@ -681,23 +750,38 @@ func TestPubSub(t *testing.T) {
 		t.Fatal("Error creating subscriber, ", err)
 		return
 	}
+
+	body.Reset(true)
+	body.EncodeLastParameter(NewString("register#2"), false)
 	subop := subscriber.NewSubscriberOperation(broker.cctx.Uri, 200, 1, 1, 1)
 	// TODO (AF): Build Register message
-	subop.Register([]byte("register"))
+	subop.Register(body)
 
-	pubop.Publish([]byte("publish #1"))
-	pubop.Publish([]byte("publish #2"))
+	body = pubop.NewBody()
+	body.EncodeLastParameter(NewString("publish#1"), false)
+	pubop.Publish(body)
+	// Note (AF): Be careful, do not reuse a previously sent Body before you are
+	// sure that it is no longer used (No acknowledge on publish)
+	body = pubop.NewBody()
+	body.EncodeLastParameter(NewString("publish#2"), false)
+	pubop.Publish(body)
 
 	// Try to get Notify
 	r1, err := subop.GetNotify()
-	fmt.Println("\t&&&&& Subscriber notified: OK, ", string(r1.Body))
+	p, err := r1.DecodeLastParameter(NullString, false)
+	fmt.Println("\t&&&&& Subscriber notified: OK, ", *p.(*String))
 
 	// Try to get Notify
 	r2, err := subop.GetNotify()
-	fmt.Println("\t&&&&& Subscriber notified: OK, ", string(r2.Body))
+	p, err = r2.DecodeLastParameter(NullString, false)
+	fmt.Println("\t&&&&& Subscriber notified: OK, ", *p.(*String))
 
-	pubop.Deregister([]byte("deregister"))
-	subop.Deregister([]byte("deregister"))
+	body.Reset(true)
+	body.EncodeLastParameter(NewString("deregister#1"), false)
+	pubop.Deregister(body)
+	body.Reset(true)
+	body.EncodeLastParameter(NewString("deregister#2"), false)
+	subop.Deregister(body)
 
 	// Waits for socket close
 	time.Sleep(250 * time.Millisecond)
@@ -730,15 +814,19 @@ func TestReset(t *testing.T) {
 		return
 	}
 
+	body := consumer_ctx.NewBody()
+	body.EncodeLastParameter(NewString("message1"), false)
 	op1 := consumer.NewSubmitOperation(provider.cctx.Uri, 200, 1, 1, 1)
-	_, err = op1.Submit([]byte("message1"))
+	_, err = op1.Submit(body)
 	if err != nil {
 		t.Fatal("Error during submit, ", err)
 		return
 	}
 	fmt.Println("\t&&&&& Submit1: OK")
 	op1.Reset()
-	_, err = op1.Submit([]byte("message2"))
+	body = consumer_ctx.NewBody()
+	body.EncodeLastParameter(NewString("message2"), false)
+	_, err = op1.Submit(body)
 	if err != nil {
 		t.Fatal("Error during submit, ", err)
 		return

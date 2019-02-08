@@ -1,7 +1,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2018 CNES
+ * Copyright (c) 2018 - 2019 CNES
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -42,7 +42,7 @@ const (
 // Test Invoke interaction in a nested scenario: Ctx1.C -> ctx2.P1 -> ctx2.P2
 // Invoke a method in same service (same MAL context).
 
-// Define Provider (Invoke interaction with nested invoke)
+// Define Provider1 (Invoke interaction with nested invoke)
 
 type TestNested2Provider1 struct {
 	cctx  *ClientContext
@@ -58,12 +58,15 @@ func newTestNested2Provider1(cctx *ClientContext, p2uri *URI) (*TestNested2Provi
 	invokeHandler := func(msg *Message, t Transaction) error {
 		if msg != nil {
 			transaction := t.(InvokeTransaction)
-			fmt.Println("\t$$$$$ Provider1 receive: ", string(msg.Body))
+			par, err := msg.DecodeLastParameter(NullString, false)
+			fmt.Println("\t$$$$$ Provider1 receive: ", *par.(*String), err)
 			transaction.Ack(nil, false)
 			provider.nbmsg += 1
 
+			body := cctx.Ctx.NewBody()
+			body.EncodeLastParameter(NewString("message from provider1"), false)
 			op := provider.cctx.NewInvokeOperation(provider.p2uri, 200, 1, 2, 2)
-			_, err := op.Invoke([]byte("message from provider1"))
+			_, err = op.Invoke(body)
 			if err != nil {
 				//			t.Fatal("Error during invoke, ", err)
 				return errors.New("Error during invoke")
@@ -74,7 +77,11 @@ func newTestNested2Provider1(cctx *ClientContext, p2uri *URI) (*TestNested2Provi
 				//			t.Fatal("Error getting response, ", err)
 				return errors.New("Error getting response")
 			}
-			fmt.Println("\t&&&&& Nested Invoke1: OK, ", string(reply.Body))
+			ret, err := reply.DecodeLastParameter(NullString, false)
+			fmt.Println("\t&&&&& Nested Invoke1: OK, ", *ret.(*String), err)
+
+			// Note (AF): Be careful, the body of a previously decoded message should be used in a
+			// newly message to send (the encoder is nil).
 
 			transaction.Reply(msg.Body, false)
 		} else {
@@ -102,12 +109,16 @@ func newTestNested2Provider2(cctx *ClientContext) (*TestNested2Provider2, error)
 	invokeHandler := func(msg *Message, t Transaction) error {
 		if msg != nil {
 			transaction := t.(InvokeTransaction)
-			fmt.Println("\t$$$$$ Provider2 receive: ", string(msg.Body))
+			par, err := msg.DecodeLastParameter(NullString, false)
+			fmt.Println("\t$$$$$ Provider2 receive: ", *par.(*String), err)
 			transaction.Ack(nil, false)
 			fmt.Println("\t$$$$$ Provider2 ack sent: OK")
 			provider.nbmsg += 1
 			time.Sleep(250 * time.Millisecond)
-			//		transaction.Reply([]byte("reply message"), nil)
+
+			// Note (AF): Be careful, the body of a previously decoded message should be used in a
+			// newly message to send (the encoder is nil).
+
 			transaction.Reply(msg.Body, false)
 			fmt.Println("\t$$$$$ Provider2 reply sent: OK")
 		} else {
@@ -166,7 +177,9 @@ func TestNested2(t *testing.T) {
 	}
 
 	op1 := consumer.NewInvokeOperation(provider1.cctx.Uri, 200, 1, 1, 1)
-	_, err = op1.Invoke([]byte("message1"))
+	body := op1.NewBody()
+	body.EncodeLastParameter(NewString("message1"), false)
+	_, err = op1.Invoke(body)
 	if err != nil {
 		t.Fatal("Error during invoke, ", err)
 		return
@@ -177,10 +190,13 @@ func TestNested2(t *testing.T) {
 		t.Fatal("Error getting response, ", err)
 		return
 	}
-	fmt.Println("\t&&&&& Invoke1: OK, ", string(r1.Body))
+	p1, err := r1.DecodeLastParameter(NullString, false)
+	fmt.Println("\t&&&&& Invoke1: OK, ", *p1.(*String))
 
 	op2 := consumer.NewInvokeOperation(provider1.cctx.Uri, 200, 1, 1, 1)
-	_, err = op2.Invoke([]byte("message2"))
+	body = op2.NewBody()
+	body.EncodeLastParameter(NewString("message2"), false)
+	_, err = op2.Invoke(body)
 	if err != nil {
 		t.Fatal("Error during invoke, ", err)
 		return
@@ -191,7 +207,8 @@ func TestNested2(t *testing.T) {
 		t.Fatal("Error getting response, ", err)
 		return
 	}
-	fmt.Println("\t&&&&& Invoke2: OK, ", string(r2.Body))
+	p2, err := r2.DecodeLastParameter(NullString, false)
+	fmt.Println("\t&&&&& Invoke2: OK, ", *p2.(*String))
 
 	if provider1.nbmsg != 2 {
 		t.Errorf("Receives %d messages, expect %d ", provider1.nbmsg, 2)
