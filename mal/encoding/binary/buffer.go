@@ -1,7 +1,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2017 - 2018 CNES
+ * Copyright (c) 2017 - 2019 CNES
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -34,12 +34,12 @@ type BinaryBuffer struct {
 	Buf    []byte
 }
 
-// Returns a newly allocated slice containing all encoded datas.
+// Returns the slice containing all encoded datas.
 func (buffer *BinaryBuffer) Body() []byte {
-	buf := make([]byte, len(buffer.Buf))
-	copy(buf, buffer.Buf)
-
-	return buf
+	// No longer duplicate the buffer
+	//	buf := make([]byte, len(buffer.Buf))
+	//	copy(buf, buffer.Buf)
+	return buffer.Buf
 }
 
 // Reset the buffer allowing to reuse it.
@@ -173,13 +173,13 @@ func (buffer *BinaryBuffer) ReadBytes(buf []byte) error {
 }
 
 // Returns the part of buffer that still needs to be decoded
-func (buffer *BinaryBuffer) Remaining() ([]byte, error) {
+func (buffer *BinaryBuffer) Remaining() []byte {
 	if buffer.Offset == len(buffer.Buf) {
-		return empty, nil
+		return empty
 	} else {
 		_ = buffer.Buf[buffer.Offset] // bounds check hint to compiler; see golang.org/issue/14808
 		off := buffer.Offset
 		buffer.Offset = len(buffer.Buf)
-		return buffer.Buf[off:], nil
+		return buffer.Buf[off:]
 	}
 }
