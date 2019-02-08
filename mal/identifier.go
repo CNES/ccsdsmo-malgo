@@ -1,7 +1,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2017 - 2018 CNES
+ * Copyright (c) 2017 - 2019 CNES
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -38,6 +38,17 @@ var (
 func NewIdentifier(s string) *Identifier {
 	var val Identifier = Identifier(s)
 	return &val
+}
+
+func (id *Identifier) Equals(other *Identifier) bool {
+	//	return reflect.DeepEqual(list, other)
+	if id == other {
+		return true
+	}
+	if id == nil || other == nil {
+		return false
+	}
+	return string(*id) == string(*other)
 }
 
 // ================================================================================
