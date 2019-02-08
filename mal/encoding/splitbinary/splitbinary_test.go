@@ -32,9 +32,14 @@ import (
 	"time"
 )
 
+func NewBodyBuffer(length uint32) []byte {
+	buf := make([]byte, 0, length)
+	return buf
+}
+
 func Test1(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	bf := make([]byte, 0, 8)
 	encoder := splitbinary.NewSplitBinaryEncoder(buf, bf)
 
@@ -139,7 +144,7 @@ func Test1(t *testing.T) {
 
 func TestUOctet(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	bf := make([]byte, 0, 8)
 	encoder := splitbinary.NewSplitBinaryEncoder(buf, bf)
 
@@ -173,7 +178,7 @@ func TestUOctet(t *testing.T) {
 
 func TestOctet(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	bf := make([]byte, 0, 8)
 	encoder := splitbinary.NewSplitBinaryEncoder(buf, bf)
 
@@ -207,7 +212,7 @@ func TestOctet(t *testing.T) {
 
 func TestUShort(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	bf := make([]byte, 0, 8)
 	encoder := splitbinary.NewSplitBinaryEncoder(buf, bf)
 
@@ -241,7 +246,7 @@ func TestUShort(t *testing.T) {
 
 func TestShort(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	bf := make([]byte, 0, 8)
 	encoder := splitbinary.NewSplitBinaryEncoder(buf, bf)
 
@@ -275,7 +280,7 @@ func TestShort(t *testing.T) {
 
 func TestUInteger(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	bf := make([]byte, 0, 8)
 	encoder := splitbinary.NewSplitBinaryEncoder(buf, bf)
 
@@ -306,7 +311,7 @@ func TestUInteger(t *testing.T) {
 
 func TestNullableUInteger(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	bf := make([]byte, 0, 8)
 	encoder := splitbinary.NewSplitBinaryEncoder(buf, bf)
 
@@ -352,7 +357,7 @@ func TestNullableUInteger(t *testing.T) {
 
 func TestInteger(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	bf := make([]byte, 0, 8)
 	encoder := splitbinary.NewSplitBinaryEncoder(buf, bf)
 
@@ -385,7 +390,7 @@ func TestInteger(t *testing.T) {
 
 func TestULong(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	bf := make([]byte, 0, 8)
 	encoder := splitbinary.NewSplitBinaryEncoder(buf, bf)
 
@@ -418,7 +423,7 @@ func TestULong(t *testing.T) {
 
 func TestLong(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	bf := make([]byte, 0, 8)
 	encoder := splitbinary.NewSplitBinaryEncoder(buf, bf)
 
@@ -451,7 +456,7 @@ func TestLong(t *testing.T) {
 
 func TestFloat(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	bf := make([]byte, 0, 8)
 	encoder := splitbinary.NewSplitBinaryEncoder(buf, bf)
 
@@ -484,7 +489,7 @@ func TestFloat(t *testing.T) {
 
 func TestDouble(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	bf := make([]byte, 0, 8)
 	encoder := splitbinary.NewSplitBinaryEncoder(buf, bf)
 
@@ -517,7 +522,7 @@ func TestDouble(t *testing.T) {
 
 func TestBlob(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	bf := make([]byte, 0, 8)
 	encoder := splitbinary.NewSplitBinaryEncoder(buf, bf)
 
@@ -555,7 +560,7 @@ func TestBlob(t *testing.T) {
 
 func TestString(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	bf := make([]byte, 0, 8)
 	encoder := splitbinary.NewSplitBinaryEncoder(buf, bf)
 
@@ -589,7 +594,7 @@ func TestString(t *testing.T) {
 
 func TestNullableString(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	bf := make([]byte, 0, 8)
 	encoder := splitbinary.NewSplitBinaryEncoder(buf, bf)
 
@@ -635,7 +640,7 @@ func TestNullableString(t *testing.T) {
 
 func TestTime(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	bf := make([]byte, 0, 8)
 	encoder := splitbinary.NewSplitBinaryEncoder(buf, bf)
 
@@ -669,7 +674,7 @@ func TestTime(t *testing.T) {
 
 func TestFineTime(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	bf := make([]byte, 0, 8)
 	encoder := splitbinary.NewSplitBinaryEncoder(buf, bf)
 
@@ -705,7 +710,7 @@ func TestFineTime(t *testing.T) {
 
 func TestAttribute(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	bf := make([]byte, 0, 8)
 	encoder := splitbinary.NewSplitBinaryEncoder(buf, bf)
 
@@ -757,7 +762,7 @@ func TestAttribute(t *testing.T) {
 
 func TestNullableAttribute(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	bf := make([]byte, 0, 8)
 	encoder := splitbinary.NewSplitBinaryEncoder(buf, bf)
 
@@ -815,7 +820,7 @@ func TestNullableAttribute(t *testing.T) {
 
 func TestElement(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	bf := make([]byte, 0, 8)
 	encoder := splitbinary.NewSplitBinaryEncoder(buf, bf)
 
@@ -865,7 +870,7 @@ func TestElement(t *testing.T) {
 
 func TestNullableElement(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	bf := make([]byte, 0, 8)
 	encoder := splitbinary.NewSplitBinaryEncoder(buf, bf)
 
@@ -925,7 +930,7 @@ func TestNullableElement(t *testing.T) {
 
 func TestBlobAttribute(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	bf := make([]byte, 0, 8)
 	encoder := splitbinary.NewSplitBinaryEncoder(buf, bf)
 
@@ -956,7 +961,7 @@ func TestBlobAttribute(t *testing.T) {
 
 func TestTimeAttribute(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	bf := make([]byte, 0, 8)
 	encoder := splitbinary.NewSplitBinaryEncoder(buf, bf)
 
@@ -997,7 +1002,7 @@ func TestTimeAttribute(t *testing.T) {
 
 func TestBooleanList(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	bf := make([]byte, 0, 8)
 	encoder := splitbinary.NewSplitBinaryEncoder(buf, bf)
 
@@ -1024,7 +1029,7 @@ func TestBooleanList(t *testing.T) {
 
 func TestOctetList(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	bf := make([]byte, 0, 8)
 	encoder := splitbinary.NewSplitBinaryEncoder(buf, bf)
 
@@ -1052,7 +1057,7 @@ func TestOctetList(t *testing.T) {
 
 func TestUOctetList(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	bf := make([]byte, 0, 8)
 	encoder := splitbinary.NewSplitBinaryEncoder(buf, bf)
 
@@ -1080,7 +1085,7 @@ func TestUOctetList(t *testing.T) {
 
 func TestShortList(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	bf := make([]byte, 0, 8)
 	encoder := splitbinary.NewSplitBinaryEncoder(buf, bf)
 
@@ -1108,7 +1113,7 @@ func TestShortList(t *testing.T) {
 
 func TestUShortList(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	bf := make([]byte, 0, 8)
 	encoder := splitbinary.NewSplitBinaryEncoder(buf, bf)
 
@@ -1136,7 +1141,7 @@ func TestUShortList(t *testing.T) {
 
 func TestIntegerList(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	bf := make([]byte, 0, 8)
 	encoder := splitbinary.NewSplitBinaryEncoder(buf, bf)
 
@@ -1164,7 +1169,7 @@ func TestIntegerList(t *testing.T) {
 
 func TestUIntegerList(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	bf := make([]byte, 0, 8)
 	encoder := splitbinary.NewSplitBinaryEncoder(buf, bf)
 
@@ -1192,7 +1197,7 @@ func TestUIntegerList(t *testing.T) {
 
 func TestLongList(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	bf := make([]byte, 0, 8)
 	encoder := splitbinary.NewSplitBinaryEncoder(buf, bf)
 
@@ -1220,7 +1225,7 @@ func TestLongList(t *testing.T) {
 
 func TestULongList(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	bf := make([]byte, 0, 8)
 	encoder := splitbinary.NewSplitBinaryEncoder(buf, bf)
 
@@ -1248,7 +1253,7 @@ func TestULongList(t *testing.T) {
 
 func TestFloatList(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	bf := make([]byte, 0, 8)
 	encoder := splitbinary.NewSplitBinaryEncoder(buf, bf)
 
@@ -1276,7 +1281,7 @@ func TestFloatList(t *testing.T) {
 
 func TestTimeList(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	bf := make([]byte, 0, 8)
 	encoder := splitbinary.NewSplitBinaryEncoder(buf, bf)
 
@@ -1304,7 +1309,7 @@ func TestTimeList(t *testing.T) {
 
 func TestFineTimeList(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	bf := make([]byte, 0, 8)
 	encoder := splitbinary.NewSplitBinaryEncoder(buf, bf)
 
@@ -1332,7 +1337,7 @@ func TestFineTimeList(t *testing.T) {
 
 func TestIdentifierList(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	bf := make([]byte, 0, 8)
 	encoder := splitbinary.NewSplitBinaryEncoder(buf, bf)
 
@@ -1360,7 +1365,7 @@ func TestIdentifierList(t *testing.T) {
 
 func TestEntityKey(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	bf := make([]byte, 0, 8)
 	encoder := splitbinary.NewSplitBinaryEncoder(buf, bf)
 
@@ -1395,7 +1400,7 @@ func TestEntityKey(t *testing.T) {
 
 func TestEntityKeyList(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	bf := make([]byte, 0, 8)
 	encoder := splitbinary.NewSplitBinaryEncoder(buf, bf)
 
@@ -1433,7 +1438,7 @@ func TestEntityKeyList(t *testing.T) {
 
 func TestEntityRequest(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	bf := make([]byte, 0, 8)
 	encoder := splitbinary.NewSplitBinaryEncoder(buf, bf)
 
@@ -1502,7 +1507,7 @@ func TestEntityRequest(t *testing.T) {
 
 func TestEntityRequestList(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	bf := make([]byte, 0, 8)
 	encoder := splitbinary.NewSplitBinaryEncoder(buf, bf)
 
@@ -1583,7 +1588,7 @@ func TestEntityRequestList(t *testing.T) {
 
 func TestOctetElementList(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	bf := make([]byte, 0, 8)
 	encoder := splitbinary.NewSplitBinaryEncoder(buf, bf)
 

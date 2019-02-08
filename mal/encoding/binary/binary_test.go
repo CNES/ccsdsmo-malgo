@@ -33,12 +33,17 @@ import (
 )
 
 const (
-	VARINT bool = true
+	VARINT bool = false
 )
+
+func NewBodyBuffer(length uint32) []byte {
+	buf := make([]byte, 0, length)
+	return buf
+}
 
 func TestByte(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	var b byte = 0
@@ -68,7 +73,7 @@ func TestByte(t *testing.T) {
 
 func TestUInt32(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	var list [65536]uint32
@@ -97,7 +102,7 @@ func TestUInt32(t *testing.T) {
 
 func TestUOctet(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	var o UOctet = 0
@@ -129,7 +134,7 @@ func TestUOctet(t *testing.T) {
 
 func TestOctet(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	var o Octet = -128
@@ -161,7 +166,7 @@ func TestOctet(t *testing.T) {
 
 func TestUShort(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	var s UShort = 0
@@ -193,7 +198,7 @@ func TestUShort(t *testing.T) {
 
 func TestShort(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	var s Short = -32768
@@ -225,7 +230,7 @@ func TestShort(t *testing.T) {
 
 func TestUInteger(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	var list [65536]UInteger
@@ -254,7 +259,7 @@ func TestUInteger(t *testing.T) {
 
 func TestNullableUInteger(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	var list = []*UInteger{
@@ -298,7 +303,7 @@ func TestNullableUInteger(t *testing.T) {
 
 func TestInteger(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	var list [65536]Integer
@@ -329,7 +334,7 @@ func TestInteger(t *testing.T) {
 
 func TestULong(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	var list [65536]ULong
@@ -360,7 +365,7 @@ func TestULong(t *testing.T) {
 
 func TestLong(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	var list [65536]Long
@@ -391,7 +396,7 @@ func TestLong(t *testing.T) {
 
 func TestFloat(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	var list [65536]Float
@@ -422,7 +427,7 @@ func TestFloat(t *testing.T) {
 
 func TestDouble(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	var list [65536]Double
@@ -453,7 +458,7 @@ func TestDouble(t *testing.T) {
 
 func TestBlob(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	var list [16384]Blob
@@ -489,7 +494,7 @@ func TestBlob(t *testing.T) {
 
 func TestString(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	var list [65536]String
@@ -521,7 +526,7 @@ func TestString(t *testing.T) {
 
 func TestNullableString(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	var list = []*String{
@@ -565,7 +570,7 @@ func TestNullableString(t *testing.T) {
 
 func TestTime(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	var list [65536]Time
@@ -597,7 +602,7 @@ func TestTime(t *testing.T) {
 
 func TestFineTime(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	var list [65536]FineTime
@@ -631,7 +636,7 @@ func TestFineTime(t *testing.T) {
 
 func TestAttribute(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	var list = []Attribute{
@@ -681,7 +686,7 @@ func TestAttribute(t *testing.T) {
 
 func TestNullableAttribute(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	var list = []Attribute{
@@ -737,7 +742,7 @@ func TestNullableAttribute(t *testing.T) {
 
 func TestElement(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	var list = []Element{
@@ -785,7 +790,7 @@ func TestElement(t *testing.T) {
 
 func TestNullableElement(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	var list = []Element{
@@ -843,7 +848,7 @@ func TestNullableElement(t *testing.T) {
 
 func TestBlobAttribute(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	var list = []Attribute{
@@ -872,7 +877,7 @@ func TestBlobAttribute(t *testing.T) {
 
 func TestTimeAttribute(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	var list = []Attribute{
@@ -911,7 +916,7 @@ func TestTimeAttribute(t *testing.T) {
 
 func TestBooleanList(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	var list = &BooleanList{
@@ -936,7 +941,7 @@ func TestBooleanList(t *testing.T) {
 
 func TestOctetList(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	var idlist = []*Octet{
@@ -963,7 +968,7 @@ func TestOctetList(t *testing.T) {
 
 func TestUOctetList(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	var idlist = []*UOctet{
@@ -990,7 +995,7 @@ func TestUOctetList(t *testing.T) {
 
 func TestShortList(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	var idlist = []*Short{
@@ -1017,7 +1022,7 @@ func TestShortList(t *testing.T) {
 
 func TestUShortList(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	var idlist = []*UShort{
@@ -1044,7 +1049,7 @@ func TestUShortList(t *testing.T) {
 
 func TestIntegerList(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	var idlist = []*Integer{
@@ -1071,7 +1076,7 @@ func TestIntegerList(t *testing.T) {
 
 func TestUIntegerList(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	var idlist = []*UInteger{
@@ -1098,7 +1103,7 @@ func TestUIntegerList(t *testing.T) {
 
 func TestLongList(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	var idlist = []*Long{
@@ -1125,7 +1130,7 @@ func TestLongList(t *testing.T) {
 
 func TestULongList(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	var idlist = []*ULong{
@@ -1152,7 +1157,7 @@ func TestULongList(t *testing.T) {
 
 func TestFloatList(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	var idlist = []*Float{
@@ -1179,7 +1184,7 @@ func TestFloatList(t *testing.T) {
 
 func TestTimeList(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	var idlist = []*Time{
@@ -1206,7 +1211,7 @@ func TestTimeList(t *testing.T) {
 
 func TestFineTimeList(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	var idlist = []*FineTime{
@@ -1233,7 +1238,7 @@ func TestFineTimeList(t *testing.T) {
 
 func TestIdentifierList(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	var idlist = []*Identifier{
@@ -1260,7 +1265,7 @@ func TestIdentifierList(t *testing.T) {
 
 func TestEntityKey(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	var list = []*EntityKey{
@@ -1293,7 +1298,7 @@ func TestEntityKey(t *testing.T) {
 
 func TestEntityKeyList(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	key1 := EntityKey{NewIdentifier("abcde"), NewLong(0), NewLong(1), NewLong(2)}
@@ -1330,7 +1335,7 @@ func TestEntityKeyList(t *testing.T) {
 
 func TestEntityRequest(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	key1 := EntityKey{NewIdentifier("abcde"), NewLong(0), NewLong(1), NewLong(2)}
@@ -1397,7 +1402,7 @@ func TestEntityRequest(t *testing.T) {
 
 func TestEntityRequestList(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	key1 := EntityKey{NewIdentifier("abcde"), NewLong(0), NewLong(1), NewLong(2)}
@@ -1477,7 +1482,7 @@ func TestEntityRequestList(t *testing.T) {
 
 func TestOctetElementList(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	var list = []Element{
@@ -1504,7 +1509,7 @@ func TestOctetElementList(t *testing.T) {
 
 func TestAbstractElement(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	var list = []Element{
@@ -1560,7 +1565,7 @@ func TestAbstractElement(t *testing.T) {
 
 func TestNullableAbstractElement(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	var list = []Element{
@@ -1643,7 +1648,7 @@ func TestNullableAbstractElement(t *testing.T) {
 
 func TestBrokerEncoding1(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	var list = &OctetList{
@@ -1702,7 +1707,7 @@ func TestBrokerEncoding1(t *testing.T) {
 
 func TestBrokerEncoding2(t *testing.T) {
 	var length uint32 = 8192
-	buf := make([]byte, 0, length)
+	buf := NewBodyBuffer(length)
 	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	var list = &LongList{
@@ -1761,7 +1766,7 @@ func TestBrokerEncoding2(t *testing.T) {
 
 //func TestElementListEncoding(t *testing.T) {
 //	var length uint32 = 8192
-//	buf := make([]byte, 0, length)
+//	buf := NewBodyBuffer(length)
 //	encoder := binary.NewBinaryEncoder(buf, VARINT)
 //
 //	var list = &LongList{
