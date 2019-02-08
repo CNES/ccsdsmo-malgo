@@ -1,7 +1,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2017 CNES
+ * Copyright (c) 2017 - 2019 CNES
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -26,7 +26,7 @@ package tcp_test
 import (
 	"fmt"
 	. "github.com/CNES/ccsdsmo-malgo/mal"
-	_ "github.com/CNES/ccsdsmo-malgo/mal/transport/tcp" // Needed to initialize TCP transport factory
+	"github.com/CNES/ccsdsmo-malgo/mal/transport/tcp" // Needed to initialize TCP transport factory
 	"testing"
 	"time"
 )
@@ -64,30 +64,35 @@ func TestTCP1(t *testing.T) {
 		for err == nil {
 			msg, err = provider.Recv()
 			if msg != nil {
-				fmt.Println("receive: ", string(msg.Body), ", ", err)
+				par, err := msg.DecodeLastParameter(NullString, false)
+				fmt.Println("receive: ", *par.(*String), ", ", err)
 				nbmsg += 1
 			}
 		}
 		t.Log("end: ", err)
 	}()
 
+	body := tcp.NewTCPBody(make([]byte, 0, 1024), true)
+	body.EncodeLastParameter(NewString("message1"), false)
 	msg1 := &Message{
 		UriFrom:          consumer.Uri,
 		UriTo:            provider.Uri,
 		TransactionId:    consumer.TransactionId(),
 		InteractionType:  MAL_INTERACTIONTYPE_SEND,
 		InteractionStage: MAL_IP_STAGE_SEND,
-		Body:             []byte("message1"),
+		Body:             body,
 	}
 	consumer.Send(msg1)
 
+	body = tcp.NewTCPBody(make([]byte, 0, 1024), true)
+	body.EncodeLastParameter(NewString("message2"), false)
 	msg2 := &Message{
 		UriFrom:          consumer.Uri,
 		UriTo:            provider.Uri,
 		TransactionId:    consumer.TransactionId(),
 		InteractionType:  MAL_INTERACTIONTYPE_SEND,
 		InteractionStage: MAL_IP_STAGE_SEND,
-		Body:             []byte("message2"),
+		Body:             body,
 	}
 	consumer.Send(msg2)
 
@@ -139,30 +144,35 @@ func TestTCP2(t *testing.T) {
 		for err == nil {
 			msg, err = provider.Recv()
 			if msg != nil {
-				fmt.Println("receive: ", string(msg.Body), ", ", err)
+				par, err := msg.DecodeLastParameter(NullString, false)
+				fmt.Println("receive: ", *par.(*String), ", ", err)
 				nbmsg += 1
 			}
 		}
 		t.Log("end: ", err)
 	}()
 
+	body := tcp.NewTCPBody(make([]byte, 0, 1024), true)
+	body.EncodeLastParameter(NewString("message1"), false)
 	msg1 := &Message{
 		UriFrom:          consumer.Uri,
 		UriTo:            provider.Uri,
 		TransactionId:    consumer.TransactionId(),
 		InteractionType:  MAL_INTERACTIONTYPE_SEND,
 		InteractionStage: MAL_IP_STAGE_SEND,
-		Body:             []byte("message1"),
+		Body:             body,
 	}
 	consumer.Send(msg1)
 
+	body = tcp.NewTCPBody(make([]byte, 0, 1024), true)
+	body.EncodeLastParameter(NewString("message2"), false)
 	msg2 := &Message{
 		UriFrom:          consumer.Uri,
 		UriTo:            provider.Uri,
 		TransactionId:    consumer.TransactionId(),
 		InteractionType:  MAL_INTERACTIONTYPE_SEND,
 		InteractionStage: MAL_IP_STAGE_SEND,
-		Body:             []byte("message2"),
+		Body:             body,
 	}
 	consumer.Send(msg2)
 

@@ -1,7 +1,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2017 - 2018 CNES
+ * Copyright (c) 2017 - 2019 CNES
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,6 +24,7 @@
 package tcp
 
 import (
+	"fmt"
 	. "github.com/CNES/ccsdsmo-malgo/mal"
 	"testing"
 	"time"
@@ -32,11 +33,16 @@ import (
 func TestMessage(t *testing.T) {
 	from := URI("maltcp://192.168.1.80:12345/Service1")
 	to := URI("maltcp://192.168.1.81:54321/Service2")
+
+	body := NewTCPBody(make([]byte, 0, 1024), true)
+	body.EncodeLastParameter(NewString("message1"), false)
+
+	fmt.Println(body.getEncodedContent())
 	msg1 := &Message{
 		UriFrom:          &from,
 		UriTo:            &to,
 		Timestamp:        *TimeNow(),
-		Body:             []byte("message1"),
+		Body:             body,
 		InteractionType:  MAL_INTERACTIONTYPE_PROGRESS,
 		InteractionStage: MAL_IP_STAGE_PROGRESS_UPDATE,
 		Domain: IdentifierList([]*Identifier{
@@ -88,6 +94,10 @@ func TestMessage(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error during encode: %s", err)
 	}
+
+	par1, err := msg2.DecodeLastParameter(NullString, false)
+	fmt.Println(*par1.(*String))
+
 	// NOTE (AF): Be careful the DeepEqual method is costly :-(
 	if !messageEqual(t, msg1, msg2) {
 		t.Errorf("Bad decoding, got: %v, want: %v", msg1, msg2)

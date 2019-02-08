@@ -1,7 +1,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2017 CNES
+ * Copyright (c) 2017 - 2019 CNES
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -26,18 +26,18 @@ package invm_test
 import (
 	"fmt"
 	. "github.com/CNES/ccsdsmo-malgo/mal"
-	_ "github.com/CNES/ccsdsmo-malgo/mal/transport/invm" // Needed to initialize InVM transport factory
+	"github.com/CNES/ccsdsmo-malgo/mal/transport/invm" // Needed to initialize InVM transport factory
 	"testing"
 	"time"
 )
 
 var (
-	invm string = "invm://local"
+	mallocal string = "invm://local"
 )
 
 // Test InVM transport using a unique context
 func TestLocal1(t *testing.T) {
-	ctx, err := NewContext(invm)
+	ctx, err := NewContext(mallocal)
 	if err != nil {
 		t.Fatal("Error creating context, ", err)
 	}
@@ -64,27 +64,36 @@ func TestLocal1(t *testing.T) {
 		for err == nil {
 			msg, err = provider.Recv()
 			if msg != nil {
-				fmt.Println("receive: ", string(msg.Body), ", ", err)
+				par, err := msg.DecodeLastParameter(NullString, false)
+				fmt.Println("receive: ", *par.(*String), ", ", err)
 				nbmsg += 1
 			}
 		}
 		t.Log("end: ", err)
 	}()
 
+	body := invm.NewInVMBody(make([]byte, 0, 1024), true)
+	body.EncodeLastParameter(NewString("message1"), false)
 	msg1 := &Message{
-		UriFrom:       consumer.Uri,
-		UriTo:         provider.Uri,
-		Body:          []byte("message1"),
-		TransactionId: consumer.TransactionId(),
+		UriFrom:          consumer.Uri,
+		UriTo:            provider.Uri,
+		TransactionId:    consumer.TransactionId(),
+		InteractionType:  MAL_INTERACTIONTYPE_SEND,
+		InteractionStage: MAL_IP_STAGE_SEND,
+		Body:             body,
 	}
 	consumer.Send(msg1)
 
+	body = invm.NewInVMBody(make([]byte, 0, 1024), true)
+	body.EncodeLastParameter(NewString("message2"), false)
 	msg2 := &Message{
-		UriFrom: consumer.Uri,
-		UriTo:   provider.Uri,
-		Body:    []byte("message2"),
+		UriFrom:          consumer.Uri,
+		UriTo:            provider.Uri,
+		TransactionId:    consumer.TransactionId(),
+		InteractionType:  MAL_INTERACTIONTYPE_SEND,
+		InteractionStage: MAL_IP_STAGE_SEND,
+		Body:             body,
 	}
-	msg2.TransactionId = consumer.TransactionId()
 	consumer.Send(msg2)
 
 	time.Sleep(250 * time.Millisecond)
@@ -97,13 +106,13 @@ func TestLocal1(t *testing.T) {
 }
 
 var (
-	invm1 string = "invm://local1"
-	invm2 string = "invm://local2"
+	mallocal1 string = "invm://local1"
+	mallocal2 string = "invm://local2"
 )
 
 // Test InVM transport using 2 different contexts
 func TestLocal2(t *testing.T) {
-	ctx1, err := NewContext(invm1)
+	ctx1, err := NewContext(mallocal1)
 	if err != nil {
 		t.Fatal("Error creating context, ", err)
 	}
@@ -112,9 +121,9 @@ func TestLocal2(t *testing.T) {
 	if err != nil {
 		t.Fatal("Error creating consumer, ", err)
 	}
-	fmt.Println("Registered consumer: ", consumer.Uri)
+	fmt.Println("Registered consumer: ", *consumer.Uri)
 
-	ctx2, err := NewContext(invm2)
+	ctx2, err := NewContext(mallocal2)
 	if err != nil {
 		t.Fatal("Error creating context, ", err)
 	}
@@ -123,7 +132,7 @@ func TestLocal2(t *testing.T) {
 	if err != nil {
 		t.Fatal("Error creating provider, ", err)
 	}
-	fmt.Println("Registered provider: ", provider.Uri)
+	fmt.Println("Registered provider: ", *provider.Uri)
 
 	endpoint, err := ctx1.GetEndPoint(ctx1.NewURI("consumer"))
 	fmt.Println("consumer: ", endpoint, err)
@@ -135,26 +144,35 @@ func TestLocal2(t *testing.T) {
 		for err == nil {
 			msg, err = provider.Recv()
 			if msg != nil {
-				fmt.Println("receive: ", string(msg.Body), ", ", err)
+				par, err := msg.DecodeLastParameter(NullString, false)
+				fmt.Println("receive: ", *par.(*String), ", ", err)
 				nbmsg += 1
 			}
 		}
 		t.Log("end: ", err)
 	}()
 
+	body := invm.NewInVMBody(make([]byte, 0, 1024), true)
+	body.EncodeLastParameter(NewString("message1"), false)
 	msg1 := &Message{
-		UriFrom:       consumer.Uri,
-		UriTo:         provider.Uri,
-		Body:          []byte("message1"),
-		TransactionId: consumer.TransactionId(),
+		UriFrom:          consumer.Uri,
+		UriTo:            provider.Uri,
+		TransactionId:    consumer.TransactionId(),
+		InteractionType:  MAL_INTERACTIONTYPE_SEND,
+		InteractionStage: MAL_IP_STAGE_SEND,
+		Body:             body,
 	}
 	consumer.Send(msg1)
 
+	body = invm.NewInVMBody(make([]byte, 0, 1024), true)
+	body.EncodeLastParameter(NewString("message2"), false)
 	msg2 := &Message{
-		UriFrom:       consumer.Uri,
-		UriTo:         provider.Uri,
-		Body:          []byte("message2"),
-		TransactionId: consumer.TransactionId(),
+		UriFrom:          consumer.Uri,
+		UriTo:            provider.Uri,
+		TransactionId:    consumer.TransactionId(),
+		InteractionType:  MAL_INTERACTIONTYPE_SEND,
+		InteractionStage: MAL_IP_STAGE_SEND,
+		Body:             body,
 	}
 	consumer.Send(msg2)
 
