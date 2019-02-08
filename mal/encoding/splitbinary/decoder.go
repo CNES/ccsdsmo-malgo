@@ -1,7 +1,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2018 CNES
+ * Copyright (c) 2018 - 2019 CNES
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -33,6 +33,9 @@ type SplitBinaryDecoder struct {
 
 // Creates a new decoder using a slice containing binary data to decode.
 func NewSplitBinaryDecoder(data []byte) *SplitBinaryDecoder {
+	// TODO(AF): Currently data shall contain a single slice of byte with bits field and
+	// data concatenated.
+
 	// Get informations from incoming slice
 	var buf []byte = nil
 	var bitfield []byte = nil

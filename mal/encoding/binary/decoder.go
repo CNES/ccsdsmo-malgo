@@ -1,7 +1,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2017 - 2018 CNES
+ * Copyright (c) 2017 - 2019 CNES
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -62,7 +62,7 @@ func (decoder *BinaryDecoder) ReadUInt32() (uint32, error) {
 }
 
 // Returns the part of buffer that still needs to be decoded
-func (decoder *BinaryDecoder) Remaining() ([]byte, error) {
+func (decoder *BinaryDecoder) Remaining() []byte {
 	return decoder.In.Remaining()
 }
 
