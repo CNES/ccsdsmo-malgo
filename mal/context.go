@@ -1,7 +1,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2017 - 2018 CNES
+ * Copyright (c) 2017 - 2019 CNES
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -74,6 +74,15 @@ func NewContext(url string) (*Context, error) {
 
 	go ctx.handle()
 	return ctx, nil
+}
+
+func (ctx *Context) NewMessage() *Message {
+	return ctx.transport.NewMessage()
+}
+
+// Returns a new Body ready to encode
+func (ctx *Context) NewBody() Body {
+	return ctx.transport.NewBody()
 }
 
 // Note (AF): May be we should provide a non programmatic way to fix the AccessControl handler
@@ -173,6 +182,7 @@ func (ctx *Context) Close() error {
 
 // Method implementing SEND request to the transport layer.
 func (ctx *Context) Send(msg *Message) error {
+	msg.Timestamp = *TimeNow()
 	// TODO (AF): May be we should handle errors internally using the error channel.
 	if ctx.achdlr != nil {
 		err := ctx.achdlr.check(msg)

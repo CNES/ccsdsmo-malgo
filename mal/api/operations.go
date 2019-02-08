@@ -1,7 +1,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2017 - 2018 CNES
+ * Copyright (c) 2017 - 2019 CNES
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -44,6 +44,8 @@ const (
 type Operation interface {
 	// Get current TransactionId
 	GetTid() ULong
+	// Returns a new Body ready to encode
+	NewBody() Body
 	// Interrupt the operation during a blocking processing.
 	Interrupt()
 	// Reset the operation in order to reuse it
@@ -85,6 +87,10 @@ func (op *OperationX) finalize() {
 
 func (op *OperationX) GetTid() ULong {
 	return op.tid
+}
+
+func (op *OperationX) NewBody() Body {
+	return op.cctx.Ctx.NewBody()
 }
 
 // Interrupts the operation.
@@ -133,7 +139,7 @@ func (op *OperationX) Reset() error {
 
 type SendOperation interface {
 	Operation
-	Send(body []byte) error
+	Send(body Body) error
 }
 
 type SendOperationX struct {
@@ -147,7 +153,7 @@ func (cctx *ClientContext) NewSendOperation(urito *URI, area UShort, areaVersion
 	return op
 }
 
-func (op *SendOperationX) Send(body []byte) error {
+func (op *SendOperationX) Send(body Body) error {
 	if op.status != _CREATED {
 		return errors.New("Bad operation status")
 	}
@@ -194,7 +200,7 @@ func (op *SendOperationX) onClose() {
 
 type SubmitOperation interface {
 	Operation
-	Submit(body []byte) (*Message, error)
+	Submit(body Body) (*Message, error)
 }
 
 type SubmitOperationX struct {
@@ -210,7 +216,7 @@ func (cctx *ClientContext) NewSubmitOperation(urito *URI, area UShort, areaVersi
 	return op
 }
 
-func (op *SubmitOperationX) Submit(body []byte) (*Message, error) {
+func (op *SubmitOperationX) Submit(body Body) (*Message, error) {
 	if op.status != _CREATED {
 		return nil, errors.New("Bad operation status")
 	}
@@ -294,7 +300,7 @@ func (op *SubmitOperationX) onClose() {
 
 type RequestOperation interface {
 	Operation
-	Request(body []byte) (*Message, error)
+	Request(body Body) (*Message, error)
 }
 
 type RequestOperationX struct {
@@ -310,7 +316,7 @@ func (cctx *ClientContext) NewRequestOperation(urito *URI, area UShort, areaVers
 	return op
 }
 
-func (op *RequestOperationX) Request(body []byte) (*Message, error) {
+func (op *RequestOperationX) Request(body Body) (*Message, error) {
 	if op.status != _CREATED {
 		return nil, errors.New("Bad operation status")
 	}
@@ -395,7 +401,7 @@ func (op *RequestOperationX) onClose() {
 
 type InvokeOperation interface {
 	Operation
-	Invoke(body []byte) (*Message, error)
+	Invoke(body Body) (*Message, error)
 	GetResponse() (*Message, error)
 }
 
@@ -414,7 +420,7 @@ func (cctx *ClientContext) NewInvokeOperation(urito *URI, area UShort, areaVersi
 	return op
 }
 
-func (op *InvokeOperationX) Invoke(body []byte) (*Message, error) {
+func (op *InvokeOperationX) Invoke(body Body) (*Message, error) {
 	if op.status != _CREATED {
 		return nil, errors.New("Bad operation status")
 	}
@@ -541,7 +547,7 @@ func (op *InvokeOperationX) onClose() {
 
 type ProgressOperation interface {
 	Operation
-	Progress(body []byte) (*Message, error)
+	Progress(body Body) (*Message, error)
 	GetUpdate() (*Message, error)
 	GetResponse() (*Message, error)
 }
@@ -563,7 +569,7 @@ func (cctx *ClientContext) NewProgressOperation(urito *URI, area UShort, areaVer
 	return op
 }
 
-func (op *ProgressOperationX) Progress(body []byte) (*Message, error) {
+func (op *ProgressOperationX) Progress(body Body) (*Message, error) {
 	if op.status != _CREATED {
 		return nil, errors.New("Bad operation status")
 	}
@@ -730,9 +736,9 @@ func (op *ProgressOperationX) onClose() {
 
 type SubscriberOperation interface {
 	Operation
-	Register(body []byte) (*Message, error)
+	Register(body Body) (*Message, error)
 	GetNotify() (*Message, error)
-	Deregister(body []byte) (*Message, error)
+	Deregister(body Body) (*Message, error)
 }
 
 type SubscriberOperationX struct {
@@ -751,7 +757,7 @@ func (cctx *ClientContext) NewSubscriberOperation(urito *URI, area UShort, areaV
 	return op
 }
 
-func (op *SubscriberOperationX) Register(body []byte) (*Message, error) {
+func (op *SubscriberOperationX) Register(body Body) (*Message, error) {
 	// TODO (AF): Be careful we can register anew a Subscriber
 	if op.status != _CREATED {
 		return nil, errors.New("Bad operation status")
@@ -852,7 +858,7 @@ func (op *SubscriberOperationX) GetNotify() (*Message, error) {
 	}
 }
 
-func (op *SubscriberOperationX) Deregister(body []byte) (*Message, error) {
+func (op *SubscriberOperationX) Deregister(body Body) (*Message, error) {
 	if op.status != _REGISTERED {
 		return nil, errors.New("Bad operation status")
 	}
@@ -935,9 +941,9 @@ func (op *SubscriberOperationX) onClose() {
 
 type PublisherOperation interface {
 	Operation
-	Register(body []byte) (*Message, error)
-	Publish(body []byte) error
-	Deregister(body []byte) (*Message, error)
+	Register(body Body) (*Message, error)
+	Publish(body Body) error
+	Deregister(body Body) (*Message, error)
 }
 
 type PublisherOperationX struct {
@@ -953,7 +959,7 @@ func (cctx *ClientContext) NewPublisherOperation(urito *URI, area UShort, areaVe
 	return op
 }
 
-func (op *PublisherOperationX) Register(body []byte) (*Message, error) {
+func (op *PublisherOperationX) Register(body Body) (*Message, error) {
 	// TODO (AF): Be careful we can register anew a publisher
 	if op.status != _CREATED {
 		return nil, errors.New("Bad operation status")
@@ -1021,7 +1027,7 @@ func (op *PublisherOperationX) Register(body []byte) (*Message, error) {
 	}
 }
 
-func (op *PublisherOperationX) Publish(body []byte) error {
+func (op *PublisherOperationX) Publish(body Body) error {
 	if op.status != _REGISTERED {
 		return errors.New("Bad operation status")
 	}
@@ -1056,7 +1062,7 @@ func (op *PublisherOperationX) Publish(body []byte) error {
 	return nil
 }
 
-func (op *PublisherOperationX) Deregister(body []byte) (*Message, error) {
+func (op *PublisherOperationX) Deregister(body Body) (*Message, error) {
 	if op.status != _REGISTERED {
 		return nil, errors.New("Bad operation status")
 	}

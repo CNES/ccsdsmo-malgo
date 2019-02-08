@@ -1,7 +1,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2017 - 2018 CNES
+ * Copyright (c) 2017 - 2019 CNES
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -30,7 +30,10 @@ import (
 // Defines a generic root Transaction interface (context of an incoming interaction)
 type Transaction interface {
 	init(msg *Message)
+	// Get current TransactionId
 	getTid() ULong
+	// Returns a new Body ready to encode
+	NewBody() Body
 }
 
 // Defines a generic root Transaction structure
@@ -76,6 +79,10 @@ func (tx *TransactionX) getTid() ULong {
 	return tx.tid
 }
 
+func (tx *TransactionX) NewBody() Body {
+	return tx.ctx.NewBody()
+}
+
 // ================================================================================
 // MAL Send interaction
 
@@ -92,14 +99,14 @@ type SendTransactionX struct {
 
 type SubmitTransaction interface {
 	Transaction
-	Ack(body []byte, isError bool) error
+	Ack(body Body, isError bool) error
 }
 
 type SubmitTransactionX struct {
 	TransactionX
 }
 
-func (tx *SubmitTransactionX) Ack(body []byte, isError bool) error {
+func (tx *SubmitTransactionX) Ack(body Body, isError bool) error {
 	msg := &Message{
 		UriFrom:          tx.uri,
 		UriTo:            tx.urifrom,
@@ -129,14 +136,14 @@ func (tx *SubmitTransactionX) Ack(body []byte, isError bool) error {
 
 type RequestTransaction interface {
 	Transaction
-	Reply(body []byte, isError bool) error
+	Reply(body Body, isError bool) error
 }
 
 type RequestTransactionX struct {
 	TransactionX
 }
 
-func (tx *RequestTransactionX) Reply(body []byte, isError bool) error {
+func (tx *RequestTransactionX) Reply(body Body, isError bool) error {
 	msg := &Message{
 		UriFrom:          tx.uri,
 		UriTo:            tx.urifrom,
@@ -166,15 +173,15 @@ func (tx *RequestTransactionX) Reply(body []byte, isError bool) error {
 
 type InvokeTransaction interface {
 	Transaction
-	Ack(body []byte, isError bool) error
-	Reply(body []byte, isError bool) error
+	Ack(body Body, isError bool) error
+	Reply(body Body, isError bool) error
 }
 
 type InvokeTransactionX struct {
 	TransactionX
 }
 
-func (tx *InvokeTransactionX) Ack(body []byte, isError bool) error {
+func (tx *InvokeTransactionX) Ack(body Body, isError bool) error {
 	msg := &Message{
 		UriFrom:          tx.uri,
 		UriTo:            tx.urifrom,
@@ -199,7 +206,7 @@ func (tx *InvokeTransactionX) Ack(body []byte, isError bool) error {
 	return tx.ctx.Send(msg)
 }
 
-func (tx *InvokeTransactionX) Reply(body []byte, isError bool) error {
+func (tx *InvokeTransactionX) Reply(body Body, isError bool) error {
 	msg := &Message{
 		UriFrom:          tx.uri,
 		UriTo:            tx.urifrom,
@@ -229,16 +236,16 @@ func (tx *InvokeTransactionX) Reply(body []byte, isError bool) error {
 
 type ProgressTransaction interface {
 	Transaction
-	Ack(body []byte, isError bool) error
-	Update(body []byte, isError bool) error
-	Reply(body []byte, isError bool) error
+	Ack(body Body, isError bool) error
+	Update(body Body, isError bool) error
+	Reply(body Body, isError bool) error
 }
 
 type ProgressTransactionX struct {
 	TransactionX
 }
 
-func (tx *ProgressTransactionX) Ack(body []byte, isError bool) error {
+func (tx *ProgressTransactionX) Ack(body Body, isError bool) error {
 	msg := &Message{
 		UriFrom:          tx.uri,
 		UriTo:            tx.urifrom,
@@ -263,7 +270,7 @@ func (tx *ProgressTransactionX) Ack(body []byte, isError bool) error {
 	return tx.ctx.Send(msg)
 }
 
-func (tx *ProgressTransactionX) Update(body []byte, isError bool) error {
+func (tx *ProgressTransactionX) Update(body Body, isError bool) error {
 	msg := &Message{
 		UriFrom:          tx.uri,
 		UriTo:            tx.urifrom,
@@ -288,7 +295,7 @@ func (tx *ProgressTransactionX) Update(body []byte, isError bool) error {
 	return tx.ctx.Send(msg)
 }
 
-func (tx *ProgressTransactionX) Reply(body []byte, isError bool) error {
+func (tx *ProgressTransactionX) Reply(body Body, isError bool) error {
 	msg := &Message{
 		UriFrom:          tx.uri,
 		UriTo:            tx.urifrom,
@@ -320,22 +327,22 @@ func (tx *ProgressTransactionX) Reply(body []byte, isError bool) error {
 
 type BrokerTransaction interface {
 	Transaction
-	AckRegister(body []byte, isError bool) error
-	AckDeregister(body []byte, isError bool) error
+	AckRegister(body Body, isError bool) error
+	AckDeregister(body Body, isError bool) error
 }
 
 // SubscriberTransaction
 
 type SubscriberTransaction interface {
 	BrokerTransaction
-	Notify(body []byte, isError bool) error
+	Notify(body Body, isError bool) error
 }
 
 type SubscriberTransactionX struct {
 	TransactionX
 }
 
-func (tx *SubscriberTransactionX) AckRegister(body []byte, isError bool) error {
+func (tx *SubscriberTransactionX) AckRegister(body Body, isError bool) error {
 	msg := &Message{
 		UriFrom:          tx.uri,
 		UriTo:            tx.urifrom,
@@ -360,7 +367,7 @@ func (tx *SubscriberTransactionX) AckRegister(body []byte, isError bool) error {
 	return tx.ctx.Send(msg)
 }
 
-func (tx *SubscriberTransactionX) Notify(body []byte, isError bool) error {
+func (tx *SubscriberTransactionX) Notify(body Body, isError bool) error {
 	msg := &Message{
 		UriFrom:          tx.uri,
 		UriTo:            tx.urifrom,
@@ -385,7 +392,7 @@ func (tx *SubscriberTransactionX) Notify(body []byte, isError bool) error {
 	return tx.ctx.Send(msg)
 }
 
-func (tx *SubscriberTransactionX) AckDeregister(body []byte, isError bool) error {
+func (tx *SubscriberTransactionX) AckDeregister(body Body, isError bool) error {
 	msg := &Message{
 		UriFrom:          tx.uri,
 		UriTo:            tx.urifrom,
@@ -420,7 +427,7 @@ type PublisherTransactionX struct {
 	TransactionX
 }
 
-func (tx *PublisherTransactionX) AckRegister(body []byte, isError bool) error {
+func (tx *PublisherTransactionX) AckRegister(body Body, isError bool) error {
 	msg := &Message{
 		UriFrom:          tx.uri,
 		UriTo:            tx.urifrom,
@@ -445,7 +452,7 @@ func (tx *PublisherTransactionX) AckRegister(body []byte, isError bool) error {
 	return tx.ctx.Send(msg)
 }
 
-func (tx *PublisherTransactionX) AckDeregister(body []byte, isError bool) error {
+func (tx *PublisherTransactionX) AckDeregister(body Body, isError bool) error {
 	msg := &Message{
 		UriFrom:          tx.uri,
 		UriTo:            tx.urifrom,

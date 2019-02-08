@@ -1,7 +1,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2017 CNES
+ * Copyright (c) 2017 - 2019 CNES
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -29,6 +29,10 @@ import (
 )
 
 type Transport interface {
+	// Returns a new Message ready to encode
+	NewMessage() *Message
+	// Returns a new Body ready to encode
+	NewBody() Body
 	//	SupportedQoS(qos QoSLevel) bool
 	//	SupportedIP(ip InteractionType) bool
 	Transmit(msg *Message) error
