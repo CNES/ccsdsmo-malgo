@@ -1,7 +1,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2017 - 2018 CNES
+ * Copyright (c) 2017 - 2019 CNES
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -133,6 +133,10 @@ type Encoder interface {
 	// Encodes a String that may be null
 	// @param att The String to encode.
 	EncodeNullableString(att *String) error
+
+	// Encodes a String with a fixed size
+	// @param att The String to encode.
+	EncodeFixedString(att *String, length int) error
 
 	// Encodes a non-null Blob.
 	// @param att The Blob to encode.

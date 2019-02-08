@@ -1,7 +1,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2017 - 2018 CNES
+ * Copyright (c) 2017 - 2019 CNES
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -131,6 +131,10 @@ type Decoder interface {
 	// Decodes a String that may be null.
 	// @return The decoded String or null.
 	DecodeNullableString() (*String, error)
+
+	// Decodes a String with a fixed size.
+	// @return The decoded String or null.
+	DecodeFixedString(length int) (*String, error)
 
 	// Decodes a Blob.
 	// @return The decoded Blob.
