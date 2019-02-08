@@ -1,7 +1,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2017 - 2018 ccsdsmo
+ * Copyright (c) 2017 - 2019 ccsdsmo
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -120,6 +120,17 @@ const MAL_UPDATETYPE_SHORT_FORM Long = 0x1000001000016
 // TODO (AF): Handles the polymorphism of message, use an interface implemented by
 // MAL transport.
 
+type Body interface {
+	SetEncodingFactory(factory EncodingFactory)
+	// Initialize the body to write (resp. read) parameter using the specified
+	// encoding. This method shall be called after setting content and factory.
+	Reset(writeable bool)
+	DecodeParameter(element Element) (Element, error)
+	DecodeLastParameter(element Element, abstract bool) (Element, error)
+	EncodeParameter(element Element) error
+	EncodeLastParameter(element Element, abstract bool) error
+}
+
 type Message struct {
 	UriFrom          *URI
 	UriTo            *URI
@@ -140,5 +151,25 @@ type Message struct {
 	Operation        UShort
 	AreaVersion      UOctet
 	IsErrorMessage   Boolean
-	Body             []byte
+	Body             Body
+}
+
+func (msg *Message) SetEncodingFactory(factory EncodingFactory) {
+	msg.Body.SetEncodingFactory(factory)
+}
+
+func (msg *Message) DecodeParameter(element Element) (Element, error) {
+	return msg.Body.DecodeParameter(element)
+}
+
+func (msg *Message) DecodeLastParameter(element Element, abstract bool) (Element, error) {
+	return msg.Body.DecodeLastParameter(element, abstract)
+}
+
+func (msg *Message) EncodeParameter(element Element) error {
+	return msg.Body.EncodeParameter(element)
+}
+
+func (msg *Message) EncodeLastParameter(element Element, abstract bool) error {
+	return msg.Body.EncodeLastParameter(element, abstract)
 }
