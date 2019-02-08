@@ -1,7 +1,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2018 CNES
+ * Copyright (c) 2018 - 2019 CNES
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -35,7 +35,7 @@ import (
 )
 
 const (
-	test2_varint = true
+	test2_varint = false
 
 	test2_broker_url      = "maltcp://127.0.0.1:16000"
 	test2_subscriber1_url = "maltcp://127.0.0.1:16001"
@@ -80,7 +80,11 @@ func newTest2Broker() error {
 	}
 
 	updtHandler := NewBlobUpdateValueHandler()
-	test2_broker, err = NewBroker(cctx, updtHandler, binary.VarintBinaryEncodingFactory)
+	if varint {
+		test2_broker, err = NewBroker(cctx, updtHandler, binary.VarintBinaryEncodingFactory)
+	} else {
+		test2_broker, err = NewBroker(cctx, updtHandler, binary.FixedBinaryEncodingFactory)
+	}
 	if err != nil {
 		return err
 	}
@@ -110,19 +114,17 @@ func test2Pub1(t *testing.T) {
 	defer test2_publisher1.Close()
 	test2_publisher1.SetDomain(IdentifierList([]*Identifier{NewIdentifier("spacecraft1"), NewIdentifier("payload"), NewIdentifier("camera1")}))
 
-	encoder := binary.NewBinaryEncoder(make([]byte, 0, 8192), test2_varint)
-
 	pubop := test2_publisher1.NewPublisherOperation(test2_broker.Uri(), 200, 1, 1, 1)
+	pbody := pubop.NewBody()
 
 	ekpub1 := &EntityKey{NewIdentifier("key1"), NewLong(1), NewLong(1), NewLong(1)}
 	ekpub2 := &EntityKey{NewIdentifier("key2"), NewLong(2), NewLong(2), NewLong(2)}
 	var eklist = EntityKeyList([]*EntityKey{ekpub1, ekpub2})
-	eklist.Encode(encoder)
-
-	pubop.Register(encoder.Body())
-	encoder.Out.Reset(true)
-
+	pbody.EncodeLastParameter(&eklist, false)
+	pubop.Register(pbody)
 	fmt.Printf("pubop.Register OK\n")
+	// Register is synchronous, we can reuse body
+	pbody.Reset(true)
 
 	// Publish a first update
 	updthdr1 := &UpdateHeader{*TimeNow(), *test2_publisher1.Uri, MAL_UPDATETYPE_CREATION, *ekpub1}
@@ -133,14 +135,12 @@ func test2Pub1(t *testing.T) {
 	updt1 := &Blob{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
 	updt2 := &Blob{9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
 	updt3 := &Blob{0, 1}
-	updtlist1 := UpdateList([]*Blob{updt1, updt2, updt3})
+	updtlist1 := BlobList([]*Blob{updt1, updt2, updt3})
 
-	updtHdrlist1.Encode(encoder)
-	updtlist1.Encode(encoder)
-	body1 := encoder.Body()
-	encoder.Out.Reset(true)
-	//	fmt.Printf("\n\nBody=%p %v\n\n", body1, body1)
-	pubop.Publish(body1)
+	pbody1 := pubop.NewBody()
+	pbody1.EncodeParameter(&updtHdrlist1)
+	pbody1.EncodeLastParameter(&updtlist1, false)
+	pubop.Publish(pbody1)
 
 	fmt.Printf("pubop.Publish OK\n")
 
@@ -153,14 +153,12 @@ func test2Pub1(t *testing.T) {
 
 	updt4 := &Blob{2, 3}
 	updt5 := &Blob{4, 5, 6}
-	updtlist2 := UpdateList([]*Blob{updt4, updt5})
+	updtlist2 := BlobList([]*Blob{updt4, updt5})
 
-	updtHdrlist2.Encode(encoder)
-	updtlist2.Encode(encoder)
-	body2 := encoder.Body()
-	encoder.Out.Reset(true)
-	//	fmt.Printf("\n\nBody=%p %v\n\n", body2, body2)
-	pubop.Publish(body2)
+	pbody2 := pubop.NewBody()
+	pbody2.EncodeParameter(&updtHdrlist2)
+	pbody2.EncodeLastParameter(&updtlist2, false)
+	pubop.Publish(pbody2)
 
 	// Deregisters publisher
 	pubop.Deregister(nil)
@@ -184,19 +182,18 @@ func test2Pub2(t *testing.T) {
 	defer test2_publisher2.Close()
 	test2_publisher2.SetDomain(IdentifierList([]*Identifier{NewIdentifier("spacecraft1"), NewIdentifier("payload"), NewIdentifier("camera2")}))
 
-	encoder := binary.NewBinaryEncoder(make([]byte, 0, 8192), test2_varint)
-
 	pubop := test2_publisher2.NewPublisherOperation(test2_broker.Uri(), 200, 1, 1, 1)
+	pbody := pubop.NewBody()
 
 	ekpub1 := &EntityKey{NewIdentifier("key1"), NewLong(1), NewLong(1), NewLong(1)}
 	ekpub2 := &EntityKey{NewIdentifier("key2"), NewLong(1), NewLong(1), NewLong(1)}
 	var eklist = EntityKeyList([]*EntityKey{ekpub1, ekpub2})
-	eklist.Encode(encoder)
+	pbody.EncodeLastParameter(&eklist, false)
 
-	pubop.Register(encoder.Body())
-	encoder.Out.Reset(true)
-
+	pubop.Register(pbody)
 	fmt.Printf("pubop.Register OK\n")
+	// Register is synchronous, we can reuse body
+	pbody.Reset(true)
 
 	// Publish a first update
 	updthdr1 := &UpdateHeader{*TimeNow(), *test2_publisher2.Uri, MAL_UPDATETYPE_CREATION, *ekpub1}
@@ -207,14 +204,12 @@ func test2Pub2(t *testing.T) {
 	updt1 := &Blob{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
 	updt2 := &Blob{9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
 	updt3 := &Blob{0, 1}
-	updtlist1 := UpdateList([]*Blob{updt1, updt2, updt3})
+	updtlist1 := BlobList([]*Blob{updt1, updt2, updt3})
 
-	updtHdrlist1.Encode(encoder)
-	updtlist1.Encode(encoder)
-	body1 := encoder.Body()
-	encoder.Out.Reset(true)
-	//	fmt.Printf("\n\nBody=%p %v\n\n", body1, body1)
-	pubop.Publish(body1)
+	pbody1 := pubop.NewBody()
+	pbody1.EncodeParameter(&updtHdrlist1)
+	pbody1.EncodeLastParameter(&updtlist1, false)
+	pubop.Publish(pbody1)
 
 	fmt.Printf("pubop.Publish OK\n")
 
@@ -227,14 +222,12 @@ func test2Pub2(t *testing.T) {
 
 	updt4 := &Blob{2, 3}
 	updt5 := &Blob{4, 5, 6}
-	updtlist2 := UpdateList([]*Blob{updt4, updt5})
+	updtlist2 := BlobList([]*Blob{updt4, updt5})
 
-	updtHdrlist2.Encode(encoder)
-	updtlist2.Encode(encoder)
-	body2 := encoder.Body()
-	encoder.Out.Reset(true)
-	//	fmt.Printf("\n\nBody=%p %v\n\n", body2, body2)
-	pubop.Publish(body2)
+	pbody2 := pubop.NewBody()
+	pbody2.EncodeParameter(&updtHdrlist2)
+	pbody2.EncodeLastParameter(&updtlist2, false)
+	pubop.Publish(pbody2)
 
 	// Deregisters publisher
 	pubop.Deregister(nil)
@@ -242,6 +235,7 @@ func test2Pub2(t *testing.T) {
 }
 
 var subop1 SubscriberOperation
+var sbody1 Body
 
 func newTest2Sub1() error {
 	var err error
@@ -255,9 +249,8 @@ func newTest2Sub1() error {
 	}
 	test2_subscriber1.SetDomain(IdentifierList([]*Identifier{NewIdentifier("spacecraft1"), NewIdentifier("payload")}))
 
-	encoder := binary.NewBinaryEncoder(make([]byte, 0, 8192), test2_varint)
-
 	subop1 = test2_subscriber1.NewSubscriberOperation(test2_broker.Uri(), 200, 1, 1, 1)
+	sbody1 = subop1.NewBody()
 
 	domains := IdentifierList([]*Identifier{NewIdentifier("*")})
 	eksub := &EntityKey{NewIdentifier("key1"), NewLong(0), NewLong(0), NewLong(0)}
@@ -267,12 +260,13 @@ func newTest2Sub1() error {
 		},
 	})
 	subs := &Subscription{subid1, erlist}
-	subs.Encode(encoder)
+	sbody1.EncodeLastParameter(subs, false)
 
-	subop1.Register(encoder.Body())
-	encoder.Out.Reset(true)
-
+	subop1.Register(sbody1)
 	fmt.Printf("subop.Register OK\n")
+	// Register is synchronous, we can clear buffer
+	sbody1.Reset(true)
+
 	return nil
 }
 
@@ -286,12 +280,12 @@ func runTest2Sub1(t *testing.T) {
 		}
 		fmt.Printf("\t&&&&& Subscriber1 notified: %d\n", r1.TransactionId)
 		test2_sub1_not_cpt += 1
-		decoder := binary.NewBinaryDecoder(r1.Body, varint)
-		id, err := decoder.DecodeIdentifier()
-		updtHdrlist, err := DecodeUpdateHeaderList(decoder)
-		updtlist, err := DecodeUpdateList(decoder)
-		test2_sub1_updt_cpt += len(*updtlist)
-		fmt.Printf("\t&&&&& Subscriber1 notified: OK, %s \n\t%+v \n\t%#v\n\n", *id, updtHdrlist, updtlist)
+
+		id, err := r1.DecodeParameter(NullIdentifier)
+		updtHdrlist, err := r1.DecodeParameter(NullUpdateHeaderList)
+		updtlist, err := r1.DecodeLastParameter(NullBlobList, false)
+		test2_sub1_updt_cpt += len(*updtlist.(*BlobList))
+		fmt.Printf("\t&&&&& Subscriber1 notified: OK, %s \n\t%+v \n\t%#v\n\n", id, updtHdrlist, updtlist)
 	}
 
 	if (test2_sub1_not_cpt != 4) || (test2_sub1_updt_cpt != 8) {
@@ -299,20 +293,19 @@ func runTest2Sub1(t *testing.T) {
 	}
 
 	// Deregisters subscriber
-	encoder := binary.NewBinaryEncoder(make([]byte, 0, 8192), test2_varint)
 
 	idlist := IdentifierList([]*Identifier{&subid1})
-	idlist.Encode(encoder)
-	subop1.Deregister(encoder.Body())
-	encoder.Out.Reset(true)
-
+	sbody1.EncodeLastParameter(&idlist, false)
+	subop1.Deregister(sbody1)
 	fmt.Printf("\t&&&&&Subscriber#1, Deregistered\n")
+	sbody1.Reset(true)
 
 	test2_subscriber1.Close()
 	test2_sub1_ctx.Close()
 }
 
 var subop2 SubscriberOperation
+var sbody2 Body
 
 func newTest2Sub2() error {
 	var err error
@@ -326,9 +319,8 @@ func newTest2Sub2() error {
 	}
 	test2_subscriber2.SetDomain(IdentifierList([]*Identifier{NewIdentifier("spacecraft1"), NewIdentifier("payload")}))
 
-	encoder := binary.NewBinaryEncoder(make([]byte, 0, 8192), test2_varint)
-
 	subop2 = test2_subscriber2.NewSubscriberOperation(test2_broker.Uri(), 200, 1, 1, 1)
+	sbody2 = subop2.NewBody()
 
 	domains := IdentifierList([]*Identifier{NewIdentifier("camera2")})
 	eksub1 := &EntityKey{NewIdentifier("key1"), NewLong(0), NewLong(0), NewLong(0)}
@@ -339,12 +331,13 @@ func newTest2Sub2() error {
 		},
 	})
 	subs := &Subscription{subid2, erlist}
-	subs.Encode(encoder)
+	sbody2.EncodeLastParameter(subs, false)
 
-	subop2.Register(encoder.Body())
-	encoder.Out.Reset(true)
-
+	subop2.Register(sbody2)
 	fmt.Printf("subop.Register OK\n")
+	// Register is synchronous, we can clear buffer
+	sbody2.Reset(true)
+
 	return nil
 }
 
@@ -358,12 +351,12 @@ func runTest2Sub2(t *testing.T) {
 		}
 		fmt.Printf("\t&&&&& Subscriber2 notified: %d\n", r1.TransactionId)
 		test2_sub2_not_cpt += 1
-		decoder := binary.NewBinaryDecoder(r1.Body, varint)
-		id, err := decoder.DecodeIdentifier()
-		updtHdrlist, err := DecodeUpdateHeaderList(decoder)
-		updtlist, err := DecodeUpdateList(decoder)
-		test2_sub2_updt_cpt += len(*updtlist)
-		fmt.Printf("\t&&&&& Subscriber2 notified: OK, %s \n\t%+v \n\t%#v\n\n", *id, updtHdrlist, updtlist)
+
+		id, err := r1.DecodeParameter(NullIdentifier)
+		updtHdrlist, err := r1.DecodeParameter(NullUpdateHeaderList)
+		updtlist, err := r1.DecodeLastParameter(NullBlobList, false)
+		test2_sub2_updt_cpt += len(*updtlist.(*BlobList))
+		fmt.Printf("\t&&&&& Subscriber2 notified: OK, %s \n\t%+v \n\t%#v\n\n", id, updtHdrlist, updtlist)
 	}
 
 	if (test2_sub2_not_cpt != 2) || (test2_sub2_updt_cpt != 5) {
@@ -371,14 +364,12 @@ func runTest2Sub2(t *testing.T) {
 	}
 
 	// Deregisters subscriber
-	encoder := binary.NewBinaryEncoder(make([]byte, 0, 8192), test2_varint)
 
 	idlist := IdentifierList([]*Identifier{&subid2})
-	idlist.Encode(encoder)
-	subop2.Deregister(encoder.Body())
-	encoder.Out.Reset(true)
-
+	sbody1.EncodeLastParameter(&idlist, false)
+	subop1.Deregister(sbody1)
 	fmt.Printf("\t&&&&&Subscriber#2, Deregistered\n")
+	sbody1.Reset(true)
 
 	test2_subscriber2.Close()
 	test2_sub2_ctx.Close()

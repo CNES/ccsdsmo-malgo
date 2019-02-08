@@ -1,7 +1,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2018 CNES
+ * Copyright (c) 2018 - 2019 CNES
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -35,7 +35,7 @@ import (
 )
 
 const (
-	varint = true
+	varint = false
 
 	subscriber_url = "maltcp://127.0.0.1:16001"
 	publisher_url  = "maltcp://127.0.0.1:16002"
@@ -60,14 +60,17 @@ func TestPubSub(t *testing.T) {
 	}
 
 	updtHandler := NewBlobUpdateValueHandler()
-	broker, err := NewBroker(cctx, updtHandler, binary.VarintBinaryEncodingFactory)
+	var broker *BrokerHandler
+	if varint {
+		broker, err = NewBroker(cctx, updtHandler, binary.VarintBinaryEncodingFactory)
+	} else {
+		broker, err = NewBroker(cctx, updtHandler, binary.FixedBinaryEncodingFactory)
+	}
 	if err != nil {
 		t.Fatal("Error creating broker, ", err)
 		return
 	}
 	defer broker.Close()
-
-	encoder := binary.NewBinaryEncoder(make([]byte, 0, 8192), varint)
 
 	// Creates the publisher and registers it
 
@@ -87,16 +90,17 @@ func TestPubSub(t *testing.T) {
 	publisher.SetDomain(IdentifierList([]*Identifier{NewIdentifier("spacecraft1"), NewIdentifier("payload"), NewIdentifier("camera")}))
 
 	pubop := publisher.NewPublisherOperation(broker.Uri(), 200, 1, 1, 1)
+	pbody := pubop.NewBody()
 
 	ekpub1 := &EntityKey{NewIdentifier("key1"), NewLong(1), NewLong(1), NewLong(1)}
 	ekpub2 := &EntityKey{NewIdentifier("key2"), NewLong(1), NewLong(1), NewLong(1)}
 	var eklist = EntityKeyList([]*EntityKey{ekpub1, ekpub2})
-	eklist.Encode(encoder)
+	pbody.EncodeLastParameter(&eklist, false)
 
-	pubop.Register(encoder.Body())
-	encoder.Out.Reset(true)
-
+	pubop.Register(pbody)
 	fmt.Printf("pubop.Register OK\n")
+	// Register is synchronous, we can reuse body
+	pbody.Reset(true)
 
 	// Creates the subscriber and registers it
 
@@ -116,6 +120,7 @@ func TestPubSub(t *testing.T) {
 	subscriber.SetDomain(IdentifierList([]*Identifier{NewIdentifier("spacecraft1"), NewIdentifier("payload")}))
 
 	subop := subscriber.NewSubscriberOperation(broker.Uri(), 200, 1, 1, 1)
+	sbody := subop.NewBody()
 
 	domains := IdentifierList([]*Identifier{NewIdentifier("*")})
 	eksub := &EntityKey{NewIdentifier("key1"), NewLong(0), NewLong(0), NewLong(0)}
@@ -126,12 +131,12 @@ func TestPubSub(t *testing.T) {
 	})
 	var subid = Identifier("MySubscription")
 	subs := &Subscription{subid, erlist}
-	subs.Encode(encoder)
+	sbody.EncodeLastParameter(subs, false)
 
-	subop.Register(encoder.Body())
-	encoder.Out.Reset(true)
-
+	subop.Register(sbody)
 	fmt.Printf("subop.Register OK\n")
+	// Register is synchronous, we can clear buffer
+	sbody.Reset(true)
 
 	// Publish a first update
 	updthdr1 := &UpdateHeader{*TimeNow(), *publisher.Uri, MAL_UPDATETYPE_CREATION, *ekpub1}
@@ -142,14 +147,12 @@ func TestPubSub(t *testing.T) {
 	updt1 := &Blob{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
 	updt2 := &Blob{9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
 	updt3 := &Blob{0, 1}
-	updtlist1 := UpdateList([]*Blob{updt1, updt2, updt3})
+	updtlist1 := BlobList([]*Blob{updt1, updt2, updt3})
 
-	updtHdrlist1.Encode(encoder)
-	updtlist1.Encode(encoder)
-	body1 := encoder.Body()
-	encoder.Out.Reset(true)
-	//	fmt.Printf("\n\nBody=%p %v\n\n", body1, body1)
-	pubop.Publish(body1)
+	pbody1 := pubop.NewBody()
+	pbody1.EncodeParameter(&updtHdrlist1)
+	pbody1.EncodeLastParameter(&updtlist1, false)
+	pubop.Publish(pbody1)
 
 	fmt.Printf("pubop.Publish OK\n")
 
@@ -162,32 +165,28 @@ func TestPubSub(t *testing.T) {
 
 	updt4 := &Blob{2, 3}
 	updt5 := &Blob{4, 5, 6}
-	updtlist2 := UpdateList([]*Blob{updt4, updt5})
+	updtlist2 := BlobList([]*Blob{updt4, updt5})
 
-	updtHdrlist2.Encode(encoder)
-	updtlist2.Encode(encoder)
-	body2 := encoder.Body()
-	encoder.Out.Reset(true)
-	//	fmt.Printf("\n\nBody=%p %v\n\n", body2, body2)
-	pubop.Publish(body2)
+	pbody2 := pubop.NewBody()
+	pbody2.EncodeParameter(&updtHdrlist2)
+	pbody2.EncodeLastParameter(&updtlist2, false)
+	pubop.Publish(pbody2)
 
 	// Try to get Notify
 	r1, err := subop.GetNotify()
 	fmt.Printf("\t&&&&& Subscriber notified: %d\n", r1.TransactionId)
-	decoder := binary.NewBinaryDecoder(r1.Body, varint)
-	id, err := decoder.DecodeIdentifier()
-	updtHdrlist, err := DecodeUpdateHeaderList(decoder)
-	updtlist, err := DecodeUpdateList(decoder)
-	fmt.Printf("\t&&&&& Subscriber notified: OK, %s \n\t%+v \n\t%#v\n\n", *id, updtHdrlist, updtlist)
+	id, err := r1.DecodeParameter(NullIdentifier)
+	updtHdrlist, err := r1.DecodeParameter(NullUpdateHeaderList)
+	updtlist, err := r1.DecodeLastParameter(NullBlobList, false)
+	fmt.Printf("\t&&&&& Subscriber notified: OK, %s \n\t%+v \n\t%#v\n\n", id, updtHdrlist, updtlist)
 
 	// Try to get Notify
 	r2, err := subop.GetNotify()
 	fmt.Printf("\t&&&&& Subscriber notified: %d\n", r2.TransactionId)
-	decoder = binary.NewBinaryDecoder(r2.Body, varint)
-	id, err = decoder.DecodeIdentifier()
-	updtHdrlist, err = DecodeUpdateHeaderList(decoder)
-	updtlist, err = DecodeUpdateList(decoder)
-	fmt.Printf("\t&&&&& Subscriber notified: OK, %s \n\t%+v \n\t%#v\n\n", *id, updtHdrlist, updtlist)
+	id, err = r2.DecodeParameter(NullIdentifier)
+	updtHdrlist, err = r2.DecodeParameter(NullUpdateHeaderList)
+	updtlist, err = r2.DecodeLastParameter(NullBlobList, false)
+	fmt.Printf("\t&&&&& Subscriber notified: OK, %s \n\t%+v \n\t%#v\n\n", id, updtHdrlist, updtlist)
 
 	// Deregisters publisher
 	pubop.Deregister(nil)
@@ -195,9 +194,9 @@ func TestPubSub(t *testing.T) {
 	// Deregisters subscriber
 
 	idlist := IdentifierList([]*Identifier{&subid})
-	idlist.Encode(encoder)
-	subop.Deregister(encoder.Body())
-	encoder.Out.Reset(true)
+	sbody.EncodeLastParameter(&idlist, false)
+	subop.Deregister(sbody)
+	sbody.Reset(true)
 
 	// Waits for socket close
 	time.Sleep(250 * time.Millisecond)
