@@ -1,7 +1,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2017 - 2018 CNES
+ * Copyright (c) 2017 - 2019 CNES
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -45,10 +45,19 @@ type Buffer interface {
 	ReadUVarInt() (uint64, error)
 	ReadFlag() (bool, error)
 	// Returns the part of buffer that still needs to be decoded
-	Remaining() ([]byte, error)
+	Remaining() []byte
 }
 
 type EncodingFactory interface {
 	NewEncoder(buf []byte) Encoder
 	NewDecoder(buf []byte) Decoder
+}
+
+func DupBody(body [][]byte) [][]byte {
+	dup := make([][]byte, len(body))
+	for i := range body {
+		dup[i] = make([]byte, len(body[i]))
+		copy(dup[i], body[i])
+	}
+	return dup
 }
