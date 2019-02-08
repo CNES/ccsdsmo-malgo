@@ -1,7 +1,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2017 CNES
+ * Copyright (c) 2017 - 2019 CNES
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -40,12 +40,28 @@ type InVMTransport struct {
 	params map[string][]string
 }
 
+// Returns a new Message ready to encode
+func (transport *InVMTransport) NewMessage() *Message {
+	msg := &Message{Body: NewInVMBody(make([]byte, 0, 1024), true)}
+	return msg
+}
+
+// Returns a new Body ready to encode
+func (transport *InVMTransport) NewBody() Body {
+	return NewInVMBody(make([]byte, 0, 1024), true)
+}
+
 func (*InVMTransport) Transmit(msg *Message) error {
 	u, err := url.Parse(string(*msg.UriTo))
 	if err != nil {
 		logger.Errorf("Cannot parse urito=%s, %s", *msg.UriTo, err)
 		return err
 	}
+
+	// Transform Body to readable
+	msg.Body.(*InVMBody).content = msg.Body.(*InVMBody).getEncodedContent()
+	msg.Body.Reset(false)
+
 	urito := url.URL{Scheme: u.Scheme, Host: u.Host}
 	transport, ok := contexts[urito.String()]
 	if ok {
