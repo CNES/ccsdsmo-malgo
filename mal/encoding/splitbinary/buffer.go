@@ -1,7 +1,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2018 CNES
+ * Copyright (c) 2018 - 2019 CNES
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -36,8 +36,11 @@ type SplitBinaryBuffer struct {
 	Bitfield     []byte
 }
 
-// Returns a newly allocated slice containing all encoded datas.
+// Returns a slice containing all encoded datas.
 func (buffer *SplitBinaryBuffer) Body() []byte {
+	// TODO (AF): Currently returns a single slice with bit field and datas concatenated,
+	// we should returns a slice for the bit field and each slice of datas.
+
 	//	var length int = 4 + len(buffer.Bitfield) + len(buffer.Buf)
 	var bflen int = ((((int)(buffer.Bitfield_len) - 1) / 8) + 1)
 	var length int = 4 + bflen + len(buffer.Buf)
