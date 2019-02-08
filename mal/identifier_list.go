@@ -1,7 +1,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2017 - 2018 CNES
+ * Copyright (c) 2017 - 2019 CNES
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -36,6 +36,28 @@ var (
 func NewIdentifierList(size int) *IdentifierList {
 	var list IdentifierList = IdentifierList(make([]*Identifier, size))
 	return &list
+}
+
+func (list *IdentifierList) Equals(other *IdentifierList) bool {
+	//	return reflect.DeepEqual(list, other)
+	if list == other {
+		return true
+	}
+	if list == nil || other == nil {
+		return false
+	}
+
+	if len(*list) != len(*other) {
+		logger.Errorf("find len %d should be %d", len(*other), len(*list))
+		return false
+	}
+	for i, v := range *list {
+		if !v.Equals((*other)[i]) {
+			logger.Errorf("find %s should be %s", *(*other)[i], *v)
+			return false
+		}
+	}
+	return true
 }
 
 // ================================================================================
