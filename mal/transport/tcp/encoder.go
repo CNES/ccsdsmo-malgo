@@ -1,7 +1,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2017 - 2018 CNES
+ * Copyright (c) 2017 - 2019 CNES
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -190,10 +190,15 @@ func (transport *TCPTransport) encode(msg *Message) ([]byte, error) {
 		}
 	}
 
-	err = encoder.WriteBody(msg.Body)
-	if err != nil {
-		logger.Errorf("TCPTransport.encode, cannot write body: %s", err.Error())
-		return nil, err
+	// TODO (AF): this method should encode only the header, and we should write header and body
+	// separately on the wire. Actually, it assumes that there Body contains a single slice.
+
+	if msg.Body != nil {
+		err = encoder.WriteBody(msg.Body.(*TCPBody).getEncodedContent())
+		if err != nil {
+			logger.Errorf("TCPTransport.encode, cannot write body: %s", err.Error())
+			return nil, err
+		}
 	}
 
 	return encoder.Out.(*binary.BinaryBuffer).Buf, nil

@@ -1,7 +1,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2017 - 2018 CNES
+ * Copyright (c) 2017 - 2019 CNES
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -223,7 +223,7 @@ func (transport *TCPTransport) decode(buf []byte, from string) (*Message, error)
 
 	// The remaining part of the buffer corresponds to the body part
 	// of the message.
-	body, err := decoder.Remaining()
+	body := NewTCPBody(decoder.Remaining(), false)
 
 	var msg *Message = &Message{
 		UriFrom:          urifrom,

@@ -1,7 +1,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2017 - 2018 CNES
+ * Copyright (c) 2017 - 2019 CNES
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -154,6 +154,17 @@ func (transport *TCPTransport) init() error {
 	return nil
 }
 
+// Returns a new Message ready to encode
+func (transport *TCPTransport) NewMessage() *Message {
+	msg := &Message{Body: NewTCPBody(make([]byte, 0, 1024), true)}
+	return msg
+}
+
+// Returns a new Body ready to encode
+func (transport *TCPTransport) NewBody() Body {
+	return NewTCPBody(make([]byte, 0, 1024), true)
+}
+
 // Starts the MAL/TCP context.
 func (transport *TCPTransport) start() error {
 	// If the host in the address parameter is empty or a literal unspecified IP address,
@@ -250,6 +261,7 @@ func (transport *TCPTransport) handleIn(cnx net.Conn) {
 		msg, err := transport.readMessage(cnx)
 
 		if err != nil {
+			// TODO (AF): We should always close this connection
 			if isEOF(err) {
 				break
 			} else {
@@ -385,6 +397,8 @@ func write32(value uint32, buf []byte) {
 }
 
 func (transport *TCPTransport) writeMessage(cnx net.Conn, msg *Message) error {
+	// TODO (AF): We should encode separately the header, and send header and body with
+	// 2 frames.
 	buf, err := transport.encode(msg)
 	if err != nil {
 		// TODO (AF): Logging
@@ -392,7 +406,7 @@ func (transport *TCPTransport) writeMessage(cnx net.Conn, msg *Message) error {
 	}
 	logger.Debugf("Writes message: %d", len(buf))
 	write32(uint32(len(buf))-FIXED_HEADER_LENGTH, buf[VARIABLE_LENGTH_OFFSET:VARIABLE_LENGTH_OFFSET+4])
-	logger.Debugf("Message transmitted: ", buf)
+	logger.Debugf("Message transmitted: ", buf[0])
 	_, err = cnx.Write(buf)
 	if err != nil {
 		logger.Errorf("Transport.writeMessage, cannot send to %s", cnx.RemoteAddr())
