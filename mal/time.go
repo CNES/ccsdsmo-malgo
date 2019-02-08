@@ -1,7 +1,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2017 - 2018 CNES
+ * Copyright (c) 2017 - 2019 CNES
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -50,6 +50,15 @@ func NewTime(t time.Time) *Time {
 
 func TimeNow() *Time {
 	var val Time = Time(time.Now())
+	return &val
+}
+
+func (t *Time) UnixNano() int64 {
+	return time.Time(*t).UnixNano()
+}
+
+func FromUnixNano(t int64) *Time {
+	var val Time = Time(time.Unix(t/1000000000, t%1000000000))
 	return &val
 }
 
