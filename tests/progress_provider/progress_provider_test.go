@@ -66,14 +66,19 @@ func newTestProgressProvider() (*TestProgressProvider, error) {
 	progressHandler := func(msg *Message, t Transaction) error {
 		provider.nbmsg += 1
 		if msg != nil {
-			fmt.Println("\t$$$$$ progressHandler1 receive: ", string(msg.Body))
 			transaction := t.(ProgressTransaction)
-			transaction.Ack(nil)
+			par, _ := msg.DecodeLastParameter(NullStringList, false)
+			fmt.Printf("\t$$$$$ progressHandler1 receive: %v\n", par)
+			transaction.Ack(nil, false)
 			for i := 0; i < 10; i++ {
-				transaction.Update([]byte(fmt.Sprintf("messsage1.#%d", i)), nil)
+				body := transaction.NewBody()
+				body.EncodeLastParameter(NewString(fmt.Sprintf("messsage1.#%d", i)), false)
+				transaction.Update(body, false)
 				time.Sleep(1 * time.Second)
 			}
-			transaction.Reply([]byte("last message1"), nil)
+			body := transaction.NewBody()
+			body.EncodeLastParameter(NewString("last message1"), false)
+			transaction.Reply(body, false)
 		} else {
 			fmt.Println("receive: nil")
 		}

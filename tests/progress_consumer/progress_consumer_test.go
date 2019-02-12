@@ -27,13 +27,12 @@ import (
 	"fmt"
 	. "github.com/CNES/ccsdsmo-malgo/mal"
 	. "github.com/CNES/ccsdsmo-malgo/mal/api"
-	"github.com/CNES/ccsdsmo-malgo/mal/encoding/binary"
 	_ "github.com/CNES/ccsdsmo-malgo/mal/transport/tcp" // Needed to initialize TCP transport factory
 	"testing"
 )
 
 const (
-	provider_url = "maltcp://127.0.0.1:6660/progress_provider/provider"
+	provider_url = "maltcp://127.0.0.1:6666/progress_provider/provider"
 	consumer_url = "maltcp://127.0.0.1:16002"
 )
 
@@ -65,6 +64,7 @@ func TestProgressConsumer(t *testing.T) {
 
 	var providerUri *URI = NewURI(provider_url)
 	op1 := consumer.NewProgressOperation(providerUri, 200, 1, 1, 5)
+	body := consumer_ctx.NewBody()
 
 	list := NewStringList(5)
 	([]*String)(*list)[0] = NewString("list-element-0")
@@ -72,11 +72,9 @@ func TestProgressConsumer(t *testing.T) {
 	([]*String)(*list)[2] = NewString("list-element-2")
 	([]*String)(*list)[3] = NewString("list-element-3")
 	([]*String)(*list)[4] = NewString("list-element-4")
-	buf := make([]byte, 0, 8192)
-	encoder := binary.NewBinaryEncoder(buf, false)
-	encoder.EncodeNullableElement(list)
+	body.EncodeLastParameter(list, false)
 
-	op1.Progress(encoder.Body())
+	op1.Progress(body)
 	fmt.Println("\t&&&&& Progress1: OK")
 
 	updt, err := op1.GetUpdate()
@@ -85,7 +83,8 @@ func TestProgressConsumer(t *testing.T) {
 	}
 	for updt != nil {
 		nbmsg += 1
-		fmt.Println("\t&&&&& Progress1: Update -> ", updt.Body)
+		p, err := updt.DecodeLastParameter(NullString, false)
+		fmt.Println("\t&&&&& Progress1: Update -> ", *p.(*String))
 		updt, err = op1.GetUpdate()
 		if err != nil {
 			t.Error(err)
@@ -96,10 +95,8 @@ func TestProgressConsumer(t *testing.T) {
 		t.Error(err)
 	}
 	nbmsg += 1
-
-	decoder := binary.NewBinaryDecoder(rep.Body, false)
-	decoder.DecodeNullableElement(list)
-	fmt.Println("\t&&&&& Progress1: Response -> ", *([]*String)(*list)[0])
+	p, err := rep.DecodeLastParameter(NullString, false)
+	fmt.Println("\t&&&&& Progress1: Response -> ", *p.(*String))
 
 	if nbmsg != 11 {
 		t.Errorf("Receives %d messages, expect %d ", nbmsg, 2)
