@@ -261,12 +261,7 @@ func (transport *TCPTransport) handleIn(cnx net.Conn) {
 		msg, err := transport.readMessage(cnx)
 
 		if err != nil {
-			// TODO (AF): We should always close this connection
-			if isEOF(err) {
-				break
-			} else {
-				continue
-			}
+			break
 		}
 		logger.Debugf("TCPTransport.HandleIn(%s), receives message: %s", cnx.RemoteAddr(), msg)
 		if msg != nil {
