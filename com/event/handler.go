@@ -63,28 +63,30 @@ func (handler *EventHandler) Close() error {
 type EventUpdateValueHandler struct {
 	list1   *ObjectDetailsList
 	values1 ObjectDetailsList
-	list2   []Element
-	values2 []Element
+	list2   ElementList
+	values2 ElementList
 }
 
 func NewEventUpdateValueHandler() *EventUpdateValueHandler {
 	return new(EventUpdateValueHandler)
 }
 
-func (handler *EventUpdateValueHandler) DecodeUpdateValueList(decoder Decoder) error {
-	list1, err := DecodeObjectDetailsList(decoder)
+func (handler *EventUpdateValueHandler) DecodeUpdateValueList(body Body) error {
+	p, err := body.DecodeParameter(NullObjectDetailsList)
 	if err != nil {
 		return err
 	}
+	list1 := p.(*ObjectDetailsList)
 	logger.Infof("Broker.Publish, DecodeUpdateValueList -> %d, %v", len([]*ObjectDetails(*list1)), list1)
 
-	list2, err := decoder.DecodeElementList()
+	p, err = body.DecodeLastParameter(nil, true)
 	if err != nil {
 		return err
 	}
-	logger.Infof("Broker.Publish, DecodeUpdateValueList -> %d, %v", len(list2), list2)
+	list2 := p.(ElementList)
+	logger.Infof("Broker.Publish, DecodeUpdateValueList -> %d, %v", list2.Size(), list2)
 
-	if len([]*ObjectDetails(*list1)) != len(list2) {
+	if len([]*ObjectDetails(*list1)) != list2.Size() {
 		return errors.New("Bad list length")
 	}
 
@@ -92,7 +94,7 @@ func (handler *EventUpdateValueHandler) DecodeUpdateValueList(decoder Decoder) e
 	handler.values1 = ObjectDetailsList(make([]*ObjectDetails, 0, len([]*ObjectDetails(*list1))))
 
 	handler.list2 = list2
-	handler.values2 = make([]Element, 0, len(list2))
+	handler.values2 = list2.CreateElement().(ElementList)
 
 	return nil
 }
@@ -103,26 +105,26 @@ func (handler *EventUpdateValueHandler) UpdateValueListSize() int {
 
 func (handler *EventUpdateValueHandler) AppendValue(idx int) {
 	handler.values1 = append(handler.values1, ([]*ObjectDetails)(*handler.list1)[idx])
-	handler.values2 = append(handler.values2, handler.list2[idx])
+	handler.values2.AppendElement(handler.list2.GetElementAt(idx))
 }
 
-func (handler *EventUpdateValueHandler) EncodeUpdateValueList(encoder Encoder) error {
-	err := encoder.EncodeElement(&handler.values1)
+func (handler *EventUpdateValueHandler) EncodeUpdateValueList(body Body) error {
+	err := body.EncodeParameter(&handler.values1)
 	if err != nil {
 		return err
 	}
 	handler.values1 = handler.values1[:0]
 
-	err = encoder.EncodeElementList(handler.values2)
+	err = body.EncodeLastParameter(handler.values2, true)
 	if err != nil {
 		return err
 	}
-	handler.values2 = handler.values2[:0]
+	handler.values2 = handler.list2.CreateElement().(ElementList)
 
 	return nil
 }
 
 func (handler *EventUpdateValueHandler) ResetValues() {
 	handler.values1 = handler.values1[:0]
-	handler.values2 = handler.values2[:0]
+	handler.values2 = handler.list2.CreateElement().(ElementList)
 }

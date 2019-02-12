@@ -45,36 +45,51 @@ func NewEventProvider(factory EncodingFactory, cctx *ClientContext, broker *URI)
 }
 
 func (provider *EventProvider) monitorEventRegister(keys *EntityKeyList) error {
-	encoder := provider.factory.NewEncoder(make([]byte, 0, 8192))
-	keys.Encode(encoder)
-	msg, err := provider.pub.Register(encoder.Body())
+	// create a body for the operation call
+	body := provider.pub.NewBody()
+	err := body.EncodeLastParameter(keys, false)
 	if err != nil {
-		// TODO (AF): Get errors in reply then log a message.
-		logger.Errorf("EventProvider.monitorEventRegister error: %v, %v", msg, err)
+		logger.Errorf("EventProvider.monitorEventRegister error: %v", err)
+		return err
+	}
+	msg, err := provider.pub.Register(body)
+	if err != nil {
+		handleError("EventProvider.monitorEventRegister error", err, msg)
 		return err
 	}
 	return nil
 }
 
 func (provider *EventProvider) monitorEventPublish(updtHdr *UpdateHeaderList, updtDetails *ObjectDetailsList, updtValues ElementList) error {
-	encoder := provider.factory.NewEncoder(make([]byte, 0, 8192))
-	updtHdr.Encode(encoder)
-	updtDetails.Encode(encoder)
-	encoder.EncodeAbstractElement(updtValues)
-	msg, err := provider.pub.Register(encoder.Body())
+	// create a body for the operation call
+	body := provider.pub.NewBody()
+	err := body.EncodeParameter(updtHdr)
 	if err != nil {
-		// TODO (AF): Get errors in reply then log a message.
-		logger.Errorf("EventProvider.monitorEventPublish error: %v, %v", msg, err)
+		logger.Errorf("EventProvider.monitorEventPublish error: %v", err)
+		return err
+	}
+	err = body.EncodeParameter(updtDetails)
+	if err != nil {
+		logger.Errorf("EventProvider.monitorEventPublish error: %v", err)
+		return err
+	}
+	err = body.EncodeLastParameter(updtValues, true)
+	if err != nil {
+		logger.Errorf("EventProvider.monitorEventPublish error: %v", err)
+		return err
+	}
+	err = provider.pub.Publish(body)
+	if err != nil {
+		logger.Errorf("EventProvider.monitorEventPublish error: %v", err)
 		return err
 	}
 	return nil
 }
 
 func (provider *EventProvider) monitorEventDeregister() error {
-	msg, err := provider.pub.Register(nil)
+	msg, err := provider.pub.Deregister(nil)
 	if err != nil {
-		// TODO (AF): Get errors in reply then log a message.
-		logger.Errorf("EventProvider.monitorEventDeregister error: %v, %v", msg, err)
+		handleError("EventProvider.monitorEventDeregister error", err, msg)
 		return err
 	}
 	return nil

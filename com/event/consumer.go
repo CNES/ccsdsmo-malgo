@@ -44,12 +44,18 @@ func NewEventConsumer(factory EncodingFactory, cctx *ClientContext, broker *URI)
 }
 
 func (consumer *EventConsumer) monitorEventRegister(sub Subscription) error {
-	encoder := consumer.factory.NewEncoder(make([]byte, 0, 8192))
-	sub.Encode(encoder)
-	msg, err := consumer.subs.Register(encoder.Body())
+	// create a body for the operation call
+	body := consumer.subs.NewBody()
+
+	err := body.EncodeLastParameter(&sub, false)
 	if err != nil {
-		// TODO (AF): Get errors in reply then log a message.
-		logger.Errorf("EventConsumer.monitorEventRegister error: %v, %v", msg, err)
+		logger.Errorf("EventConsumer.monitorEventRegister error: %v", err)
+		return err
+	}
+
+	msg, err := consumer.subs.Register(body)
+	if err != nil {
+		handleError("EventConsumer.monitorEventRegister error", err, msg)
 		return err
 	}
 	return nil
@@ -58,36 +64,66 @@ func (consumer *EventConsumer) monitorEventRegister(sub Subscription) error {
 // Get events.
 // Last out parameter of type ElementList should be cast in *XList using out.(*XList)) where X is the type
 // of wanted elements.
-func (consumer *EventConsumer) monitorEventGetNotify() (*Message, *Identifier, *UpdateHeaderList, *ObjectDetails, ElementList, error) {
+func (consumer *EventConsumer) monitorEventGetNotify() (*Message, *Identifier, *UpdateHeaderList, *ObjectDetailsList, ElementList, error) {
 	msg, err := consumer.subs.GetNotify()
 	if err != nil {
-		// TODO (AF): Get errors in reply then log a message.
+		handleError("EventConsumer.monitorEventGetNotify error", err, msg)
 		return nil, nil, nil, nil, nil, err
 	}
 
-	decoder := consumer.factory.NewDecoder(msg.Body)
-	id, err := decoder.DecodeIdentifier()
-	updtHdrlist, err := DecodeUpdateHeaderList(decoder)
-	updtDetailslist, err := DecodeObjectDetails(decoder)
-	updtElementlist, err := decoder.DecodeAbstractElement()
+	param, err := msg.DecodeParameter(NullIdentifier)
+	if err != nil {
+		logger.Errorf("EventConsumer.monitorEventGetNotify error: decoding Identifier, %v", err)
+		return nil, nil, nil, nil, nil, err
+	}
+	id := param.(*Identifier)
+	param, err = msg.DecodeParameter(NullUpdateHeaderList)
+	if err != nil {
+		logger.Errorf("EventConsumer.monitorEventGetNotify error: decoding UpdateHeaderList, %v", err)
+		return nil, nil, nil, nil, nil, err
+	}
+	updtHdrlist := param.(*UpdateHeaderList)
+	param, err = msg.DecodeParameter(NullObjectDetailsList)
+	if err != nil {
+		logger.Errorf("EventConsumer.monitorEventGetNotify error: decoding ObjectDetailsList, %v", err)
+		return nil, nil, nil, nil, nil, err
+	}
+	updtDetailslist := param.(*ObjectDetailsList)
+	param, err = msg.DecodeLastParameter(nil, true)
+	if err != nil {
+		logger.Errorf("EventConsumer.monitorEventGetNotify error: decoding ElementList, %v", err)
+		return nil, nil, nil, nil, nil, err
+	}
+	updtElementlist := param.(ElementList)
 
 	logger.Debugf("EventConsumer.monitorEventGetNotify: %s, %v, %v, %v", id, updtHdrlist, updtDetailslist, updtElementlist)
 
-	return msg, id, updtHdrlist, updtDetailslist, updtElementlist.(ElementList), nil
+	return msg, id, updtHdrlist, updtDetailslist, updtElementlist, nil
 }
 
 func (consumer *EventConsumer) monitorEventDeregister(subids IdentifierList) error {
-	encoder := consumer.factory.NewEncoder(make([]byte, 0, 8192))
-	subids.Encode(encoder)
-	msg, err := consumer.subs.Deregister(encoder.Body())
+	// create a body for the operation call
+	body := consumer.subs.NewBody()
+
+	err := body.EncodeLastParameter(&subids, false)
 	if err != nil {
-		// TODO (AF): Get error in reply then log a message.
-		logger.Errorf("EventConsumer.monitorEventDeregister error: %v, %v", msg, err)
+		logger.Errorf("EventConsumer.monitorEventDeregister error: %v", err)
 		return err
 	}
+
+	msg, err := consumer.subs.Deregister(body)
+	if err != nil {
+		handleError("EventConsumer.monitorEventDeregister error", err, msg)
+		return err
+	}
+
 	return nil
 }
 
 func (consumer *EventConsumer) Close() error {
-	return consumer.cctx.Close()
+	var err error = nil
+	if consumer.subs != nil {
+		err = consumer.subs.Close()
+	}
+	return err
 }
