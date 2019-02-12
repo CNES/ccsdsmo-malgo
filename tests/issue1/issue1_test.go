@@ -58,7 +58,8 @@ func newTestSendProvider(ctx *Context) (*TestSendProvider, error) {
 	// Register handler
 	sendHandler := func(msg *Message, t Transaction) error {
 		if msg != nil {
-			fmt.Println("\t$$$$$ sendHandler receive: ", string(msg.Body))
+			par, err := msg.DecodeLastParameter(NullString, false)
+			fmt.Println("\t$$$$$ sendHandler receive: ", *par.(*String), err)
 			provider.nbmsg += 1
 		} else {
 			fmt.Println("receive: nil")
@@ -96,7 +97,8 @@ func newTestSubmitProvider(ctx *Context) (*TestSubmitProvider, error) {
 	submitHandler := func(msg *Message, t Transaction) error {
 		if msg != nil {
 			transaction := t.(SubmitTransaction)
-			fmt.Println("\t$$$$$ submitHandler receive: ", string(msg.Body))
+			par, err := msg.DecodeLastParameter(NullString, false)
+			fmt.Println("\t$$$$$ submitHandler receive: ", *par.(*String), err)
 			provider.nbmsg += 1
 			transaction.Ack(nil, false)
 		} else {
@@ -153,10 +155,14 @@ func Test1(t *testing.T) {
 	}
 
 	op1 := consumer.NewSendOperation(sendProvider.cctx.Uri, 200, 1, 1, 1)
-	op1.Send([]byte("message1"))
+	body := op1.NewBody()
+	body.EncodeLastParameter(NewString("message1"), false)
+	op1.Send(body)
 
 	op2 := consumer.NewSendOperation(sendProvider.cctx.Uri, 200, 1, 1, 1)
-	op2.Send([]byte("message2"))
+	body = op2.NewBody()
+	body.EncodeLastParameter(NewString("message2"), false)
+	op2.Send(body)
 
 	// Waits for message reception
 	time.Sleep(250 * time.Millisecond)
@@ -167,7 +173,9 @@ func Test1(t *testing.T) {
 
 	// Test TCP transport Submit Interaction using the high level API
 	op3 := consumer.NewSubmitOperation(submitProvider.cctx.Uri, 200, 1, 1, 1)
-	_, err = op3.Submit([]byte("message1"))
+	body = op3.NewBody()
+	body.EncodeLastParameter(NewString("message1"), false)
+	_, err = op3.Submit(body)
 	if err != nil {
 		t.Fatal("Error during submit, ", err)
 		return
@@ -175,7 +183,9 @@ func Test1(t *testing.T) {
 	fmt.Println("\t&&&&& Submit1: OK")
 
 	op4 := consumer.NewSubmitOperation(submitProvider.cctx.Uri, 200, 1, 1, 1)
-	_, err = op4.Submit([]byte("message2"))
+	body = op4.NewBody()
+	body.EncodeLastParameter(NewString("message2"), false)
+	_, err = op4.Submit(body)
 	if err != nil {
 		t.Fatal("Error during submit, ", err)
 		return
