@@ -132,10 +132,6 @@ type Decoder interface {
 	// @return The decoded String or null.
 	DecodeNullableString() (*String, error)
 
-	// Decodes a String with a fixed size.
-	// @return The decoded String or null.
-	DecodeFixedString(length int) (*String, error)
-
 	// Decodes a Blob.
 	// @return The decoded Blob.
 	DecodeBlob() (*Blob, error)
@@ -226,259 +222,264 @@ type Decoder interface {
 	DecodeElementList() ([]Element, error)
 }
 
+type SpecificDecoder func(element Element, encoder Encoder) error
+
 type GenDecoder struct {
-	Decoder
+	Self Decoder
+
+	// Registry for specific decoding functions
+	Registry map[int64]SpecificDecoder
 }
 
 // Decodes a Boolean that may be null.
 // @return The decoded Boolean or null.
 func (decoder *GenDecoder) DecodeNullableBoolean() (*Boolean, error) {
-	null, err := decoder.IsNull()
+	null, err := decoder.Self.IsNull()
 	if err != nil {
 		return nil, err
 	}
 	if null {
 		return nil, nil
 	} else {
-		return decoder.DecodeBoolean()
+		return decoder.Self.DecodeBoolean()
 	}
 }
 
 // Decodes a Float that may be null.
 // @return The decoded Float or null.
 func (decoder *GenDecoder) DecodeNullableFloat() (*Float, error) {
-	null, err := decoder.IsNull()
+	null, err := decoder.Self.IsNull()
 	if err != nil {
 		return nil, err
 	}
 	if null {
 		return nil, nil
 	} else {
-		return decoder.DecodeFloat()
+		return decoder.Self.DecodeFloat()
 	}
 }
 
 // Decodes a Double that may be null.
 // @return The decoded Double or null.
 func (decoder *GenDecoder) DecodeNullableDouble() (*Double, error) {
-	null, err := decoder.IsNull()
+	null, err := decoder.Self.IsNull()
 	if err != nil {
 		return nil, err
 	}
 	if null {
 		return nil, nil
 	} else {
-		return decoder.DecodeDouble()
+		return decoder.Self.DecodeDouble()
 	}
 }
 
 // Decodes an Octet that may be null.
 // @return The decoded Octet or null.
 func (decoder *GenDecoder) DecodeNullableOctet() (*Octet, error) {
-	null, err := decoder.IsNull()
+	null, err := decoder.Self.IsNull()
 	if err != nil {
 		return nil, err
 	}
 	if null {
 		return nil, nil
 	} else {
-		return decoder.DecodeOctet()
+		return decoder.Self.DecodeOctet()
 	}
 }
 
 // Decodes a UOctet that may be null.
 // @return The decoded UOctet or null.
 func (decoder *GenDecoder) DecodeNullableUOctet() (*UOctet, error) {
-	null, err := decoder.IsNull()
+	null, err := decoder.Self.IsNull()
 	if err != nil {
 		return nil, err
 	}
 	if null {
 		return nil, nil
 	} else {
-		return decoder.DecodeUOctet()
+		return decoder.Self.DecodeUOctet()
 	}
 }
 
 // Decodes a Short that may be null.
 // @return The decoded Short or null.
 func (decoder *GenDecoder) DecodeNullableShort() (*Short, error) {
-	null, err := decoder.IsNull()
+	null, err := decoder.Self.IsNull()
 	if err != nil {
 		return nil, err
 	}
 	if null {
 		return nil, nil
 	} else {
-		return decoder.DecodeShort()
+		return decoder.Self.DecodeShort()
 	}
 }
 
 // Decodes a UShort that may be null.
 // @return The decoded UShort or null.
 func (decoder *GenDecoder) DecodeNullableUShort() (*UShort, error) {
-	null, err := decoder.IsNull()
+	null, err := decoder.Self.IsNull()
 	if err != nil {
 		return nil, err
 	}
 	if null {
 		return nil, nil
 	} else {
-		return decoder.DecodeUShort()
+		return decoder.Self.DecodeUShort()
 	}
 }
 
 // Decodes an Integer that may be null.
 // @return The decoded Integer or null.
 func (decoder *GenDecoder) DecodeNullableInteger() (*Integer, error) {
-	null, err := decoder.IsNull()
+	null, err := decoder.Self.IsNull()
 	if err != nil {
 		return nil, err
 	}
 	if null {
 		return nil, nil
 	} else {
-		return decoder.DecodeInteger()
+		return decoder.Self.DecodeInteger()
 	}
 }
 
 // Decodes a UInteger that may be null.
 // @return The decoded UInteger or null.
 func (decoder *GenDecoder) DecodeNullableUInteger() (*UInteger, error) {
-	null, err := decoder.IsNull()
+	null, err := decoder.Self.IsNull()
 	if err != nil {
 		return nil, err
 	}
 	if null {
 		return nil, nil
 	} else {
-		return decoder.DecodeUInteger()
+		return decoder.Self.DecodeUInteger()
 	}
 }
 
 // Decodes a Long that may be null.
 // @return The decoded Long or null.
 func (decoder *GenDecoder) DecodeNullableLong() (*Long, error) {
-	null, err := decoder.IsNull()
+	null, err := decoder.Self.IsNull()
 	if err != nil {
 		return nil, err
 	}
 	if null {
 		return nil, nil
 	} else {
-		return decoder.DecodeLong()
+		return decoder.Self.DecodeLong()
 	}
 }
 
 // Decodes a ULong that may be null.
 // @return The decoded ULong or null.
 func (decoder *GenDecoder) DecodeNullableULong() (*ULong, error) {
-	null, err := decoder.IsNull()
+	null, err := decoder.Self.IsNull()
 	if err != nil {
 		return nil, err
 	}
 	if null {
 		return nil, nil
 	} else {
-		return decoder.DecodeULong()
+		return decoder.Self.DecodeULong()
 	}
 }
 
 // Decodes a String that may be null.
 // @return The decoded String or null.
 func (decoder *GenDecoder) DecodeNullableString() (*String, error) {
-	null, err := decoder.IsNull()
+	null, err := decoder.Self.IsNull()
 	if err != nil {
 		return nil, err
 	}
 	if null {
 		return nil, nil
 	} else {
-		return decoder.DecodeString()
+		return decoder.Self.DecodeString()
 	}
 }
 
 // Decodes a Blob that may be null.
 // @return The decoded Blob or null.
 func (decoder *GenDecoder) DecodeNullableBlob() (*Blob, error) {
-	null, err := decoder.IsNull()
+	null, err := decoder.Self.IsNull()
 	if err != nil {
 		return nil, err
 	}
 	if null {
 		return nil, nil
 	} else {
-		return decoder.DecodeBlob()
+		return decoder.Self.DecodeBlob()
 	}
 }
 
 // Decodes an Identifier that may be null.
 // @return The decoded Identifier or null.
 func (decoder *GenDecoder) DecodeNullableIdentifier() (*Identifier, error) {
-	null, err := decoder.IsNull()
+	null, err := decoder.Self.IsNull()
 	if err != nil {
 		return nil, err
 	}
 	if null {
 		return nil, nil
 	} else {
-		return decoder.DecodeIdentifier()
+		return decoder.Self.DecodeIdentifier()
 	}
 }
 
 // Decodes a Duration that may be null.
 // @return The decoded Duration or null.
 func (decoder *GenDecoder) DecodeNullableDuration() (*Duration, error) {
-	null, err := decoder.IsNull()
+	null, err := decoder.Self.IsNull()
 	if err != nil {
 		return nil, err
 	}
 	if null {
 		return nil, nil
 	} else {
-		return decoder.DecodeDuration()
+		return decoder.Self.DecodeDuration()
 	}
 }
 
 // Decodes a Time that may be null.
 // @return The decoded Time or null.
 func (decoder *GenDecoder) DecodeNullableTime() (*Time, error) {
-	null, err := decoder.IsNull()
+	null, err := decoder.Self.IsNull()
 	if err != nil {
 		return nil, err
 	}
 	if null {
 		return nil, nil
 	} else {
-		return decoder.DecodeTime()
+		return decoder.Self.DecodeTime()
 	}
 }
 
 // Decodes a FineTime that may be null.
 // @return The decoded FineTime or null.
 func (decoder *GenDecoder) DecodeNullableFineTime() (*FineTime, error) {
-	null, err := decoder.IsNull()
+	null, err := decoder.Self.IsNull()
 	if err != nil {
 		return nil, err
 	}
 	if null {
 		return nil, nil
 	} else {
-		return decoder.DecodeFineTime()
+		return decoder.Self.DecodeFineTime()
 	}
 }
 
 // Decodes a URI that may be null.
 // @return The decoded URI or null.
 func (decoder *GenDecoder) DecodeNullableURI() (*URI, error) {
-	null, err := decoder.IsNull()
+	null, err := decoder.Self.IsNull()
 	if err != nil {
 		return nil, err
 	}
 	if null {
 		return nil, nil
 	} else {
-		return decoder.DecodeURI()
+		return decoder.Self.DecodeURI()
 	}
 }
 
@@ -486,93 +487,93 @@ func (decoder *GenDecoder) DecodeNullableURI() (*URI, error) {
 // @param element An instance of the element to decode.
 // @return The decoded Element.
 func (decoder *GenDecoder) DecodeElement(element Element) (Element, error) {
-	return element.Decode(decoder)
+	return element.Decode(decoder.Self)
 }
 
 // Decodes an Element that may be null.
 // @param element An instance of the element to decode.
 // @return The decoded Element or null.
 func (decoder *GenDecoder) DecodeNullableElement(element Element) (Element, error) {
-	null, err := decoder.IsNull()
+	null, err := decoder.Self.IsNull()
 	if err != nil {
 		return nil, err
 	}
 	if null {
 		return element.Null(), nil
 	} else {
-		return element.Decode(decoder)
+		return element.Decode(decoder.Self)
 	}
 }
 
 // Decodes an abstract Element using polymorphism.
 // @return The decoded Element.
 func (decoder *GenDecoder) DecodeAbstractElement() (Element, error) {
-	shortForm, err := decoder.DecodeLong()
+	shortForm, err := decoder.Self.DecodeLong()
 	if err != nil {
 		return nil, err
 	}
 	element, err := LookupMALElement(*shortForm)
-	return element.Decode(decoder)
+	return element.Decode(decoder.Self)
 }
 
 // Decodes an abstract Element that may be null using polymorphism.
 // @return The decoded Element or null.
 func (decoder *GenDecoder) DecodeNullableAbstractElement() (Element, error) {
-	null, err := decoder.IsNull()
+	null, err := decoder.Self.IsNull()
 	if err != nil {
 		return nil, err
 	}
 	if null {
 		return NullElement, nil
 	} else {
-		return decoder.DecodeAbstractElement()
+		return decoder.Self.DecodeAbstractElement()
 	}
 }
 
 // Decodes an Attribute.
 // @return The decoded Attribute.
 func (decoder *GenDecoder) DecodeAttribute() (Attribute, error) {
-	typeval, err := decoder.DecodeAttributeType()
+	typeval, err := decoder.Self.DecodeAttributeType()
 	if err != nil {
 		return nil, err
 	}
 	switch typeval {
 	case MAL_BLOB_TYPE_SHORT_FORM:
-		return decoder.DecodeBlob()
+		return decoder.Self.DecodeBlob()
 	case MAL_BOOLEAN_TYPE_SHORT_FORM:
-		return decoder.DecodeBoolean()
+		return decoder.Self.DecodeBoolean()
 	case MAL_DURATION_TYPE_SHORT_FORM:
-		return decoder.DecodeDuration()
+		return decoder.Self.DecodeDuration()
 	case MAL_FLOAT_TYPE_SHORT_FORM:
-		return decoder.DecodeFloat()
+		return decoder.Self.DecodeFloat()
 	case MAL_DOUBLE_TYPE_SHORT_FORM:
-		return decoder.DecodeDouble()
+		return decoder.Self.DecodeDouble()
 	case MAL_IDENTIFIER_TYPE_SHORT_FORM:
-		return decoder.DecodeIdentifier()
+		return decoder.Self.DecodeIdentifier()
 	case MAL_OCTET_TYPE_SHORT_FORM:
-		return decoder.DecodeOctet()
+		return decoder.Self.DecodeOctet()
 	case MAL_UOCTET_TYPE_SHORT_FORM:
-		return decoder.DecodeUOctet()
+		return decoder.Self.DecodeUOctet()
 	case MAL_SHORT_TYPE_SHORT_FORM:
-		return decoder.DecodeShort()
+		return decoder.Self.DecodeShort()
 	case MAL_USHORT_TYPE_SHORT_FORM:
-		return decoder.DecodeUShort()
+		return decoder.Self.DecodeUShort()
 	case MAL_INTEGER_TYPE_SHORT_FORM:
-		return decoder.DecodeInteger()
+		return decoder.Self.DecodeInteger()
 	case MAL_UINTEGER_TYPE_SHORT_FORM:
-		return decoder.DecodeUInteger()
+		return decoder.Self.DecodeUInteger()
 	case MAL_LONG_TYPE_SHORT_FORM:
-		return decoder.DecodeLong()
+		return decoder.Self.DecodeLong()
 	case MAL_ULONG_TYPE_SHORT_FORM:
-		return decoder.DecodeULong()
+		return decoder.Self.DecodeULong()
 	case MAL_STRING_TYPE_SHORT_FORM:
-		return decoder.DecodeString()
+		return decoder.Self.DecodeString()
 	case MAL_TIME_TYPE_SHORT_FORM:
-		return decoder.DecodeTime()
+		return decoder.Self.DecodeTime()
 	case MAL_FINETIME_TYPE_SHORT_FORM:
-		return decoder.DecodeFineTime()
+		return decoder.Self.DecodeFineTime()
 	case MAL_URI_TYPE_SHORT_FORM:
-		return decoder.DecodeURI()
+		return decoder.Self.DecodeURI()
 	default:
 		return nil, errors.New("Unknow attribute: " + string(typeval))
 	}
@@ -581,14 +582,14 @@ func (decoder *GenDecoder) DecodeAttribute() (Attribute, error) {
 // Decodes an Attribute that may be null.
 // @return The decoded Attribute or null.
 func (decoder *GenDecoder) DecodeNullableAttribute() (Attribute, error) {
-	null, err := decoder.IsNull()
+	null, err := decoder.Self.IsNull()
 	if err != nil {
 		return nil, err
 	}
 	if null {
 		return nil, nil
 	} else {
-		return decoder.DecodeAttribute()
+		return decoder.Self.DecodeAttribute()
 	}
 }
 
@@ -598,7 +599,7 @@ const mask int64 = -16777216 // 0xFFFFFFFFFF000000
 // Only use to decode List< <<Update Value Type>> > in Broker.
 // @return The decoded list ofElement
 func (decoder *GenDecoder) DecodeElementList() ([]Element, error) {
-	shortForm, err := decoder.DecodeLong()
+	shortForm, err := decoder.Self.DecodeLong()
 	if err != nil {
 		return nil, err
 	}
@@ -608,13 +609,13 @@ func (decoder *GenDecoder) DecodeElementList() ([]Element, error) {
 	y := (int64(*shortForm) & mask) | int64(x)
 	shortForm = NewLong(y)
 	element, err := LookupMALElement(*shortForm)
-	size, err := decoder.DecodeUInteger()
+	size, err := decoder.Self.DecodeUInteger()
 	if err != nil {
 		return nil, err
 	}
 	list := make([]Element, int(*size))
 	for i := 0; i < len(list); i++ {
-		list[i], err = decoder.DecodeNullableElement(element)
+		list[i], err = decoder.Self.DecodeNullableElement(element)
 		if err != nil {
 			return nil, err
 		}
@@ -625,13 +626,13 @@ func (decoder *GenDecoder) DecodeElementList() ([]Element, error) {
 // Note (AF): see corresponding comment in encoder about generic view for lists.
 
 func (decoder *GenDecoder) DecodeList(element Element) ([]Element, error) {
-	size, err := decoder.DecodeUInteger()
+	size, err := decoder.Self.DecodeUInteger()
 	if err != nil {
 		return nil, err
 	}
 	list := make([]Element, int(*size))
 	for i := 0; i < len(list); i++ {
-		list[i], err = decoder.DecodeNullableElement(element)
+		list[i], err = decoder.Self.DecodeNullableElement(element)
 		if err != nil {
 			return nil, err
 		}
@@ -640,7 +641,7 @@ func (decoder *GenDecoder) DecodeList(element Element) ([]Element, error) {
 }
 
 func (decoder *GenDecoder) DecodeNullableList(element Element) ([]Element, error) {
-	null, err := decoder.IsNull()
+	null, err := decoder.Self.IsNull()
 	if err != nil {
 		return nil, err
 	}
@@ -649,4 +650,49 @@ func (decoder *GenDecoder) DecodeNullableList(element Element) ([]Element, error
 	} else {
 		return decoder.DecodeList(element)
 	}
+}
+
+// Functions allowing to handle specific decoders
+
+func (decoder *GenDecoder) RegisterSpecific(shortForm Long, specific SpecificDecoder) error {
+	rlogger.Debugf("DecoderRegistry.RegisterSpecific: %x", (int64)(shortForm))
+	if decoder.Registry == nil {
+		decoder.Registry = make(map[int64]SpecificDecoder)
+	}
+	_, ok := decoder.Registry[(int64)(shortForm)]
+	if ok {
+		rlogger.Errorf("DecoderRegistry.RegisterSpecific: %x already registered", (int64)(shortForm))
+		return errors.New("DecoderRegistry.RegisterSpecific: already registered")
+	}
+	decoder.Registry[(int64)(shortForm)] = specific
+	return nil
+}
+
+func (decoder *GenDecoder) LookupSpecific(shortForm Long) (SpecificDecoder, error) {
+	rlogger.Debugf("DecoderRegistry.LookupSpecific: %x", (int64)(shortForm))
+	if decoder.Registry == nil {
+		rlogger.Errorf("DecoderRegistry.LookupSpecific: unknown %x element", (int64)(shortForm))
+		return nil, errors.New("DecoderRegistry.LookupSpecific: unknown")
+	}
+	specific, ok := decoder.Registry[(int64)(shortForm)]
+	if !ok {
+		rlogger.Errorf("DecoderRegistry.LookupSpecific: unknown %x element", (int64)(shortForm))
+		return nil, errors.New("DecoderRegistry.LookupSpecific: unknown")
+	}
+	return specific, nil
+}
+
+func (decoder *GenDecoder) DeregisterSpecific(shortForm Long) error {
+	rlogger.Debugf("DecoderRegistry.DeregisterSpecific: %x", (int64)(shortForm))
+	if decoder.Registry == nil {
+		rlogger.Errorf("DecoderRegistry.DeregisterSpecific: %x not registered", (int64)(shortForm))
+		return errors.New("DecoderRegistry.DeregisterSpecific: not registered")
+	}
+	_, ok := decoder.Registry[(int64)(shortForm)]
+	if !ok {
+		rlogger.Errorf("DecoderRegistry.DeregisterSpecific: %x not registered", (int64)(shortForm))
+		return errors.New("DecoderRegistry.DeregisterSpecific: not registered")
+	}
+	delete(decoder.Registry, (int64)(shortForm))
+	return nil
 }

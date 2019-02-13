@@ -23,7 +23,9 @@
  */
 package mal
 
-import ()
+import (
+	"errors"
+)
 
 // ================================================================================
 // Encoding interface, implemented by specific encoding technology.
@@ -134,10 +136,6 @@ type Encoder interface {
 	// @param att The String to encode.
 	EncodeNullableString(att *String) error
 
-	// Encodes a String with a fixed size
-	// @param att The String to encode.
-	EncodeFixedString(att *String, length int) error
-
 	// Encodes a non-null Blob.
 	// @param att The Blob to encode.
 	EncodeBlob(att *Blob) error
@@ -226,8 +224,13 @@ type Encoder interface {
 	EncodeElementList(list []Element) error
 }
 
+type SpecificEncoder func(element Element, encoder Encoder) error
+
 type GenEncoder struct {
-	Encoder
+	Self Encoder
+
+	// Registry for specific encoding functions
+	Registry map[int64]SpecificEncoder
 }
 
 // TODO (AF): Move all nullable from binary decoder..
@@ -236,13 +239,13 @@ type GenEncoder struct {
 // @param att The Boolean to encode.
 func (encoder *GenEncoder) EncodeNullableBoolean(att *Boolean) error {
 	if att == nil {
-		return encoder.EncodeNull()
+		return encoder.Self.EncodeNull()
 	} else {
-		err := encoder.EncodeNotNull()
+		err := encoder.Self.EncodeNotNull()
 		if err != nil {
 			return err
 		}
-		return encoder.EncodeBoolean(att)
+		return encoder.Self.EncodeBoolean(att)
 	}
 }
 
@@ -250,13 +253,13 @@ func (encoder *GenEncoder) EncodeNullableBoolean(att *Boolean) error {
 // @param att The Float to encode.
 func (encoder *GenEncoder) EncodeNullableFloat(att *Float) error {
 	if att == nil {
-		return encoder.EncodeNull()
+		return encoder.Self.EncodeNull()
 	} else {
-		err := encoder.EncodeNotNull()
+		err := encoder.Self.EncodeNotNull()
 		if err != nil {
 			return err
 		}
-		return encoder.EncodeFloat(att)
+		return encoder.Self.EncodeFloat(att)
 	}
 }
 
@@ -264,13 +267,13 @@ func (encoder *GenEncoder) EncodeNullableFloat(att *Float) error {
 // @param att The Double to encode.
 func (encoder *GenEncoder) EncodeNullableDouble(att *Double) error {
 	if att == nil {
-		return encoder.EncodeNull()
+		return encoder.Self.EncodeNull()
 	} else {
-		err := encoder.EncodeNotNull()
+		err := encoder.Self.EncodeNotNull()
 		if err != nil {
 			return err
 		}
-		return encoder.EncodeDouble(att)
+		return encoder.Self.EncodeDouble(att)
 	}
 }
 
@@ -278,13 +281,13 @@ func (encoder *GenEncoder) EncodeNullableDouble(att *Double) error {
 // @param att The Octet to encode.
 func (encoder *GenEncoder) EncodeNullableOctet(att *Octet) error {
 	if att == nil {
-		return encoder.EncodeNull()
+		return encoder.Self.EncodeNull()
 	} else {
-		err := encoder.EncodeNotNull()
+		err := encoder.Self.EncodeNotNull()
 		if err != nil {
 			return err
 		}
-		return encoder.EncodeOctet(att)
+		return encoder.Self.EncodeOctet(att)
 	}
 }
 
@@ -292,13 +295,13 @@ func (encoder *GenEncoder) EncodeNullableOctet(att *Octet) error {
 // @param att The UOctet to encode.
 func (encoder *GenEncoder) EncodeNullableUOctet(att *UOctet) error {
 	if att == nil {
-		return encoder.EncodeNull()
+		return encoder.Self.EncodeNull()
 	} else {
-		err := encoder.EncodeNotNull()
+		err := encoder.Self.EncodeNotNull()
 		if err != nil {
 			return err
 		}
-		return encoder.EncodeUOctet(att)
+		return encoder.Self.EncodeUOctet(att)
 	}
 }
 
@@ -306,13 +309,13 @@ func (encoder *GenEncoder) EncodeNullableUOctet(att *UOctet) error {
 // @param att The Short to encode.
 func (encoder *GenEncoder) EncodeNullableShort(att *Short) error {
 	if att == nil {
-		return encoder.EncodeNull()
+		return encoder.Self.EncodeNull()
 	} else {
-		err := encoder.EncodeNotNull()
+		err := encoder.Self.EncodeNotNull()
 		if err != nil {
 			return err
 		}
-		return encoder.EncodeShort(att)
+		return encoder.Self.EncodeShort(att)
 	}
 }
 
@@ -320,13 +323,13 @@ func (encoder *GenEncoder) EncodeNullableShort(att *Short) error {
 // @param att The UShort to encode.
 func (encoder *GenEncoder) EncodeNullableUShort(att *UShort) error {
 	if att == nil {
-		return encoder.EncodeNull()
+		return encoder.Self.EncodeNull()
 	} else {
-		err := encoder.EncodeNotNull()
+		err := encoder.Self.EncodeNotNull()
 		if err != nil {
 			return err
 		}
-		return encoder.EncodeUShort(att)
+		return encoder.Self.EncodeUShort(att)
 	}
 }
 
@@ -334,13 +337,13 @@ func (encoder *GenEncoder) EncodeNullableUShort(att *UShort) error {
 // @param att The Integer to encode.
 func (encoder *GenEncoder) EncodeNullableInteger(att *Integer) error {
 	if att == nil {
-		return encoder.EncodeNull()
+		return encoder.Self.EncodeNull()
 	} else {
-		err := encoder.EncodeNotNull()
+		err := encoder.Self.EncodeNotNull()
 		if err != nil {
 			return err
 		}
-		return encoder.EncodeInteger(att)
+		return encoder.Self.EncodeInteger(att)
 	}
 }
 
@@ -348,13 +351,13 @@ func (encoder *GenEncoder) EncodeNullableInteger(att *Integer) error {
 // @param att The UInteger to encode.
 func (encoder *GenEncoder) EncodeNullableUInteger(att *UInteger) error {
 	if att == nil {
-		return encoder.EncodeNull()
+		return encoder.Self.EncodeNull()
 	} else {
-		err := encoder.EncodeNotNull()
+		err := encoder.Self.EncodeNotNull()
 		if err != nil {
 			return err
 		}
-		return encoder.EncodeUInteger(att)
+		return encoder.Self.EncodeUInteger(att)
 	}
 }
 
@@ -362,13 +365,13 @@ func (encoder *GenEncoder) EncodeNullableUInteger(att *UInteger) error {
 // @param att The Long to encode.
 func (encoder *GenEncoder) EncodeNullableLong(att *Long) error {
 	if att == nil {
-		return encoder.EncodeNull()
+		return encoder.Self.EncodeNull()
 	} else {
-		err := encoder.EncodeNotNull()
+		err := encoder.Self.EncodeNotNull()
 		if err != nil {
 			return err
 		}
-		return encoder.EncodeLong(att)
+		return encoder.Self.EncodeLong(att)
 	}
 }
 
@@ -376,13 +379,13 @@ func (encoder *GenEncoder) EncodeNullableLong(att *Long) error {
 // @param att The ULong to encode.
 func (encoder *GenEncoder) EncodeNullableULong(att *ULong) error {
 	if att == nil {
-		return encoder.EncodeNull()
+		return encoder.Self.EncodeNull()
 	} else {
-		err := encoder.EncodeNotNull()
+		err := encoder.Self.EncodeNotNull()
 		if err != nil {
 			return err
 		}
-		return encoder.EncodeULong(att)
+		return encoder.Self.EncodeULong(att)
 	}
 }
 
@@ -390,13 +393,13 @@ func (encoder *GenEncoder) EncodeNullableULong(att *ULong) error {
 // @param att The String to encode.
 func (encoder *GenEncoder) EncodeNullableString(str *String) error {
 	if str == nil {
-		return encoder.EncodeNull()
+		return encoder.Self.EncodeNull()
 	} else {
-		err := encoder.EncodeNotNull()
+		err := encoder.Self.EncodeNotNull()
 		if err != nil {
 			return err
 		}
-		return encoder.EncodeString(str)
+		return encoder.Self.EncodeString(str)
 	}
 }
 
@@ -404,13 +407,13 @@ func (encoder *GenEncoder) EncodeNullableString(str *String) error {
 // @param att The Blob to encode.
 func (encoder *GenEncoder) EncodeNullableBlob(blob *Blob) error {
 	if blob == nil {
-		return encoder.EncodeNull()
+		return encoder.Self.EncodeNull()
 	} else {
-		err := encoder.EncodeNotNull()
+		err := encoder.Self.EncodeNotNull()
 		if err != nil {
 			return err
 		}
-		return encoder.EncodeBlob(blob)
+		return encoder.Self.EncodeBlob(blob)
 	}
 }
 
@@ -418,13 +421,13 @@ func (encoder *GenEncoder) EncodeNullableBlob(blob *Blob) error {
 // @param att The Identifier to encode.
 func (encoder *GenEncoder) EncodeNullableIdentifier(att *Identifier) error {
 	if att == nil {
-		return encoder.EncodeNull()
+		return encoder.Self.EncodeNull()
 	} else {
-		err := encoder.EncodeNotNull()
+		err := encoder.Self.EncodeNotNull()
 		if err != nil {
 			return err
 		}
-		return encoder.EncodeIdentifier(att)
+		return encoder.Self.EncodeIdentifier(att)
 	}
 }
 
@@ -432,13 +435,13 @@ func (encoder *GenEncoder) EncodeNullableIdentifier(att *Identifier) error {
 // @param att The Duration to encode.
 func (encoder *GenEncoder) EncodeNullableDuration(att *Duration) error {
 	if att == nil {
-		return encoder.EncodeNull()
+		return encoder.Self.EncodeNull()
 	} else {
-		err := encoder.EncodeNotNull()
+		err := encoder.Self.EncodeNotNull()
 		if err != nil {
 			return err
 		}
-		return encoder.EncodeDuration(att)
+		return encoder.Self.EncodeDuration(att)
 	}
 }
 
@@ -446,13 +449,13 @@ func (encoder *GenEncoder) EncodeNullableDuration(att *Duration) error {
 // @param att The Time to encode.
 func (encoder *GenEncoder) EncodeNullableTime(att *Time) error {
 	if att == nil {
-		return encoder.EncodeNull()
+		return encoder.Self.EncodeNull()
 	} else {
-		err := encoder.EncodeNotNull()
+		err := encoder.Self.EncodeNotNull()
 		if err != nil {
 			return err
 		}
-		return encoder.EncodeTime(att)
+		return encoder.Self.EncodeTime(att)
 	}
 }
 
@@ -460,13 +463,13 @@ func (encoder *GenEncoder) EncodeNullableTime(att *Time) error {
 // @param att The FineTime to encode.
 func (encoder *GenEncoder) EncodeNullableFineTime(att *FineTime) error {
 	if att == nil {
-		return encoder.EncodeNull()
+		return encoder.Self.EncodeNull()
 	} else {
-		err := encoder.EncodeNotNull()
+		err := encoder.Self.EncodeNotNull()
 		if err != nil {
 			return err
 		}
-		return encoder.EncodeFineTime(att)
+		return encoder.Self.EncodeFineTime(att)
 	}
 }
 
@@ -474,33 +477,33 @@ func (encoder *GenEncoder) EncodeNullableFineTime(att *FineTime) error {
 // @param att The URI to encode.
 func (encoder *GenEncoder) EncodeNullableURI(uri *URI) error {
 	if uri == nil {
-		return encoder.EncodeNull()
+		return encoder.Self.EncodeNull()
 	} else {
-		err := encoder.EncodeNotNull()
+		err := encoder.Self.EncodeNotNull()
 		if err != nil {
 			return err
 		}
-		return encoder.EncodeURI(uri)
+		return encoder.Self.EncodeURI(uri)
 	}
 }
 
 // Encodes a non-null Element.
 // @param element The Element to encode.
 func (encoder *GenEncoder) EncodeElement(element Element) error {
-	return element.Encode(encoder)
+	return element.Encode(encoder.Self)
 }
 
 // Encodes an Element that may be null
 // @param element The Element to encode.
 func (encoder *GenEncoder) EncodeNullableElement(element Element) error {
 	if element == element.Null() { // element.IsNull()
-		return encoder.EncodeNull()
+		return encoder.Self.EncodeNull()
 	} else {
-		err := encoder.EncodeNotNull()
+		err := encoder.Self.EncodeNotNull()
 		if err != nil {
 			return err
 		}
-		return element.Encode(encoder)
+		return element.Encode(encoder.Self)
 	}
 }
 
@@ -508,48 +511,48 @@ func (encoder *GenEncoder) EncodeNullableElement(element Element) error {
 // @param element The Element to encode.
 func (encoder *GenEncoder) EncodeAbstractElement(element Element) error {
 	shortForm := element.GetShortForm()
-	err := encoder.EncodeLong(&shortForm)
+	err := encoder.Self.EncodeLong(&shortForm)
 	if err != nil {
 		return err
 	}
-	return element.Encode(encoder)
+	return element.Encode(encoder.Self)
 }
 
 // Encodes an abstract Element that may be null (use for polymorphism).
 // @param element The Element to encode.
 func (encoder *GenEncoder) EncodeNullableAbstractElement(element Element) error {
 	if element == element.Null() { // element.IsNull()
-		return encoder.EncodeNull()
+		return encoder.Self.EncodeNull()
 	} else {
-		err := encoder.EncodeNotNull()
+		err := encoder.Self.EncodeNotNull()
 		if err != nil {
 			return err
 		}
-		return encoder.EncodeAbstractElement(element)
+		return encoder.Self.EncodeAbstractElement(element)
 	}
 }
 
 // Encodes a non-null Attribute.
 // @param att The Attribute to encode.
 func (encoder *GenEncoder) EncodeAttribute(att Attribute) error {
-	err := encoder.EncodeAttributeType(att.GetTypeShortForm())
+	err := encoder.Self.EncodeAttributeType(att.GetTypeShortForm())
 	if err != nil {
 		return err
 	}
-	return att.Encode(encoder)
+	return att.Encode(encoder.Self)
 }
 
 // Encodes an Attribute that may be null
 // @param att The Attribute to encode.
 func (encoder *GenEncoder) EncodeNullableAttribute(att Attribute) error {
 	if att == att.Null() { // att.IsNull()
-		return encoder.EncodeNull()
+		return encoder.Self.EncodeNull()
 	} else {
-		err := encoder.EncodeNotNull()
+		err := encoder.Self.EncodeNotNull()
 		if err != nil {
 			return err
 		}
-		return encoder.EncodeAttribute(att)
+		return encoder.Self.EncodeAttribute(att)
 	}
 }
 
@@ -562,16 +565,16 @@ func (encoder *GenEncoder) EncodeElementList(list []Element) error {
 	x := -int32((int64(shortForm) & 0x00FFFFFF) | 0xFF000000)
 	y := (int64(shortForm) & mask) | int64(x)
 	shortForm = Long(y)
-	err := encoder.EncodeLong(&shortForm)
+	err := encoder.Self.EncodeLong(&shortForm)
 	if err != nil {
 		return err
 	}
-	err = encoder.EncodeUInteger(NewUInteger(uint32(len(list))))
+	err = encoder.Self.EncodeUInteger(NewUInteger(uint32(len(list))))
 	if err != nil {
 		return err
 	}
 	for _, e := range list {
-		encoder.EncodeNullableElement(e)
+		encoder.Self.EncodeNullableElement(e)
 	}
 	return nil
 }
@@ -584,24 +587,69 @@ func (encoder *GenEncoder) EncodeElementList(list []Element) error {
 // alternative to developper.
 
 func (encoder *GenEncoder) EncodeList(list []Element) error {
-	err := encoder.EncodeUInteger(NewUInteger(uint32(len(list))))
+	err := encoder.Self.EncodeUInteger(NewUInteger(uint32(len(list))))
 	if err != nil {
 		return err
 	}
 	for _, e := range list {
-		encoder.EncodeNullableElement(e)
+		encoder.Self.EncodeNullableElement(e)
 	}
 	return nil
 }
 
 func (encoder *GenEncoder) EncodeNullableList(list []Element) error {
 	if list == nil {
-		return encoder.EncodeNull()
+		return encoder.Self.EncodeNull()
 	} else {
-		err := encoder.EncodeNotNull()
+		err := encoder.Self.EncodeNotNull()
 		if err != nil {
 			return err
 		}
 		return encoder.EncodeList(list)
 	}
+}
+
+// Functions allowing to handle specific encoders
+
+func (encoder *GenEncoder) RegisterSpecific(shortForm Long, specific SpecificEncoder) error {
+	rlogger.Debugf("EncoderRegistry.RegisterSpecific: %x", (int64)(shortForm))
+	if encoder.Registry == nil {
+		encoder.Registry = make(map[int64]SpecificEncoder)
+	}
+	_, ok := encoder.Registry[(int64)(shortForm)]
+	if ok {
+		rlogger.Errorf("EncoderRegistry.RegisterSpecific: %x already registered", (int64)(shortForm))
+		return errors.New("EncoderRegistry.RegisterSpecific: already registered")
+	}
+	encoder.Registry[(int64)(shortForm)] = specific
+	return nil
+}
+
+func (encoder *GenEncoder) LookupSpecific(shortForm Long) (SpecificEncoder, error) {
+	rlogger.Debugf("EncoderRegistry.LookupSpecific: %x", (int64)(shortForm))
+	if encoder.Registry == nil {
+		rlogger.Errorf("EncoderRegistry.LookupSpecific: unknown %x element", (int64)(shortForm))
+		return nil, errors.New("EncoderRegistry.LookupSpecific: unknown")
+	}
+	specific, ok := encoder.Registry[(int64)(shortForm)]
+	if !ok {
+		rlogger.Errorf("EncoderRegistry.LookupSpecific: unknown %x element", (int64)(shortForm))
+		return nil, errors.New("EncoderRegistry.LookupSpecific: unknown")
+	}
+	return specific, nil
+}
+
+func (encoder *GenEncoder) DeregisterSpecific(shortForm Long) error {
+	rlogger.Debugf("EncoderRegistry.DeregisterSpecific: %x", (int64)(shortForm))
+	if encoder.Registry == nil {
+		rlogger.Errorf("EncoderRegistry.DeregisterSpecific: %x not registered", (int64)(shortForm))
+		return errors.New("EncoderRegistry.DeregisterSpecific: not registered")
+	}
+	_, ok := encoder.Registry[(int64)(shortForm)]
+	if !ok {
+		rlogger.Errorf("EncoderRegistry.DeregisterSpecific: %x not registered", (int64)(shortForm))
+		return errors.New("EncoderRegistry.DeregisterSpecific: not registered")
+	}
+	delete(encoder.Registry, (int64)(shortForm))
+	return nil
 }
