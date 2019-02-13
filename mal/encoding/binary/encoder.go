@@ -52,7 +52,7 @@ func NewBinaryEncoder(buf []byte, varint bool) *BinaryEncoder {
 			Buf:    buf,
 		},
 	}
-	encoder.GenEncoder.Encoder = encoder
+	encoder.GenEncoder.Self = encoder
 	return encoder
 }
 

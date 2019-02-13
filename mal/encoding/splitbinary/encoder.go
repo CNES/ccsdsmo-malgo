@@ -50,7 +50,7 @@ func NewSplitBinaryEncoder(buf []byte, bitfield []byte) *SplitBinaryEncoder {
 		},
 	}
 
-	encoder.GenEncoder.Encoder = encoder
+	encoder.GenEncoder.Self = encoder
 	return encoder
 }
 

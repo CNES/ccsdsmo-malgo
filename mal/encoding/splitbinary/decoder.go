@@ -62,7 +62,7 @@ func NewSplitBinaryDecoder(data []byte) *SplitBinaryDecoder {
 			In:     buffer,
 		},
 	}
-	decoder.GenDecoder.Decoder = decoder
+	decoder.GenDecoder.Self = decoder
 	return decoder
 }
 

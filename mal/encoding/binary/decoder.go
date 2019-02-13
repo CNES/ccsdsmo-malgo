@@ -45,7 +45,7 @@ func NewBinaryDecoder(buf []byte, varint bool) *BinaryDecoder {
 			Buf:    buf,
 		},
 	}
-	decoder.GenDecoder.Decoder = decoder
+	decoder.GenDecoder.Self = decoder
 	return decoder
 }
 
