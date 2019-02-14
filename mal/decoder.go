@@ -220,9 +220,12 @@ type Decoder interface {
 	// Should only use to decode List< <<Update Value Type>> > in Broker.
 	// @return The decoded list ofElement
 	DecodeElementList() ([]Element, error)
+
+	// Gets a specific decoder for the specified type
+	LookupSpecific(shortForm Long) SpecificDecoder
 }
 
-type SpecificDecoder func(element Element, encoder Encoder) error
+type SpecificDecoder func(decoder Decoder) (Element, error)
 
 type GenDecoder struct {
 	Self Decoder
@@ -654,45 +657,45 @@ func (decoder *GenDecoder) DecodeNullableList(element Element) ([]Element, error
 
 // Functions allowing to handle specific decoders
 
-func (decoder *GenDecoder) RegisterSpecific(shortForm Long, specific SpecificDecoder) error {
+func NewDecoderRegistry() map[int64]SpecificDecoder {
+	return make(map[int64]SpecificDecoder)
+}
+
+func RegisterSpecificDecoder(registry map[int64]SpecificDecoder, shortForm Long, specific SpecificDecoder) error {
 	rlogger.Debugf("DecoderRegistry.RegisterSpecific: %x", (int64)(shortForm))
-	if decoder.Registry == nil {
-		decoder.Registry = make(map[int64]SpecificDecoder)
-	}
-	_, ok := decoder.Registry[(int64)(shortForm)]
+	_, ok := registry[(int64)(shortForm)]
 	if ok {
 		rlogger.Errorf("DecoderRegistry.RegisterSpecific: %x already registered", (int64)(shortForm))
 		return errors.New("DecoderRegistry.RegisterSpecific: already registered")
 	}
-	decoder.Registry[(int64)(shortForm)] = specific
+	registry[(int64)(shortForm)] = specific
 	return nil
 }
 
-func (decoder *GenDecoder) LookupSpecific(shortForm Long) (SpecificDecoder, error) {
-	rlogger.Debugf("DecoderRegistry.LookupSpecific: %x", (int64)(shortForm))
+func (decoder *GenDecoder) LookupSpecific(shortForm Long) SpecificDecoder {
 	if decoder.Registry == nil {
-		rlogger.Errorf("DecoderRegistry.LookupSpecific: unknown %x element", (int64)(shortForm))
-		return nil, errors.New("DecoderRegistry.LookupSpecific: unknown")
+		return nil
 	}
-	specific, ok := decoder.Registry[(int64)(shortForm)]
-	if !ok {
-		rlogger.Errorf("DecoderRegistry.LookupSpecific: unknown %x element", (int64)(shortForm))
-		return nil, errors.New("DecoderRegistry.LookupSpecific: unknown")
-	}
-	return specific, nil
+	return LookupSpecificDecoder(decoder.Registry, shortForm)
 }
 
-func (decoder *GenDecoder) DeregisterSpecific(shortForm Long) error {
-	rlogger.Debugf("DecoderRegistry.DeregisterSpecific: %x", (int64)(shortForm))
-	if decoder.Registry == nil {
-		rlogger.Errorf("DecoderRegistry.DeregisterSpecific: %x not registered", (int64)(shortForm))
-		return errors.New("DecoderRegistry.DeregisterSpecific: not registered")
+func LookupSpecificDecoder(registry map[int64]SpecificDecoder, shortForm Long) SpecificDecoder {
+	rlogger.Debugf("DecoderRegistry.LookupSpecific: %x", (int64)(shortForm))
+	specific, ok := registry[(int64)(shortForm)]
+	if !ok {
+		rlogger.Debugf("DecoderRegistry.LookupSpecific: unknown %x element", (int64)(shortForm))
+		return nil
 	}
-	_, ok := decoder.Registry[(int64)(shortForm)]
+	return specific
+}
+
+func DeregisterSpecificDecoder(registry map[int64]SpecificDecoder, shortForm Long) error {
+	rlogger.Debugf("DecoderRegistry.DeregisterSpecific: %x", (int64)(shortForm))
+	_, ok := registry[(int64)(shortForm)]
 	if !ok {
 		rlogger.Errorf("DecoderRegistry.DeregisterSpecific: %x not registered", (int64)(shortForm))
 		return errors.New("DecoderRegistry.DeregisterSpecific: not registered")
 	}
-	delete(decoder.Registry, (int64)(shortForm))
+	delete(registry, (int64)(shortForm))
 	return nil
 }

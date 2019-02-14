@@ -222,6 +222,9 @@ type Encoder interface {
 	// Should only use to encode List< <<Update Value Type>> > in Broker.
 	// @param list The list of Element to encode
 	EncodeElementList(list []Element) error
+
+	// Gets a specific encoder for the specified type
+	LookupSpecific(shortForm Long) SpecificEncoder
 }
 
 type SpecificEncoder func(element Element, encoder Encoder) error
@@ -611,45 +614,45 @@ func (encoder *GenEncoder) EncodeNullableList(list []Element) error {
 
 // Functions allowing to handle specific encoders
 
-func (encoder *GenEncoder) RegisterSpecific(shortForm Long, specific SpecificEncoder) error {
+func NewEncoderRegistry() map[int64]SpecificEncoder {
+	return make(map[int64]SpecificEncoder)
+}
+
+func RegisterSpecificEncoder(registry map[int64]SpecificEncoder, shortForm Long, specific SpecificEncoder) error {
 	rlogger.Debugf("EncoderRegistry.RegisterSpecific: %x", (int64)(shortForm))
-	if encoder.Registry == nil {
-		encoder.Registry = make(map[int64]SpecificEncoder)
-	}
-	_, ok := encoder.Registry[(int64)(shortForm)]
+	_, ok := registry[(int64)(shortForm)]
 	if ok {
 		rlogger.Errorf("EncoderRegistry.RegisterSpecific: %x already registered", (int64)(shortForm))
 		return errors.New("EncoderRegistry.RegisterSpecific: already registered")
 	}
-	encoder.Registry[(int64)(shortForm)] = specific
+	registry[(int64)(shortForm)] = specific
 	return nil
 }
 
-func (encoder *GenEncoder) LookupSpecific(shortForm Long) (SpecificEncoder, error) {
-	rlogger.Debugf("EncoderRegistry.LookupSpecific: %x", (int64)(shortForm))
+func (encoder *GenEncoder) LookupSpecific(shortForm Long) SpecificEncoder {
 	if encoder.Registry == nil {
-		rlogger.Errorf("EncoderRegistry.LookupSpecific: unknown %x element", (int64)(shortForm))
-		return nil, errors.New("EncoderRegistry.LookupSpecific: unknown")
+		return nil
 	}
-	specific, ok := encoder.Registry[(int64)(shortForm)]
-	if !ok {
-		rlogger.Errorf("EncoderRegistry.LookupSpecific: unknown %x element", (int64)(shortForm))
-		return nil, errors.New("EncoderRegistry.LookupSpecific: unknown")
-	}
-	return specific, nil
+	return LookupSpecificEncoder(encoder.Registry, shortForm)
 }
 
-func (encoder *GenEncoder) DeregisterSpecific(shortForm Long) error {
-	rlogger.Debugf("EncoderRegistry.DeregisterSpecific: %x", (int64)(shortForm))
-	if encoder.Registry == nil {
-		rlogger.Errorf("EncoderRegistry.DeregisterSpecific: %x not registered", (int64)(shortForm))
-		return errors.New("EncoderRegistry.DeregisterSpecific: not registered")
+func LookupSpecificEncoder(registry map[int64]SpecificEncoder, shortForm Long) SpecificEncoder {
+	rlogger.Debugf("EncoderRegistry.LookupSpecific: %x", (int64)(shortForm))
+	specific, ok := registry[(int64)(shortForm)]
+	if !ok {
+		rlogger.Debugf("EncoderRegistry.LookupSpecific: unknown %x element", (int64)(shortForm))
+		return nil
 	}
-	_, ok := encoder.Registry[(int64)(shortForm)]
+	return specific
+}
+
+func DeregisterSpecificEncoder(registry map[int64]SpecificEncoder, shortForm Long) error {
+	rlogger.Debugf("EncoderRegistry.DeregisterSpecific: %x", (int64)(shortForm))
+	_, ok := registry[(int64)(shortForm)]
 	if !ok {
 		rlogger.Errorf("EncoderRegistry.DeregisterSpecific: %x not registered", (int64)(shortForm))
 		return errors.New("EncoderRegistry.DeregisterSpecific: not registered")
 	}
-	delete(encoder.Registry, (int64)(shortForm))
+	delete(registry, (int64)(shortForm))
 	return nil
 }
