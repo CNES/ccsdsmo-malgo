@@ -1,7 +1,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2018 CNES
+ * Copyright (c) 2018 - 2019 CNES
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -96,6 +96,10 @@ func (*ObjectKey) GetTypeShortForm() Integer {
 // Encodes this element using the supplied encoder.
 // @param encoder The encoder to use, must not be null.
 func (key *ObjectKey) Encode(encoder Encoder) error {
+	specific := encoder.LookupSpecific(COM_OBJECT_KEY_SHORT_FORM)
+	if specific != nil {
+		return specific(key, encoder)
+	}
 	err := encoder.EncodeElement(&key.Domain)
 	if err != nil {
 		return err
@@ -107,13 +111,17 @@ func (key *ObjectKey) Encode(encoder Encoder) error {
 // @param decoder The decoder to use, must not be null.
 // @return the decoded instance, may be not the same instance as this Element.
 func (key *ObjectKey) Decode(decoder Decoder) (Element, error) {
-	return DecodeObjectKey(decoder)
+	specific := decoder.LookupSpecific(COM_OBJECT_KEY_SHORT_FORM)
+	if specific != nil {
+		return specific(decoder)
+	}
+	return decodeObjectKey(decoder)
 }
 
 // Decodes an instance of EntityKey using the supplied decoder.
 // @param decoder The decoder to use, must not be null.
 // @return the decoded EntityKey instance.
-func DecodeObjectKey(decoder Decoder) (*ObjectKey, error) {
+func decodeObjectKey(decoder Decoder) (*ObjectKey, error) {
 	domain, err := decoder.DecodeElement(NullIdentifierList)
 	if err != nil {
 		return nil, err
