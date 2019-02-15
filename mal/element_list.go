@@ -38,6 +38,8 @@ type ElementList interface {
 
 // ################################################################################
 // Defines a MAL ElementList generic implementation
+// Be careful, ElementList is not a MAL type: It does not implement Element and
+// there is no corresponding short-form.
 // ################################################################################
 
 type ElementListImpl []Element
