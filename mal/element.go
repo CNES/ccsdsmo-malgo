@@ -1,7 +1,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2017 - 2018 CNES
+ * Copyright (c) 2017 - 2019 CNES
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -97,4 +97,38 @@ type Element interface {
 
 	IsNull() bool
 	Null() Element
+}
+
+func GetListShortForm(element Element) Long {
+	if element == nil {
+		return -1
+	}
+	shortForm := element.GetShortForm()
+	// this short form should never represent a list type
+	typePart := ULong(shortForm & 0xFFFFFF)
+	if typePart > 0x7FFFFF {
+		return -1
+	}
+	return Long((ULong(shortForm) & 0xFFFFFFFFFF000000) | ULong((-Long(typePart))&0xFFFFFF))
+}
+
+func GetListItemShortForm(element Element) Long {
+	if element == nil {
+		return -1
+	}
+	shortForm := element.GetShortForm()
+	// this short form should never represent a list type
+	typePart := ULong(shortForm & 0xFFFFFF)
+	if typePart < 0x800000 {
+		return -1
+	}
+	return Long((ULong(shortForm) & 0xFFFFFFFFFF000000) | ULong((-Long(typePart))&0xFFFFFF))
+}
+
+func CreateElement(shortform Long) Element {
+	null, err := LookupMALElement(shortform)
+	if err != nil {
+		return nil
+	}
+	return null.CreateElement()
 }
