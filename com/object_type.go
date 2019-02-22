@@ -1,7 +1,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2018 CNES
+ * Copyright (c) 2018 - 2019 CNES
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -25,6 +25,7 @@ package com
 
 import (
 	"errors"
+	"fmt"
 	. "github.com/CNES/ccsdsmo-malgo/mal"
 )
 
@@ -173,7 +174,7 @@ func (t *ObjectType) RegisterMALBodyType(shortForm Long) error {
 	if t == nil {
 		return errors.New("Unexpected null type in RegisterMALBodyType")
 	}
-	if t.Area==0 || t.Version==0 || t.Number==0 {
+	if t.Area == 0 || t.Version == 0 || t.Number == 0 {
 		return errors.New("Unexpected null type field in RegisterMALBodyType")
 	}
 	val := comTypesMap[*t]
@@ -208,4 +209,11 @@ func (t *ObjectType) GetMALBodyListType() Long {
 	numberPart := ULong(shortForm & 0xFFFFFF)
 	numberListPart := ULong((-Long(numberPart)) & 0xFFFFFF)
 	return Long((ULong(shortForm) & 0xFFFFFFFFFF000000) | numberListPart)
+}
+
+// ================================================================================
+// Implements Stringer interface
+
+func (t *ObjectType) String() string {
+	return fmt.Sprintf("ObjectType(%d, %d, %d, %d)", t.Area, t.Service, t.Version, t.Number)
 }

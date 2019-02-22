@@ -1,7 +1,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2018 CNES
+ * Copyright (c) 2018 - 2019 CNES
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,6 +24,7 @@
 package com
 
 import (
+	"fmt"
 	. "github.com/CNES/ccsdsmo-malgo/mal"
 )
 
@@ -137,4 +138,11 @@ func (id *ObjectId) IsNull() bool {
 
 func (*ObjectId) Null() Element {
 	return NullObjectId
+}
+
+// ================================================================================
+// Implements Stringer interface
+
+func (id *ObjectId) String() string {
+	return fmt.Sprintf("ObjectId(%s, %s)", id.Type, id.Key)
 }
