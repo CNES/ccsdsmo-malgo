@@ -23,7 +23,9 @@
  */
 package mal
 
-import ()
+import (
+	"fmt"
+)
 
 // ################################################################################
 // Defines MAL Identifier type
@@ -122,4 +124,11 @@ func (id *Identifier) IsNull() bool {
 
 func (*Identifier) Null() Element {
 	return NullIdentifier
+}
+
+// ================================================================================
+// Implements Stringer interface
+
+func (id *Identifier) String() string {
+	return fmt.Sprintf("Identifier(%s)", string(*id))
 }

@@ -23,6 +23,10 @@
  */
 package mal
 
+import (
+	"strings"
+)
+
 // ################################################################################
 // Defines MAL IdentifierList type
 // ################################################################################
@@ -179,4 +183,18 @@ func (list *IdentifierList) IsNull() bool {
 
 func (*IdentifierList) Null() Element {
 	return NullIdentifierList
+}
+
+// ================================================================================
+// Implements Stringer interface
+
+func (list *IdentifierList) String() string {
+	var strbuf strings.Builder
+	strbuf.WriteString("IdentifierList(")
+	l := ([]*Identifier)(*list)
+	for _, id := range l {
+		strbuf.WriteString(string(*id))
+	}
+	strbuf.WriteString(")")
+	return strbuf.String()
 }
