@@ -99,6 +99,10 @@ func (*ObjectDetails) GetTypeShortForm() Integer {
 // Encodes this element using the supplied encoder.
 // @param encoder The encoder to use, must not be null.
 func (details *ObjectDetails) Encode(encoder Encoder) error {
+	specific := encoder.LookupSpecific(COM_OBJECT_DETAILS_SHORT_FORM)
+	if specific != nil {
+		return specific(details, encoder)
+	}
 	err := encoder.EncodeNullableLong(details.Related)
 	if err != nil {
 		return err
@@ -110,6 +114,10 @@ func (details *ObjectDetails) Encode(encoder Encoder) error {
 // @param decoder The decoder to use, must not be null.
 // @return the decoded instance, may be not the same instance as this Element.
 func (details *ObjectDetails) Decode(decoder Decoder) (Element, error) {
+	specific := decoder.LookupSpecific(COM_OBJECT_DETAILS_SHORT_FORM)
+	if specific != nil {
+		return specific(decoder)
+	}
 	return DecodeObjectDetails(decoder)
 }
 
