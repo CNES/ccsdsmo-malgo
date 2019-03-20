@@ -1,7 +1,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2018 CNES
+ * Copyright (c) 2018 - 2019 CNES
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -258,7 +258,7 @@ func (cctx *ClientContext) OnMessage(msg *Message) {
 		handler, err := cctx.getProviderHandler(msg.InteractionType, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation)
 		if err != nil {
 			// TODO (AF): Log an error? Adds an error listener?
-			logger.Errorf("Cannot route message: %tv", msg)
+			logger.Errorf("Cannot route message: %t", msg)
 			return
 		}
 		var transaction Transaction

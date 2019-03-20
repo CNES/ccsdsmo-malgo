@@ -24,6 +24,7 @@
 package com
 
 import (
+	"fmt"
 	. "github.com/CNES/ccsdsmo-malgo/mal"
 )
 
@@ -145,4 +146,11 @@ func (key *ObjectKey) IsNull() bool {
 
 func (key *ObjectKey) Null() Element {
 	return NullObjectKey
+}
+
+// ================================================================================
+// Implements Stringer interface
+
+func (key *ObjectKey) String() string {
+	return fmt.Sprintf("ObjectKey(%s, %d)", key.Domain, key.InstId)
 }
