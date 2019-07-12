@@ -203,6 +203,7 @@ func (ctx *Context) Receive(msg *Message) error {
 			return err
 		}
 	}
+	logger.Debugf("Context.Receive: forward to client %s", *msg.UriTo)
 	ctx.ch <- msg
 	return nil
 }
