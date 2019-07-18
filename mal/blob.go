@@ -117,7 +117,7 @@ func (blob *Blob) CreateElement() Element {
 	return NullBlob
 }
 
-func (blob Blob) IsNull() bool {
+func (blob *Blob) IsNull() bool {
 	return blob == nil
 }
 
