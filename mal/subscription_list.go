@@ -116,7 +116,10 @@ func (list *SubscriptionList) Encode(encoder Encoder) error {
 		return err
 	}
 	for _, e := range []*Subscription(*list) {
-		encoder.EncodeNullableElement(e)
+		err = encoder.EncodeNullableElement(e)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }

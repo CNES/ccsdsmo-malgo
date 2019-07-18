@@ -116,7 +116,10 @@ func (list *URIList) Encode(encoder Encoder) error {
 		return err
 	}
 	for _, e := range []*URI(*list) {
-		encoder.EncodeNullableURI(e)
+		err = encoder.EncodeNullableURI(e)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }

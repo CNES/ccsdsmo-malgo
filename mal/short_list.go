@@ -116,7 +116,10 @@ func (list *ShortList) Encode(encoder Encoder) error {
 		return err
 	}
 	for _, e := range []*Short(*list) {
-		encoder.EncodeNullableShort(e)
+		err = encoder.EncodeNullableShort(e)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }

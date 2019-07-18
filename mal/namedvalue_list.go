@@ -116,7 +116,10 @@ func (list *NamedValueList) Encode(encoder Encoder) error {
 		return err
 	}
 	for _, e := range []*NamedValue(*list) {
-		encoder.EncodeNullableElement(e)
+		err = encoder.EncodeNullableElement(e)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }

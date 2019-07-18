@@ -116,7 +116,10 @@ func (list *FileList) Encode(encoder Encoder) error {
 		return err
 	}
 	for _, e := range []*File(*list) {
-		encoder.EncodeNullableElement(e)
+		err = encoder.EncodeNullableElement(e)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }

@@ -116,7 +116,10 @@ func (list *UOctetList) Encode(encoder Encoder) error {
 		return err
 	}
 	for _, e := range []*UOctet(*list) {
-		encoder.EncodeNullableUOctet(e)
+		err = encoder.EncodeNullableUOctet(e)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }

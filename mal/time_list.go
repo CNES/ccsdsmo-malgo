@@ -116,7 +116,10 @@ func (list *TimeList) Encode(encoder Encoder) error {
 		return err
 	}
 	for _, e := range []*Time(*list) {
-		encoder.EncodeNullableTime(e)
+		err = encoder.EncodeNullableTime(e)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }

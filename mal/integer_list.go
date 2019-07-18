@@ -116,7 +116,10 @@ func (list *IntegerList) Encode(encoder Encoder) error {
 		return err
 	}
 	for _, e := range []*Integer(*list) {
-		encoder.EncodeNullableInteger(e)
+		err = encoder.EncodeNullableInteger(e)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }

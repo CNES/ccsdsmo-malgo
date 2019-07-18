@@ -116,7 +116,10 @@ func (list *DurationList) Encode(encoder Encoder) error {
 		return err
 	}
 	for _, e := range []*Duration(*list) {
-		encoder.EncodeNullableDuration(e)
+		err = encoder.EncodeNullableDuration(e)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }

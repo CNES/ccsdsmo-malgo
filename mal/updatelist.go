@@ -51,7 +51,10 @@ func (list *UpdateList) Encode(encoder Encoder) error {
 		return err
 	}
 	for _, e := range []*Blob(*list) {
-		encoder.EncodeNullableBlob(e)
+		err = encoder.EncodeNullableBlob(e)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }

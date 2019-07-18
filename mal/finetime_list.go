@@ -116,7 +116,10 @@ func (list *FineTimeList) Encode(encoder Encoder) error {
 		return err
 	}
 	for _, e := range []*FineTime(*list) {
-		encoder.EncodeNullableFineTime(e)
+		err = encoder.EncodeNullableFineTime(e)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }

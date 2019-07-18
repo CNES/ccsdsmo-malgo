@@ -116,7 +116,10 @@ func (list *ULongList) Encode(encoder Encoder) error {
 		return err
 	}
 	for _, e := range []*ULong(*list) {
-		encoder.EncodeNullableULong(e)
+		err = encoder.EncodeNullableULong(e)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }

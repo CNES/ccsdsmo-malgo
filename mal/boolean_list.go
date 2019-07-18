@@ -116,7 +116,10 @@ func (list *BooleanList) Encode(encoder Encoder) error {
 		return err
 	}
 	for _, e := range []*Boolean(*list) {
-		encoder.EncodeNullableBoolean(e)
+		err = encoder.EncodeNullableBoolean(e)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }

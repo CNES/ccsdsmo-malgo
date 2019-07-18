@@ -116,7 +116,10 @@ func (list *IdBooleanPairList) Encode(encoder Encoder) error {
 		return err
 	}
 	for _, e := range []*IdBooleanPair(*list) {
-		encoder.EncodeNullableElement(e)
+		err = encoder.EncodeNullableElement(e)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }

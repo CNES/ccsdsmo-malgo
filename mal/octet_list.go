@@ -116,7 +116,10 @@ func (list *OctetList) Encode(encoder Encoder) error {
 		return err
 	}
 	for _, e := range []*Octet(*list) {
-		encoder.EncodeNullableOctet(e)
+		err = encoder.EncodeNullableOctet(e)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }

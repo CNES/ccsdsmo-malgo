@@ -116,7 +116,10 @@ func (list *FloatList) Encode(encoder Encoder) error {
 		return err
 	}
 	for _, e := range []*Float(*list) {
-		encoder.EncodeNullableFloat(e)
+		err = encoder.EncodeNullableFloat(e)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }

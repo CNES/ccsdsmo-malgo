@@ -116,7 +116,10 @@ func (list *DoubleList) Encode(encoder Encoder) error {
 		return err
 	}
 	for _, e := range []*Double(*list) {
-		encoder.EncodeNullableDouble(e)
+		err = encoder.EncodeNullableDouble(e)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }

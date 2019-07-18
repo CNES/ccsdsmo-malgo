@@ -142,7 +142,10 @@ func (list *IdentifierList) Encode(encoder Encoder) error {
 		return err
 	}
 	for _, e := range []*Identifier(*list) {
-		encoder.EncodeNullableIdentifier(e)
+		err = encoder.EncodeNullableIdentifier(e)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
