@@ -117,7 +117,7 @@ func GetListItemShortForm(element Element) Long {
 		return -1
 	}
 	shortForm := element.GetShortForm()
-	// this short form should never represent a list type
+	// this short form should represent a list type
 	typePart := ULong(shortForm & 0xFFFFFF)
 	if typePart < 0x800000 {
 		return -1
