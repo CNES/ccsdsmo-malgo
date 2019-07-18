@@ -1,0 +1,14 @@
+FROM centos:latest
+
+MAINTAINER andre.freyssinet@scalagent.com
+
+ENV GOPATH /go
+ENV PATH $GOPATH/bin:/usr/local/go/bin:$PATH
+
+RUN yum -y update && yum clean all
+
+# RUN yum -y install git &&
+
+RUN mkdir -p "$GOPATH/src" "$GOPATH/bin" && chmod -R 777 "$GOPATH" && yum -y install git golang && yum clean all
+  
+WORKDIR $GOPATH
