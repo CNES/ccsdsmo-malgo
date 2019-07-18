@@ -628,22 +628,52 @@ func (decoder *GenDecoder) DecodeElementList() ([]Element, error) {
 
 // Note (AF): see corresponding comment in encoder about generic view for lists.
 
-func (decoder *GenDecoder) DecodeList(element Element) ([]Element, error) {
+//func (decoder *GenDecoder) DecodeList(element Element) ([]Element, error) {
+//	size, err := decoder.Self.DecodeUInteger()
+//	if err != nil {
+//		return nil, err
+//	}
+//	list := make([]Element, int(*size))
+//	for i := 0; i < len(list); i++ {
+//		list[i], err = decoder.Self.DecodeNullableElement(element)
+//		if err != nil {
+//			return nil, err
+//		}
+//	}
+//	return list, nil
+//}
+//
+//func (decoder *GenDecoder) DecodeNullableList(element Element) ([]Element, error) {
+//	null, err := decoder.Self.IsNull()
+//	if err != nil {
+//		return nil, err
+//	}
+//	if null {
+//		return nil, nil
+//	} else {
+//		return decoder.DecodeList(element)
+//	}
+//}
+
+// Use interface ElementList instead of []Element
+func (decoder *GenDecoder) DecodeList(element Element) (ElementList, error) {
 	size, err := decoder.Self.DecodeUInteger()
 	if err != nil {
 		return nil, err
 	}
-	list := make([]Element, int(*size))
-	for i := 0; i < len(list); i++ {
-		list[i], err = decoder.Self.DecodeNullableElement(element)
+	seed, err := LookupMALElement(GetListShortForm(element))
+	list := seed.CreateElement().(ElementList)
+	for i := 0; i < int(*size); i++ {
+		item, err := decoder.Self.DecodeNullableElement(element)
 		if err != nil {
 			return nil, err
 		}
+		list.AppendElement(item)
 	}
 	return list, nil
 }
 
-func (decoder *GenDecoder) DecodeNullableList(element Element) ([]Element, error) {
+func (decoder *GenDecoder) DecodeNullableList(element Element) (ElementList, error) {
 	null, err := decoder.Self.IsNull()
 	if err != nil {
 		return nil, err

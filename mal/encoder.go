@@ -223,6 +223,9 @@ type Encoder interface {
 	// @param list The list of Element to encode
 	EncodeElementList(list []Element) error
 
+	EncodeList(list ElementList) error
+	EncodeNullableList(list ElementList) error
+
 	// Gets a specific encoder for the specified type
 	LookupSpecific(shortForm Long) SpecificEncoder
 }
@@ -589,18 +592,43 @@ func (encoder *GenEncoder) EncodeElementList(list []Element) error {
 // Finally it should not replace the actual list view, but rather offers an
 // alternative to developper.
 
-func (encoder *GenEncoder) EncodeList(list []Element) error {
-	err := encoder.Self.EncodeUInteger(NewUInteger(uint32(len(list))))
+//func (encoder *GenEncoder) EncodeList(list []Element) error {
+//	err := encoder.Self.EncodeUInteger(NewUInteger(uint32(len(list))))
+//	if err != nil {
+//		return err
+//	}
+//	for _, e := range list {
+//		encoder.Self.EncodeNullableElement(e)
+//	}
+//	return nil
+//}
+//
+//func (encoder *GenEncoder) EncodeNullableList(list []Element) error {
+//	if list == nil {
+//		return encoder.Self.EncodeNull()
+//	} else {
+//		err := encoder.Self.EncodeNotNull()
+//		if err != nil {
+//			return err
+//		}
+//		return encoder.EncodeList(list)
+//	}
+//}
+
+// Use the ElementList interface instead of the []Element representation
+
+func (encoder *GenEncoder) EncodeList(list ElementList) error {
+	err := encoder.Self.EncodeUInteger(NewUInteger(uint32(list.Size())))
 	if err != nil {
 		return err
 	}
-	for _, e := range list {
-		encoder.Self.EncodeNullableElement(e)
+	for i := 0; i < list.Size(); i++ {
+		encoder.Self.EncodeNullableElement(list.GetElementAt(i))
 	}
 	return nil
 }
 
-func (encoder *GenEncoder) EncodeNullableList(list []Element) error {
+func (encoder *GenEncoder) EncodeNullableList(list ElementList) error {
 	if list == nil {
 		return encoder.Self.EncodeNull()
 	} else {
@@ -608,7 +636,7 @@ func (encoder *GenEncoder) EncodeNullableList(list []Element) error {
 		if err != nil {
 			return err
 		}
-		return encoder.EncodeList(list)
+		return encoder.Self.EncodeList(list)
 	}
 }
 
