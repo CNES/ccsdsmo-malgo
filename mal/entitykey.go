@@ -1,7 +1,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2017 - 2018 CNES
+ * Copyright (c) 2017 - 2019 CNES
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,7 +23,9 @@
  */
 package mal
 
-import ()
+import (
+	"fmt"
+)
 
 // ################################################################################
 // Defines MAL EntityKey type
@@ -189,4 +191,98 @@ func (key *EntityKey) IsNull() bool {
 
 func (*EntityKey) Null() Element {
 	return NullEntityKey
+}
+
+// ================================================================================
+// Implements the matching algorythm used by Publish/Subscribe
+
+func (rkey *EntityKey) Match(key *EntityKey) bool {
+	// a) A sub-key specified in the EntityKey structure shall take one of three types of value:
+	//    an actual value, a NULL value, and the special wildcard value of ‘*’ (for the first subkey
+	//    only) or zero (for the other three sub-keys).
+	// b) If a sub-key contains a specific value it shall only match a sub-key that contains the
+	//    same value. This includes an empty ‘’ value for the first sub-key. The matches are
+	//    case sensitive.
+	// c) If a sub-key contains a NULL value it shall only match a sub-key that contains
+	//    NULL.
+	// d) If a sub-key contains the wildcard value it shall match a sub-key that contains any
+	//    value including NULL.
+
+	logger.Debugf("EntityKey.Match request -> %s", *rkey)
+	logger.Debugf("EntityKey.Match update -> %s", *key)
+
+	if rkey.FirstSubKey == nil {
+		if key.FirstSubKey != nil {
+			logger.Debugf("EntityKey.Match #1.1 !NOK!")
+			return false
+		}
+	} else if (string)(*rkey.FirstSubKey) != "*" {
+		if (rkey.FirstSubKey == nil) || ((string)(*rkey.FirstSubKey) != (string)(*key.FirstSubKey)) {
+			logger.Debugf("EntityKey.Match #1.2 !NOK!")
+			return false
+		}
+	}
+
+	if rkey.SecondSubKey == nil {
+		if key.SecondSubKey != nil {
+			logger.Debugf("EntityKey.Match #2.1 !NOK!")
+			return false
+		}
+	} else if (int64)(*rkey.SecondSubKey) != 0 {
+		if (rkey.SecondSubKey == nil) || ((int64)(*rkey.SecondSubKey) != (int64)(*key.SecondSubKey)) {
+			logger.Debugf("EntityKey.Match #2.2 !NOK!")
+			return false
+		}
+	}
+
+	if rkey.ThirdSubKey == nil {
+		if key.ThirdSubKey != nil {
+			logger.Debugf("EntityKey.Match #3.1 !NOK!")
+			return false
+		}
+	} else if (int64)(*rkey.ThirdSubKey) != 0 {
+		if (rkey.ThirdSubKey == nil) || ((int64)(*rkey.ThirdSubKey) != (int64)(*key.ThirdSubKey)) {
+			logger.Debugf("EntityKey.Match #3.2 !NOK!")
+			return false
+		}
+	}
+
+	if rkey.FourthSubKey == nil {
+		if key.FourthSubKey != nil {
+			logger.Debugf("EntityKey.Match #4.1 !NOK!")
+			return false
+		}
+	} else if (int64)(*rkey.FourthSubKey) != 0 {
+		if (rkey.FourthSubKey == nil) || ((int64)(*rkey.FourthSubKey) != (int64)(*key.FourthSubKey)) {
+			logger.Debugf("EntityKey.Match #4.2 !NOK!")
+			return false
+		}
+	}
+
+	logger.Debugf("EntityKey.Match OK")
+	return true
+
+}
+
+// ================================================================================
+// Implements Stringer interface
+
+func (key *EntityKey) String() string {
+	firstSubKey := "nil"
+	if key.FirstSubKey != nil {
+		firstSubKey = string(*key.FirstSubKey)
+	}
+	secondSubKey := "nil"
+	if key.SecondSubKey != nil {
+		secondSubKey = string(*key.SecondSubKey)
+	}
+	thirdSubKey := "nil"
+	if key.ThirdSubKey != nil {
+		thirdSubKey = string(*key.ThirdSubKey)
+	}
+	fourthSubKey := "nil"
+	if key.FourthSubKey != nil {
+		fourthSubKey = string(*key.FourthSubKey)
+	}
+	return fmt.Sprintf("EntityKey(%s, %d, %d, %d)", firstSubKey, secondSubKey, thirdSubKey, fourthSubKey)
 }

@@ -100,7 +100,7 @@ func (sub *BrokerSub) domainMatches(domain IdentifierList, subdomain *Identifier
 	return true
 }
 
-func (sub *BrokerSub) matches(msg *Message, key EntityKey) bool {
+func (sub *BrokerSub) matches(msg *Message, key *EntityKey) bool {
 	// See MAL specification 3.5.6.5 e,f,g p 3-57
 	logger.Debugf("Broker.matches -> %s", sub.subid)
 
@@ -147,15 +147,14 @@ func (sub *BrokerSub) matches(msg *Message, key EntityKey) bool {
 			//    NULL.
 			// d) If a sub-key contains the wildcard value it shall match a sub-key that contains any
 			//    value including NULL.
-			logger.Debugf("Broker.matches request -> %s %d %d %d", *rkey.FirstSubKey, *rkey.SecondSubKey, *rkey.ThirdSubKey, *rkey.FourthSubKey)
-			logger.Debugf("Broker.matches update -> %s %d %d %d", *key.FirstSubKey, *key.SecondSubKey, *key.ThirdSubKey, *key.FourthSubKey)
-			if (((string)(*rkey.FirstSubKey) == "*") || ((string)(*rkey.FirstSubKey) == (string)(*key.FirstSubKey))) &&
-				(((int64)(*rkey.SecondSubKey) == 0) || ((string)(*rkey.SecondSubKey) == (string)(*key.SecondSubKey))) &&
-				(((int64)(*rkey.ThirdSubKey) == 0) || ((string)(*rkey.ThirdSubKey) == (string)(*key.ThirdSubKey))) &&
-				(((int64)(*rkey.FourthSubKey) == 0) || ((string)(*rkey.FourthSubKey) == (string)(*key.FourthSubKey))) {
+
+			logger.Debugf("Broker.matches request -> %s", *rkey)
+			logger.Debugf("Broker.matches update -> %s", key)
+
+			if rkey.Match(key) {
+				logger.Debugf("Broker.matches #6 OK")
 				return true
 			}
-			logger.Debugf("Broker.matches #6 !!")
 		}
 		// There is no matching key in this entity request
 	}
@@ -438,7 +437,7 @@ func (handler *BrokerHandler) publish(pub *Message, transaction PublisherTransac
 	for _, sub := range handler.subs {
 		var headers UpdateHeaderList = make([]*UpdateHeader, 0, len(*uhlist))
 		for idx, hdr := range *uhlist {
-			if sub.matches(pub, hdr.Key) {
+			if sub.matches(pub, &hdr.Key) {
 				logger.Warnf("Broker.Publish match !!")
 				// Adds the update to the notify message for this subscription
 				headers = append(headers, hdr)
