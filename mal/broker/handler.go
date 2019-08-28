@@ -60,6 +60,8 @@ func subkey(urifrom string, subid string) string {
 func (sub *BrokerSub) domainMatches(domain IdentifierList, subdomain *IdentifierList) bool {
 	// See MAL specification 3.5.6.5 e,f,g p 3-57
 
+	logger.Debugf("Broker.domainMatches [%v + %v] -> %v", sub.domain, subdomain, domain)
+
 	// e) The domain of the update message shall match the domain of the subscription message.
 	// f) If the subscription EntityRequest included a subDomain field, then this shall be appended
 	//    to the domain of the subscription message to make the complete domain for that request.
@@ -81,19 +83,19 @@ func (sub *BrokerSub) domainMatches(domain IdentifierList, subdomain *Identifier
 	}
 	logger.Debugf("Broker.domainMatches %v, %v", required, all)
 	if len(domain) < len(required) {
-		logger.Debugf("Broker.domainMatches #1 !! -> %d < %d", len(domain), len(required))
+		logger.Debugf("Broker.domainMatches #1 !NOK! -> %d < %d", len(domain), len(required))
 		return false
 	}
 
 	for idx, name := range ([]*Identifier)(required) {
 		if *name != *([]*Identifier)(domain)[idx] {
-			logger.Debugf("Broker.domainMatches #2 %d %s != %s !!", idx, *name, *([]*Identifier)(domain)[idx])
+			logger.Debugf("Broker.domainMatches #2 %d %s != %s !NOK!", idx, *name, *([]*Identifier)(domain)[idx])
 			return false
 		}
 	}
 
 	if len(domain) > len(required) {
-		logger.Debugf("Broker.domainMatches #3 !! -> %v", all)
+		logger.Debugf("Broker.domainMatches #3 !NOK! -> %v", all)
 		return all
 	}
 
@@ -102,36 +104,36 @@ func (sub *BrokerSub) domainMatches(domain IdentifierList, subdomain *Identifier
 
 func (sub *BrokerSub) matches(msg *Message, key *EntityKey) bool {
 	// See MAL specification 3.5.6.5 e,f,g p 3-57
-	logger.Debugf("Broker.matches -> %s", sub.subid)
+	logger.Debugf("Broker.matches? -> %s", sub.subid)
 
 	if (msg.Session != sub.session) || (msg.SessionName != sub.sessionName) {
 		// h) The session types and names must match.
-		logger.Debugf("Broker.matches #1 !!")
+		logger.Debugf("Broker.matches #1 !NOK!")
 		return false
 	}
 
 	// Evaluates all requests of the subscription
 	for _, request := range ([]*EntityRequest)(*sub.entities) {
 		if !sub.domainMatches(msg.Domain, request.SubDomain) {
-			logger.Debugf("Broker.matches #2 !!")
+			logger.Debugf("Broker.matches #2 !NOK!")
 			continue
 		}
 		if !request.AllAreas && msg.ServiceArea != sub.serviceArea {
 			// j) The area identifiers must match unless the subscription specified True in the allAreas
 			//    field of the EntityRequest, in which case they shall be ignored.
-			logger.Debugf("Broker.matches #3 !!")
+			logger.Debugf("Broker.matches #3 !NOK!")
 			continue
 		}
 		if !request.AllServices && msg.Service != sub.service {
 			// k) The service identifiers must match unless the subscription specified True in the
 			//    allServices field of the EntityRequest, in which case they shall be ignored.
-			logger.Debugf("Broker.matches #4 !!")
+			logger.Debugf("Broker.matches #4 !NOK!")
 			continue
 		}
 		if !request.AllOperations && msg.Operation != sub.operation {
 			// l) The operation identifiers must match unless the subscription specified True in the
 			// allOperations field of the EntityRequest, in which case they shall be ignored.
-			logger.Debugf("Broker.matches #5 !!")
+			logger.Debugf("Broker.matches #5 !NOK!")
 			continue
 		}
 
@@ -172,6 +174,7 @@ type BrokerPub struct {
 	Service     UShort
 	operation   UShort
 	keys        *EntityKeyList
+	// TODO (AF): Is it needed ? used ?
 	transaction PublisherTransaction
 }
 
