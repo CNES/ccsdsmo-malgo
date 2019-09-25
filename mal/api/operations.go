@@ -827,6 +827,7 @@ func (op *SubscriberOperationX) Register(body Body) (*Message, error) {
 
 // Returns next notify.
 func (op *SubscriberOperationX) GetNotify() (*Message, error) {
+	// TODO (AF): May be we have to allow a timeout to this operation.
 	if (op.status != _REGISTERED) && (op.status != _REREGISTER_INITIATED) && (op.status != _DEREGISTER_INITIATED) {
 		return nil, errors.New("Bad operation status")
 	}
