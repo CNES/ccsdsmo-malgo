@@ -1,7 +1,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2017 - 2019 CNES
+ * Copyright (c) 2017 - 2020 CNES
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -421,6 +421,7 @@ func (tx *SubscriberTransactionX) AckDeregister(body Body, isError bool) error {
 
 type PublisherTransaction interface {
 	BrokerTransaction
+	// TODO (AF): Should add PublishError to return error on Publish.
 }
 
 type PublisherTransactionX struct {

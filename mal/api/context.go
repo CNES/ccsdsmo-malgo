@@ -1,7 +1,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2018 - 2019 CNES
+ * Copyright (c) 2018 - 2020 CNES
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -253,6 +253,10 @@ func (cctx *ClientContext) getProviderHandler(stype InteractionType, area UShort
 
 // TODO (AF): Take in account operations and handlers!!
 func (cctx *ClientContext) OnMessage(msg *Message) {
+	// TODO (AF): /!\ The broker can send a PUBLISH to the publisher to report an error.
+	// We must take this into account in the distribution of messages, currently all PUBLISH
+	// messages are handled by broker.
+
 	if ((msg.InteractionType != MAL_INTERACTIONTYPE_PUBSUB) && (msg.InteractionStage == MAL_IP_STAGE_INIT)) ||
 		((msg.InteractionType == MAL_INTERACTIONTYPE_PUBSUB) && ((msg.InteractionStage & 0x1) != 0)) {
 		handler, err := cctx.getProviderHandler(msg.InteractionType, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation)
