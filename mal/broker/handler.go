@@ -252,7 +252,7 @@ func (handler *BlobUpdateValueHandler) ResetValues() {
 
 // ################################################################################
 
-func NewBroker(cctx *ClientContext, updtHandler UpdateValueHandler, encoding EncodingFactory) (*BrokerHandler, error) {
+func NewBroker(cctx *ClientContext, updtHandler UpdateValueHandler, encoding EncodingFactory, area UShort, areaVersion UOctet, service UShort, operation UShort) (*BrokerHandler, error) {
 	subs := make(map[string]*BrokerSub)
 	pubs := make(map[string]*BrokerPub)
 	broker := &BrokerHandler{cctx, updtHandler, encoding, subs, pubs}
@@ -275,7 +275,7 @@ func NewBroker(cctx *ClientContext, updtHandler UpdateValueHandler, encoding Enc
 		return nil
 	}
 	// Registers the broker handler
-	cctx.RegisterBrokerHandler(200, 1, 1, 1, brokerHandler)
+	cctx.RegisterBrokerHandler(area, areaVersion, service, operation, brokerHandler)
 
 	return broker, nil
 }

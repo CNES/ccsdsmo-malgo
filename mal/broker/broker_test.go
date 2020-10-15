@@ -62,9 +62,9 @@ func TestPubSub(t *testing.T) {
 	updtHandler := NewBlobUpdateValueHandler()
 	var broker *BrokerHandler
 	if varint {
-		broker, err = NewBroker(cctx, updtHandler, binary.VarintBinaryEncodingFactory)
+		broker, err = NewBroker(cctx, updtHandler, binary.VarintBinaryEncodingFactory, 200, 1, 1, 1)
 	} else {
-		broker, err = NewBroker(cctx, updtHandler, binary.FixedBinaryEncodingFactory)
+		broker, err = NewBroker(cctx, updtHandler, binary.FixedBinaryEncodingFactory, 200, 1, 1, 1)
 	}
 	if err != nil {
 		t.Fatal("Error creating broker, ", err)

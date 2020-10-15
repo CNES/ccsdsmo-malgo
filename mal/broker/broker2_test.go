@@ -81,9 +81,9 @@ func newTest2Broker() error {
 
 	updtHandler := NewBlobUpdateValueHandler()
 	if test2_varint {
-		test2_broker, err = NewBroker(cctx, updtHandler, binary.VarintBinaryEncodingFactory)
+		test2_broker, err = NewBroker(cctx, updtHandler, binary.VarintBinaryEncodingFactory, 200, 1, 1, 1)
 	} else {
-		test2_broker, err = NewBroker(cctx, updtHandler, binary.FixedBinaryEncodingFactory)
+		test2_broker, err = NewBroker(cctx, updtHandler, binary.FixedBinaryEncodingFactory, 200, 1, 1, 1)
 	}
 	if err != nil {
 		return err
