@@ -307,7 +307,7 @@ the resources needed to enable a MAL consumer to initiate and manage interaction
   - **NewPublisherOperation** creates an operation entity allowing a publisher to interact with a broker, it returns a **PublisherOperation** entity
   that define 3 methods:
     - the register method allows to send a PUBLISH\_REGISTER message to the broker.
-    - the getNotify method allows to send a PUBLISH message to the broker.
+    - the publish method allows to send a PUBLISH message to the broker.
     - the deregister method allows to send a PUBLISH\_DEREGISTER message to the broker.
 
 Additionally all **Operation** entities provide a **Close** method and a **Reset** method. The **Reset** method allows to reuse the operation after
