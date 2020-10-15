@@ -54,7 +54,8 @@ func NewElementListImpl(size int) *ElementListImpl {
 }
 
 // ================================================================================
-// Defines MAL ElementList type as an ElementList
+// Defines ElementListImpl type as an ElementList
+// TODO Composite interface
 
 func (list *ElementListImpl) Size() int {
 	if list != nil {
@@ -71,6 +72,13 @@ func (list *ElementListImpl) GetElementAt(i int) Element {
 		return nil
 	}
 	return nil
+}
+
+func (list *ElementListImpl) AppendElement(element Element) {
+	if list != nil {
+		// TODO check element type to be the same as the type of the list elements
+		*list = append(*list, element)
+	}
 }
 
 // Encodes this element using the supplied encoder.
