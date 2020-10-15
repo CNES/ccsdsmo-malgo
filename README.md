@@ -32,21 +32,18 @@ This GO API basically includes 4 packages:
 
 ### MAL/GO QUICK INSTALLATION
 
-```
-go get github.com/juju/loggo
-go get github.com/ccsdsmo/malgo
-```
+	go get github.com/juju/loggo
+	go get github.com/CNES/ccsdsmo-malgo
+	
 ### MAL/GO TEST
 
-```
-options: -v -timeout 1m
+	options: -v -timeout 1m
 
-cd src
-go test github.com/ccsdsmo/malgo/mal/encoding/binary
-go test github.com/ccsdsmo/malgo/mal/encoding/splitbinary
-go test github.com/ccsdsmo/malgo/mal/transport/invm
-go test github.com/ccsdsmo/malgo/mal/transport/tcp
-go test github.com/ccsdsmo/malgo/mal/api
-go test github.com/ccsdsmo/malgo/tests/encoding
-go test github.com/ccsdsmo/malgo/tests/issue1
-```
+	cd src
+	go test github.com/CNES/ccsdsmo-malgo/mal/encoding/binary
+	go test github.com/CNES/ccsdsmo-malgo/mal/encoding/splitbinary
+	go test github.com/CNES/ccsdsmo-malgo/mal/transport/invm
+	go test github.com/CNES/ccsdsmo-malgo/mal/transport/tcp
+	go test github.com/CNES/ccsdsmo-malgo/mal/api
+	go test github.com/CNES/ccsdsmo-malgo/tests/encoding
+	go test github.com/CNES/ccsdsmo-malgo/tests/issue1
