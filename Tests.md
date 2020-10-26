@@ -2,7 +2,7 @@
 
 This document includes the execution trace of all the tests defined in the malgo project.
 It reflects an execution on the 3rd release of malgo (tag MALGO_0_3).
-In order to force the exll tests are done with the GOCACHE environment variable set of off.
+In order to force the execution tests are done with the GOCACHE environment variable set of off.
 
 ## Mode normal
 
