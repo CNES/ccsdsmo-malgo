@@ -1,7 +1,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2017 - 2019 CNES
+ * Copyright (c) 2017 - 2020 CNES
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -174,7 +174,7 @@ type BrokerPub struct {
 	Service     UShort
 	operation   UShort
 	keys        *EntityKeyList
-	// TODO (AF): Is it needed ? used ?
+	// TODO (AF): Is it needed ? used ? => PublishError ?
 	transaction PublisherTransaction
 }
 
@@ -185,8 +185,6 @@ type BrokerHandler struct {
 
 	updtHandler UpdateValueHandler
 
-	encoding EncodingFactory
-
 	// Map of all active subscribers
 	subs map[string]*BrokerSub
 	// Map o fall active publishers
@@ -194,6 +192,8 @@ type BrokerHandler struct {
 }
 
 type UpdateValueHandler interface {
+	// TODO (AF): May be we have to define a function InitUpdateValueList with a list of
+	// Element as parameter (see BlobUpdateValueHandler.InitUpdateValueList).
 	DecodeUpdateValueList(body Body) error
 	UpdateValueListSize() int
 	AppendValue(idx int)
@@ -213,6 +213,19 @@ func NewBlobUpdateValueHandler() *BlobUpdateValueHandler {
 	return new(BlobUpdateValueHandler)
 }
 
+// Function used to initialize the UpdateValueHandler from a list of values.
+// This function is used with local broker.
+func (handler *BlobUpdateValueHandler) InitUpdateValueList(list *BlobList) error {
+	logger.Infof("Broker.Publish, DecodeUpdateValueList -> %d %v", len([]*Blob(*list)), list)
+
+	handler.list = list
+	handler.values = BlobList(make([]*Blob, 0, handler.list.Size()))
+
+	return nil
+}
+
+// Function used to create the UpdateValueHandler from the encoded message.
+// This function is used with shared broker.
 func (handler *BlobUpdateValueHandler) DecodeUpdateValueList(body Body) error {
 	p, err := body.DecodeLastParameter(NullBlobList, false)
 	//	list, err := DecodeBlobList(decoder)
@@ -251,11 +264,12 @@ func (handler *BlobUpdateValueHandler) ResetValues() {
 }
 
 // ################################################################################
+// Implements a BrokerHandler
 
-func NewBroker(cctx *ClientContext, updtHandler UpdateValueHandler, encoding EncodingFactory, area UShort, areaVersion UOctet, service UShort, operation UShort) (*BrokerHandler, error) {
+func NewBroker(cctx *ClientContext, updtHandler UpdateValueHandler, area UShort, areaVersion UOctet, service UShort, operation UShort) (*BrokerHandler, error) {
 	subs := make(map[string]*BrokerSub)
 	pubs := make(map[string]*BrokerPub)
-	broker := &BrokerHandler{cctx, updtHandler, encoding, subs, pubs}
+	broker := &BrokerHandler{cctx: cctx, updtHandler: updtHandler, subs: subs, pubs: pubs}
 
 	brokerHandler := func(msg *Message, t Transaction) error {
 		//		fmt.Println("##########", msg.Body)
@@ -431,7 +445,13 @@ func (handler *BrokerHandler) publish(pub *Message, transaction PublisherTransac
 	}
 	logger.Infof("Broker.Publish, DecodeUpdateList -> %d", handler.updtHandler.UpdateValueListSize())
 
-	if len(*uhlist) != handler.updtHandler.UpdateValueListSize() {
+	return handler.doPublish(pub, uhlist, handler.updtHandler)
+}
+
+func (handler *BrokerHandler) doPublish(pub *Message, uhlist *UpdateHeaderList, updtHandler UpdateValueHandler) error {
+	logger.Debugf("Broker.doPublish -> %v", uhlist)
+
+	if len(*uhlist) != updtHandler.UpdateValueListSize() {
 		return errors.New("Bad header and value list lengths")
 	}
 
@@ -444,16 +464,16 @@ func (handler *BrokerHandler) publish(pub *Message, transaction PublisherTransac
 				logger.Warnf("Broker.Publish match !!")
 				// Adds the update to the notify message for this subscription
 				headers = append(headers, hdr)
-				handler.updtHandler.AppendValue(idx)
+				updtHandler.AppendValue(idx)
 			}
 		}
 		if len(headers) == 0 {
 			// there is no update matching this subscription
-			handler.updtHandler.ResetValues()
+			updtHandler.ResetValues()
 			continue
 		}
 
-		body := transaction.NewBody()
+		body := sub.transaction.NewBody()
 		//		buf := make([][]byte, 1)
 		//		buf[0] = make([]byte, 0, 1024)
 		//		encoder := handler.encoding.NewEncoder(buf)
@@ -461,7 +481,7 @@ func (handler *BrokerHandler) publish(pub *Message, transaction PublisherTransac
 		body.EncodeParameter(&sub.subid)
 		//		headers.Encode(encoder)
 		body.EncodeParameter(&headers)
-		handler.updtHandler.EncodeUpdateValueList(body)
+		updtHandler.EncodeUpdateValueList(body)
 		//		sub.transaction.Notify(encoder.Body(), false)
 		sub.transaction.Notify(body, false)
 	}
@@ -469,6 +489,9 @@ func (handler *BrokerHandler) publish(pub *Message, transaction PublisherTransac
 }
 
 func (handler *BrokerHandler) OnPublish(msg *Message, transaction PublisherTransaction) error {
+	// TODO (AF): to remove
+	logger.Debugf("Broker.OnPublish -> %v", msg)
+
 	err := handler.publish(msg, transaction)
 	if err != nil {
 		// TODO (AF): Returns error
@@ -476,4 +499,107 @@ func (handler *BrokerHandler) OnPublish(msg *Message, transaction PublisherTrans
 		return err
 	}
 	return nil
+}
+
+// ################################################################################
+// Definition of a local (embeded) broker.
+
+type LocalBroker struct {
+	handler *BrokerHandler
+
+	area        UShort
+	areaVersion UOctet
+	service     UShort
+	operation   UShort
+	status      byte
+}
+
+func (broker *LocalBroker) Uri() *URI {
+	return broker.handler.cctx.Uri
+}
+
+// Gets the underlying ClientContext used by the broker.
+func (broker *LocalBroker) ClientContext() *ClientContext {
+	return broker.handler.cctx
+}
+
+func (broker *LocalBroker) Close() {
+	// TODO (AF): Removes all remaining subscribers and publishers
+	broker.handler.cctx.Close()
+}
+
+func NewLocalBroker(cctx *ClientContext, updtHandler UpdateValueHandler, area UShort, areaVersion UOctet, service UShort, operation UShort) (*LocalBroker, error) {
+	handler, err := NewBroker(cctx, updtHandler, area, areaVersion, service, operation)
+	if err != nil {
+		return nil, err
+	}
+	broker := &LocalBroker{handler: handler, area: area, areaVersion: areaVersion, service: service, operation: operation}
+	return broker, nil
+}
+
+func (broker *LocalBroker) PublishRegister(list *EntityKeyList) error {
+	return broker.handler.LocalPublishRegister(broker.area, broker.areaVersion, broker.service, broker.operation, list)
+}
+
+func (handler *BrokerHandler) LocalPublishRegister(area UShort, areaVersion UOctet, service UShort, operation UShort, list *EntityKeyList) error {
+	cctx := handler.cctx
+	pubid := string(*cctx.Uri)
+	logger.Infof("Broker.LocalPublishRegister: %v, %t", pubid, list)
+	handler.pubs[pubid] = &BrokerPub{
+		domain:      cctx.Domain,
+		session:     cctx.Session,
+		sessionName: cctx.SessionName,
+		serviceArea: area,
+		Service:     service,
+		operation:   operation,
+		keys:        list,
+		transaction: nil,
+	}
+
+	return nil
+}
+
+func (broker *LocalBroker) PublishDeregister() error {
+	return broker.handler.LocalPublishDeregister()
+}
+
+func (handler *BrokerHandler) LocalPublishDeregister() error {
+	cctx := handler.cctx
+	pubid := string(*cctx.Uri)
+	logger.Infof("Broker.LocalPublishDeregister: %v", pubid)
+	// TODDO (AF): May be we have to verify if the publisher is registered.
+	delete(handler.pubs, string(pubid))
+
+	return nil
+}
+
+func (broker *LocalBroker) Publish(uhlist *UpdateHeaderList, updtHandler UpdateValueHandler) error {
+	return broker.handler.LocalPublish(broker.area, broker.areaVersion, broker.service, broker.operation, uhlist, updtHandler)
+}
+
+func (handler *BrokerHandler) LocalPublish(area UShort, areaVersion UOctet, service UShort, operation UShort, uhlist *UpdateHeaderList, updtHandler UpdateValueHandler) error {
+	logger.Debugf("Broker.LocalPublish -> %v", uhlist)
+
+	cctx := handler.cctx
+	pub := &Message{
+		UriFrom:          cctx.Uri,
+		UriTo:            nil,
+		AuthenticationId: cctx.AuthenticationId,
+		EncodingId:       cctx.EncodingId,
+		QoSLevel:         cctx.QoSLevel,
+		Priority:         cctx.Priority,
+		Domain:           cctx.Domain,
+		NetworkZone:      cctx.NetworkZone,
+		Session:          cctx.Session,
+		SessionName:      cctx.SessionName,
+		InteractionType:  MAL_INTERACTIONTYPE_PUBSUB,
+		InteractionStage: MAL_IP_STAGE_PUBSUB_PUBLISH,
+		ServiceArea:      area,
+		AreaVersion:      areaVersion,
+		Service:          service,
+		Operation:        operation,
+		TransactionId:    0,
+		Body:             nil,
+	}
+	return handler.doPublish(pub, uhlist, updtHandler)
 }
