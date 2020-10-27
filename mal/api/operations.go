@@ -1,7 +1,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2017 - 2019 CNES
+ * Copyright (c) 2017 - 2020 CNES
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -944,24 +944,29 @@ type PublisherOperation interface {
 	Operation
 	Register(body Body) (*Message, error)
 	Publish(body Body) error
+	GetPublishError() (*Message, error)
 	Deregister(body Body) (*Message, error)
 }
 
 type PublisherOperationX struct {
 	OperationX
+	pe_ch chan *Message
 }
 
 func (cctx *ClientContext) NewPublisherOperation(urito *URI, area UShort, areaVersion UOctet, service UShort, operation UShort) PublisherOperation {
 	// Gets a new TransactionId for operation
 	tid := cctx.TransactionId()
-	// Normally should not receive more than one message (Acknowledge of Register and Deregister messages).
+	// In normal operation should not receive more than one message (Acknowledge of Register and
+	// Deregister messages).
 	ch := make(chan *Message)
-	op := &PublisherOperationX{OperationX: OperationX{cctx, tid, ch, urito, area, areaVersion, service, operation, _CREATED}}
+	// Make channel for PublishError
+	pe_ch := make(chan *Message, 5)
+	op := &PublisherOperationX{OperationX: OperationX{cctx, tid, ch, urito, area, areaVersion, service, operation, _CREATED}, pe_ch: pe_ch}
 	return op
 }
 
 func (op *PublisherOperationX) Register(body Body) (*Message, error) {
-	// TODO (AF): Be careful we can register anew a publisher
+	// TODO (AF): Be careful currently we cannot register anew a publisher
 	if op.status != _CREATED {
 		return nil, errors.New("Bad operation status")
 	}
@@ -999,7 +1004,6 @@ func (op *PublisherOperationX) Register(body Body) (*Message, error) {
 		op.finalize()
 		return nil, err
 	}
-
 	// Waits for the PUBLISH_REGISTER_ACK MAL message
 	msg, more := <-op.ch
 	if !more {
@@ -1061,6 +1065,19 @@ func (op *PublisherOperationX) Publish(body Body) error {
 	}
 
 	return nil
+}
+
+func (op *PublisherOperationX) GetPublishError() (*Message, error) {
+	select {
+	case msg, ok := <-op.pe_ch:
+		if ok {
+			return msg, nil
+		} else {
+			return nil, errors.New("Operation ends")
+		}
+	default:
+		return nil, nil
+	}
 }
 
 func (op *PublisherOperationX) Deregister(body Body) (*Message, error) {
@@ -1125,7 +1142,12 @@ func (op *PublisherOperationX) Deregister(body Body) (*Message, error) {
 func (op *PublisherOperationX) onMessage(msg *Message) {
 	// Verify the message: service area, version, service, operation
 	if op.verify(msg) && (msg.InteractionType == MAL_INTERACTIONTYPE_PUBSUB) {
-		op.ch <- msg
+		if msg.InteractionStage == MAL_IP_STAGE_PUBSUB_PUBLISH && msg.IsErrorMessage {
+			// It is a PUBLISH_ERROR, keep it ans continue
+			op.pe_ch <- msg
+		} else {
+			op.ch <- msg
+		}
 	} else {
 		logger.Errorf("PUBSUB Operation (%s,%d) receives Bad message: %+v", *op.urito, op.tid, msg)
 	}
