@@ -421,7 +421,8 @@ func (tx *SubscriberTransactionX) AckDeregister(body Body, isError bool) error {
 
 type PublisherTransaction interface {
 	BrokerTransaction
-	// TODO (AF): Should add PublishError to return error on Publish.
+	// PublishError to return error on Publish.
+	PublishError(body Body) error
 }
 
 type PublisherTransactionX struct {
@@ -473,6 +474,32 @@ func (tx *PublisherTransactionX) AckDeregister(body Body, isError bool) error {
 		Service:          tx.service,
 		Operation:        tx.operation,
 		IsErrorMessage:   Boolean(isError),
+		Body:             body,
+	}
+	return tx.ctx.Send(msg)
+}
+
+// TODO (AF): Get fields from original Register
+func (tx *PublisherTransactionX) PublishError(body Body) error {
+	msg := &Message{
+		UriFrom:          tx.uri,
+		UriTo:            tx.urifrom,
+		AuthenticationId: tx.AuthenticationId,
+		EncodingId:       tx.EncodingId,
+		QoSLevel:         tx.QoSLevel,
+		Priority:         tx.Priority,
+		Domain:           tx.Domain,
+		NetworkZone:      tx.NetworkZone,
+		Session:          tx.Session,
+		SessionName:      tx.SessionName,
+		InteractionType:  MAL_INTERACTIONTYPE_PUBSUB,
+		InteractionStage: MAL_IP_STAGE_PUBSUB_PUBLISH_REGISTER_ACK,
+		TransactionId:    tx.tid,
+		ServiceArea:      tx.area,
+		AreaVersion:      tx.areaVersion,
+		Service:          tx.service,
+		Operation:        tx.operation,
+		IsErrorMessage:   Boolean(true),
 		Body:             body,
 	}
 	return tx.ctx.Send(msg)
