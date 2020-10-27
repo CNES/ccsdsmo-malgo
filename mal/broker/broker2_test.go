@@ -1,7 +1,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2018 - 2019 CNES
+ * Copyright (c) 2018 - 2020 CNES
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -28,7 +28,6 @@ import (
 	. "github.com/CNES/ccsdsmo-malgo/mal"
 	. "github.com/CNES/ccsdsmo-malgo/mal/api"
 	. "github.com/CNES/ccsdsmo-malgo/mal/broker"
-	"github.com/CNES/ccsdsmo-malgo/mal/encoding/binary"
 	_ "github.com/CNES/ccsdsmo-malgo/mal/transport/tcp" // Needed to initialize TCP transport factory
 	"testing"
 	"time"
@@ -81,9 +80,9 @@ func newTest2Broker() error {
 
 	updtHandler := NewBlobUpdateValueHandler()
 	if test2_varint {
-		test2_broker, err = NewBroker(cctx, updtHandler, binary.VarintBinaryEncodingFactory, 200, 1, 1, 1)
+		test2_broker, err = NewBroker(cctx, updtHandler, 200, 1, 1, 1)
 	} else {
-		test2_broker, err = NewBroker(cctx, updtHandler, binary.FixedBinaryEncodingFactory, 200, 1, 1, 1)
+		test2_broker, err = NewBroker(cctx, updtHandler, 200, 1, 1, 1)
 	}
 	if err != nil {
 		return err
