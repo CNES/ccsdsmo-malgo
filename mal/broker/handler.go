@@ -440,7 +440,6 @@ func (handler *BrokerHandler) publish(pub *Message, transaction PublisherTransac
 
 	handler.updtHandler.DecodeUpdateValueList(pub.Body)
 	if err != nil {
-		// TODO (AF): Returns a PublishError MAL message to publisher
 		return err
 	}
 	logger.Infof("Broker.Publish, DecodeUpdateList -> %d", handler.updtHandler.UpdateValueListSize())
@@ -456,12 +455,18 @@ func (handler *BrokerHandler) doPublish(pub *Message, uhlist *UpdateHeaderList, 
 	}
 
 	// TODO (AF): Verify the publication validity see 3.5.6.8 e, f
+	pubid := string(*pub.UriFrom)
+	publisher := handler.pubs[pubid]
+	if publisher == nil {
+		logger.Warnf("Publisher not registered: %s", pubid)
+		return errors.New("Publisher not registered")
+	}
 
 	for _, sub := range handler.subs {
 		var headers UpdateHeaderList = make([]*UpdateHeader, 0, len(*uhlist))
 		for idx, hdr := range *uhlist {
 			if sub.matches(pub, &hdr.Key) {
-				logger.Warnf("Broker.Publish match !!")
+				logger.Infof("Broker.Publish match !!")
 				// Adds the update to the notify message for this subscription
 				headers = append(headers, hdr)
 				updtHandler.AppendValue(idx)
@@ -494,8 +499,14 @@ func (handler *BrokerHandler) OnPublish(msg *Message, transaction PublisherTrans
 
 	err := handler.publish(msg, transaction)
 	if err != nil {
-		// TODO (AF): Returns error
-		//		return transaction.PublishError(err)
+		// TODO (AF): Returns a PublishError MAL message to publisher
+		pubid := string(*msg.UriFrom)
+		publisher := handler.pubs[pubid]
+
+		body := publisher.transaction.NewBody()
+		body.EncodeParameter(NewUInteger(0))
+		body.EncodeLastParameter(NewString(err.Error()), false)
+		transaction.PublishError(body)
 		return err
 	}
 	return nil
