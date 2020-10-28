@@ -258,7 +258,7 @@ func (cctx *ClientContext) OnMessage(msg *Message) {
 	// messages are handled by broker.
 
 	if ((msg.InteractionType != MAL_INTERACTIONTYPE_PUBSUB) && (msg.InteractionStage == MAL_IP_STAGE_INIT)) ||
-		((msg.InteractionType == MAL_INTERACTIONTYPE_PUBSUB) && ((msg.InteractionStage & 0x1) != 0)) {
+		((msg.InteractionType == MAL_INTERACTIONTYPE_PUBSUB) && ((msg.InteractionStage & 0x1) != 0) && ((msg.InteractionStage != MAL_IP_STAGE_PUBSUB_PUBLISH) || !msg.IsErrorMessage)) {
 		handler, err := cctx.getProviderHandler(msg.InteractionType, msg.ServiceArea, msg.AreaVersion, msg.Service, msg.Operation)
 		if err != nil {
 			// TODO (AF): Log an error? Adds an error listener?
