@@ -493,7 +493,7 @@ func (tx *PublisherTransactionX) PublishError(body Body) error {
 		Session:          tx.Session,
 		SessionName:      tx.SessionName,
 		InteractionType:  MAL_INTERACTIONTYPE_PUBSUB,
-		InteractionStage: MAL_IP_STAGE_PUBSUB_PUBLISH_REGISTER_ACK,
+		InteractionStage: MAL_IP_STAGE_PUBSUB_PUBLISH,
 		TransactionId:    tx.tid,
 		ServiceArea:      tx.area,
 		AreaVersion:      tx.areaVersion,
