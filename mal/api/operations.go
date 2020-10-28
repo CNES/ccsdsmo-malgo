@@ -64,6 +64,8 @@ type OperationX struct {
 	service     UShort
 	operation   UShort
 	status      byte
+	// Channel used for asynchronous errors (for example PublishError)
+	err_ch chan *Message
 }
 
 // Verifies that the incoming message corresponds to the initiated operation
@@ -119,6 +121,10 @@ func (op *OperationX) Close() error {
 		op.ch = nil
 		return err
 	}
+	if op.err_ch != nil {
+		close(op.err_ch)
+		op.err_ch = nil
+	}
 	return nil
 }
 
@@ -149,7 +155,7 @@ type SendOperationX struct {
 func (cctx *ClientContext) NewSendOperation(urito *URI, area UShort, areaVersion UOctet, service UShort, operation UShort) SendOperation {
 	// Gets a new TransactionId for operation
 	tid := cctx.TransactionId()
-	op := &SendOperationX{OperationX: OperationX{cctx, tid, nil, urito, area, areaVersion, service, operation, _CREATED}}
+	op := &SendOperationX{OperationX: OperationX{cctx, tid, nil, urito, area, areaVersion, service, operation, _CREATED, nil}}
 	return op
 }
 
@@ -212,7 +218,7 @@ func (cctx *ClientContext) NewSubmitOperation(urito *URI, area UShort, areaVersi
 	tid := cctx.TransactionId()
 	// Normally should not receive more than one message
 	ch := make(chan *Message)
-	op := &SubmitOperationX{OperationX: OperationX{cctx, tid, ch, urito, area, areaVersion, service, operation, _CREATED}}
+	op := &SubmitOperationX{OperationX: OperationX{cctx, tid, ch, urito, area, areaVersion, service, operation, _CREATED, nil}}
 	return op
 }
 
@@ -312,7 +318,7 @@ func (cctx *ClientContext) NewRequestOperation(urito *URI, area UShort, areaVers
 	tid := cctx.TransactionId()
 	// Normally should not receive more than one message
 	ch := make(chan *Message)
-	op := &RequestOperationX{OperationX: OperationX{cctx, tid, ch, urito, area, areaVersion, service, operation, _CREATED}}
+	op := &RequestOperationX{OperationX: OperationX{cctx, tid, ch, urito, area, areaVersion, service, operation, _CREATED, nil}}
 	return op
 }
 
@@ -416,7 +422,7 @@ func (cctx *ClientContext) NewInvokeOperation(urito *URI, area UShort, areaVersi
 	tid := cctx.TransactionId()
 	// Normally should not receive more than 2 messages, and it waits first message (ack) synchronously.
 	ch := make(chan *Message)
-	op := &InvokeOperationX{OperationX: OperationX{cctx, tid, ch, urito, area, areaVersion, service, operation, _CREATED}}
+	op := &InvokeOperationX{OperationX: OperationX{cctx, tid, ch, urito, area, areaVersion, service, operation, _CREATED, nil}}
 	return op
 }
 
@@ -565,7 +571,7 @@ func (cctx *ClientContext) NewProgressOperation(urito *URI, area UShort, areaVer
 	// MAL context thread.
 	// TODO (AF): Fix length of channel
 	ch := make(chan *Message, 10)
-	op := &ProgressOperationX{OperationX: OperationX{cctx, tid, ch, urito, area, areaVersion, service, operation, _CREATED}}
+	op := &ProgressOperationX{OperationX: OperationX{cctx, tid, ch, urito, area, areaVersion, service, operation, _CREATED, nil}}
 	return op
 }
 
@@ -753,7 +759,7 @@ func (cctx *ClientContext) NewSubscriberOperation(urito *URI, area UShort, areaV
 	// MAL context thread.
 	// TODO (AF): Fix length of channel
 	ch := make(chan *Message, 10)
-	op := &SubscriberOperationX{OperationX: OperationX{cctx, tid, ch, urito, area, areaVersion, service, operation, _CREATED}}
+	op := &SubscriberOperationX{OperationX: OperationX{cctx, tid, ch, urito, area, areaVersion, service, operation, _CREATED, nil}}
 	return op
 }
 
@@ -950,7 +956,6 @@ type PublisherOperation interface {
 
 type PublisherOperationX struct {
 	OperationX
-	pe_ch chan *Message
 }
 
 func (cctx *ClientContext) NewPublisherOperation(urito *URI, area UShort, areaVersion UOctet, service UShort, operation UShort) PublisherOperation {
@@ -960,8 +965,8 @@ func (cctx *ClientContext) NewPublisherOperation(urito *URI, area UShort, areaVe
 	// Deregister messages).
 	ch := make(chan *Message)
 	// Make channel for PublishError
-	pe_ch := make(chan *Message, 5)
-	op := &PublisherOperationX{OperationX: OperationX{cctx, tid, ch, urito, area, areaVersion, service, operation, _CREATED}, pe_ch: pe_ch}
+	err_ch := make(chan *Message, 5)
+	op := &PublisherOperationX{OperationX: OperationX{cctx, tid, ch, urito, area, areaVersion, service, operation, _CREATED, err_ch}}
 	return op
 }
 
@@ -1068,8 +1073,12 @@ func (op *PublisherOperationX) Publish(body Body) error {
 }
 
 func (op *PublisherOperationX) GetPublishError() (*Message, error) {
+	if op.status != _REGISTERED {
+		return nil, errors.New("Bad operation status")
+	}
+
 	select {
-	case msg, ok := <-op.pe_ch:
+	case msg, ok := <-op.err_ch:
 		if ok {
 			return msg, nil
 		} else {
@@ -1143,8 +1152,9 @@ func (op *PublisherOperationX) onMessage(msg *Message) {
 	// Verify the message: service area, version, service, operation
 	if op.verify(msg) && (msg.InteractionType == MAL_INTERACTIONTYPE_PUBSUB) {
 		if msg.InteractionStage == MAL_IP_STAGE_PUBSUB_PUBLISH && msg.IsErrorMessage {
-			// It is a PUBLISH_ERROR, keep it ans continue
-			op.pe_ch <- msg
+			// It is a PUBLISH_ERROR, keep it and continue
+			logger.Debugf("PublisherOperation.onMessage: PublishError (%s, %s)", op.cctx.Uri, op.tid)
+			op.err_ch <- msg
 		} else {
 			op.ch <- msg
 		}
