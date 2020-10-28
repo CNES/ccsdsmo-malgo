@@ -192,8 +192,7 @@ type BrokerHandler struct {
 }
 
 type UpdateValueHandler interface {
-	// TODO (AF): May be we have to define a function InitUpdateValueList with a list of
-	// Element as parameter (see BlobUpdateValueHandler.InitUpdateValueList).
+	InitUpdateValueList(list ElementList) error
 	DecodeUpdateValueList(body Body) error
 	UpdateValueListSize() int
 	AppendValue(idx int)
@@ -215,10 +214,16 @@ func NewBlobUpdateValueHandler() *BlobUpdateValueHandler {
 
 // Function used to initialize the UpdateValueHandler from a list of values.
 // This function is used with local broker.
-func (handler *BlobUpdateValueHandler) InitUpdateValueList(list *BlobList) error {
-	logger.Infof("Broker.Publish, DecodeUpdateValueList -> %d %v", len([]*Blob(*list)), list)
+func (handler *BlobUpdateValueHandler) InitUpdateValueList(list ElementList) error {
+	blist, ok := list.(*BlobList)
+	if !ok {
+		err := errors.New("Unexpected type of the update value list")
+		logger.Warnf("%s", err.Error())
+		return err
+	}
+	logger.Infof("Broker.Publish, InitUpdateValueList -> %d %v", len([]*Blob(*blist)), blist)
 
-	handler.list = list
+	handler.list = blist
 	handler.values = BlobList(make([]*Blob, 0, handler.list.Size()))
 
 	return nil
@@ -261,6 +266,70 @@ func (handler *BlobUpdateValueHandler) EncodeUpdateValueList(body Body) error {
 
 func (handler *BlobUpdateValueHandler) ResetValues() {
 	handler.values = handler.values[:0]
+}
+
+// ################################################################################
+// Implements a generic UpdateValueHandler
+
+type GenericUpdateValueHandler struct {
+	list   ElementList
+	values ElementList
+	// Null value for the list type, nil if abstract
+	valueType ElementList
+}
+
+func NewGenericUpdateValueHandler(valueType ElementList) *GenericUpdateValueHandler {
+	return &GenericUpdateValueHandler{
+		valueType: valueType,
+	}
+}
+
+// Function used to initialize the UpdateValueHandler from a list of values.
+// This function is used with local broker.
+func (handler *GenericUpdateValueHandler) InitUpdateValueList(list ElementList) error {
+	logger.Infof("Broker.Publish, InitUpdateValueList -> %d %v", list.Size(), list)
+
+	handler.list = list
+	handler.values = list.CreateElement().(ElementList)
+
+	return nil
+}
+
+// Function used to create the UpdateValueHandler from the encoded message.
+// This function is used with shared broker.
+func (handler *GenericUpdateValueHandler) DecodeUpdateValueList(body Body) error {
+	p, err := body.DecodeLastParameter(handler.valueType, handler.valueType == nil)
+	if err != nil {
+		return err
+	}
+	list := p.(ElementList)
+	logger.Infof("Broker.Publish, DecodeUpdateValueList -> %d %v", list.Size(), list)
+
+	handler.list = list
+	handler.values = list.CreateElement().(ElementList)
+
+	return nil
+}
+
+func (handler *GenericUpdateValueHandler) UpdateValueListSize() int {
+	return handler.list.Size()
+}
+
+func (handler *GenericUpdateValueHandler) AppendValue(idx int) {
+	handler.values.AppendElement(handler.list.GetElementAt(idx))
+}
+
+func (handler *GenericUpdateValueHandler) EncodeUpdateValueList(body Body) error {
+	err := body.EncodeLastParameter(handler.values, handler.valueType == nil)
+	if err != nil {
+		return err
+	}
+	handler.values = handler.values.CreateElement().(ElementList)
+	return nil
+}
+
+func (handler *GenericUpdateValueHandler) ResetValues() {
+	handler.values = handler.values.CreateElement().(ElementList)
 }
 
 // ################################################################################
@@ -584,11 +653,13 @@ func (handler *BrokerHandler) LocalPublishDeregister() error {
 	return nil
 }
 
-func (broker *LocalBroker) Publish(uhlist *UpdateHeaderList, updtHandler UpdateValueHandler) error {
-	return broker.handler.LocalPublish(broker.area, broker.areaVersion, broker.service, broker.operation, uhlist, updtHandler)
+//func (broker *LocalBroker) Publish(uhlist *UpdateHeaderList, updtHandler UpdateValueHandler) error {
+func (broker *LocalBroker) Publish(uhlist *UpdateHeaderList, uvlist ElementList) error {
+	broker.handler.updtHandler.InitUpdateValueList(uvlist)
+	return broker.handler.LocalPublish(broker.area, broker.areaVersion, broker.service, broker.operation, uhlist)
 }
 
-func (handler *BrokerHandler) LocalPublish(area UShort, areaVersion UOctet, service UShort, operation UShort, uhlist *UpdateHeaderList, updtHandler UpdateValueHandler) error {
+func (handler *BrokerHandler) LocalPublish(area UShort, areaVersion UOctet, service UShort, operation UShort, uhlist *UpdateHeaderList) error {
 	logger.Debugf("Broker.LocalPublish -> %v", uhlist)
 
 	cctx := handler.cctx
@@ -612,5 +683,5 @@ func (handler *BrokerHandler) LocalPublish(area UShort, areaVersion UOctet, serv
 		TransactionId:    0,
 		Body:             nil,
 	}
-	return handler.doPublish(pub, uhlist, updtHandler)
+	return handler.doPublish(pub, uhlist, handler.updtHandler)
 }

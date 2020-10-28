@@ -38,58 +38,58 @@ import (
 )
 
 const (
-	lt2_brokerpub_url   = "maltcp://127.0.0.1:16010"
-	lt2_subscriber1_url = "maltcp://127.0.0.1:16011"
-	lt2_subscriber2_url = "maltcp://127.0.0.1:16013"
+	lt3_brokerpub_url   = "maltcp://127.0.0.1:16010"
+	lt3_subscriber1_url = "maltcp://127.0.0.1:16011"
+	lt3_subscriber2_url = "maltcp://127.0.0.1:16013"
 )
 
 var (
-	lt2_running bool = true
+	lt3_running bool = true
 
-	lt2_broker         *LocalBroker
-	lt2_updtHandler    UpdateValueHandler
-	lt2_brokerpub_ctx  *Context
-	lt2_brokerpub_cctx *ClientContext
+	lt3_broker         *LocalBroker
+	lt3_updtHandler    UpdateValueHandler
+	lt3_brokerpub_ctx  *Context
+	lt3_brokerpub_cctx *ClientContext
 
-	lt2_sub1_ctx    *Context
-	lt2_subscriber1 *ClientContext
+	lt3_sub1_ctx    *Context
+	lt3_subscriber1 *ClientContext
 
-	lt2_sub2_ctx    *Context
-	lt2_subscriber2 *ClientContext
+	lt3_sub2_ctx    *Context
+	lt3_subscriber2 *ClientContext
 
-	lt2_sub1_not_cpt  int = 0
-	lt2_sub1_updt_cpt int = 0
+	lt3_sub1_not_cpt  int = 0
+	lt3_sub1_updt_cpt int = 0
 
-	lt2_sub2_not_cpt  int = 0
-	lt2_sub2_updt_cpt int = 0
+	lt3_sub2_not_cpt  int = 0
+	lt3_sub2_updt_cpt int = 0
 
-	lt2_subid1 = Identifier("MySubscription1")
-	lt2_subid2 = Identifier("MySubscription2")
+	lt3_subid1 = Identifier("MySubscription1")
+	lt3_subid2 = Identifier("MySubscription2")
 )
 
 func closeLocalTest2BrokerPub() {
-	lt2_brokerpub_cctx.Close()
-	lt2_brokerpub_ctx.Close()
+	lt3_brokerpub_cctx.Close()
+	lt3_brokerpub_ctx.Close()
 }
 
 func newLocalTest2BrokerPub(t *testing.T) {
 	var err error
-	lt2_brokerpub_ctx, err = NewContext(lt2_brokerpub_url)
+	lt3_brokerpub_ctx, err = NewContext(lt3_brokerpub_url)
 	if err != nil {
 		t.Fatal("Error creating context, ", err)
 		return
 	}
 
-	lt2_brokerpub_cctx, err = NewClientContext(lt2_brokerpub_ctx, "brokerpub")
+	lt3_brokerpub_cctx, err = NewClientContext(lt3_brokerpub_ctx, "brokerpub")
 	if err != nil {
 		t.Fatal("Error creating publisher, ", err)
 		return
 	}
-	lt2_brokerpub_cctx.SetDomain(IdentifierList([]*Identifier{NewIdentifier("spacecraft1"), NewIdentifier("payload"), NewIdentifier("camera1")}))
+	lt3_brokerpub_cctx.SetDomain(IdentifierList([]*Identifier{NewIdentifier("spacecraft1"), NewIdentifier("payload"), NewIdentifier("camera1")}))
 
 	// Creates local broker
-	lt2_updtHandler = NewBlobUpdateValueHandler()
-	lt2_broker, err = NewLocalBroker(lt2_brokerpub_cctx, lt2_updtHandler, 200, 1, 1, 1)
+	lt3_updtHandler = NewGenericUpdateValueHandler(NullBlobList)
+	lt3_broker, err = NewLocalBroker(lt3_brokerpub_cctx, lt3_updtHandler, 200, 1, 1, 1)
 	if err != nil {
 		t.Fatal("Error creating broker, ", err)
 	}
@@ -100,13 +100,13 @@ func localTest2Pub1(t *testing.T) {
 	ekpub2 := &EntityKey{NewIdentifier("key2"), NewLong(2), NewLong(2), NewLong(2)}
 	var eklist = EntityKeyList([]*EntityKey{ekpub1, ekpub2})
 
-	lt2_broker.PublishRegister(&eklist)
+	lt3_broker.PublishRegister(&eklist)
 	fmt.Printf("pubop.Register OK\n")
 
 	// Publish a first update
-	updthdr1 := &UpdateHeader{*TimeNow(), *lt2_brokerpub_cctx.Uri, MAL_UPDATETYPE_CREATION, *ekpub1}
-	updthdr2 := &UpdateHeader{*TimeNow(), *lt2_brokerpub_cctx.Uri, MAL_UPDATETYPE_CREATION, *ekpub2}
-	updthdr3 := &UpdateHeader{*TimeNow(), *lt2_brokerpub_cctx.Uri, MAL_UPDATETYPE_CREATION, *ekpub1}
+	updthdr1 := &UpdateHeader{*TimeNow(), *lt3_brokerpub_cctx.Uri, MAL_UPDATETYPE_CREATION, *ekpub1}
+	updthdr2 := &UpdateHeader{*TimeNow(), *lt3_brokerpub_cctx.Uri, MAL_UPDATETYPE_CREATION, *ekpub2}
+	updthdr3 := &UpdateHeader{*TimeNow(), *lt3_brokerpub_cctx.Uri, MAL_UPDATETYPE_CREATION, *ekpub1}
 	updtHdrlist1 := UpdateHeaderList([]*UpdateHeader{updthdr1, updthdr2, updthdr3})
 
 	updt1 := &Blob{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
@@ -114,46 +114,46 @@ func localTest2Pub1(t *testing.T) {
 	updt3 := &Blob{0, 1}
 	updtlist1 := BlobList([]*Blob{updt1, updt2, updt3})
 
-	lt2_broker.Publish(&updtHdrlist1, &updtlist1)
+	lt3_broker.Publish(&updtHdrlist1, &updtlist1)
 	fmt.Printf("pubop.Publish OK\n")
 
 	time.Sleep(100 * time.Millisecond)
 
 	// Publish a second update
-	updthdr4 := &UpdateHeader{*TimeNow(), *lt2_brokerpub_cctx.Uri, MAL_UPDATETYPE_CREATION, *ekpub1}
-	updthdr5 := &UpdateHeader{*TimeNow(), *lt2_brokerpub_cctx.Uri, MAL_UPDATETYPE_CREATION, *ekpub1}
+	updthdr4 := &UpdateHeader{*TimeNow(), *lt3_brokerpub_cctx.Uri, MAL_UPDATETYPE_CREATION, *ekpub1}
+	updthdr5 := &UpdateHeader{*TimeNow(), *lt3_brokerpub_cctx.Uri, MAL_UPDATETYPE_CREATION, *ekpub1}
 	updtHdrlist2 := UpdateHeaderList([]*UpdateHeader{updthdr4, updthdr5})
 
 	updt4 := &Blob{2, 3}
 	updt5 := &Blob{4, 5, 6}
 	updtlist2 := BlobList([]*Blob{updt4, updt5})
 
-	lt2_broker.Publish(&updtHdrlist2, &updtlist2)
+	lt3_broker.Publish(&updtHdrlist2, &updtlist2)
 	fmt.Printf("pubop.Publish OK\n")
 
 	// Deregisters publisher
-	lt2_broker.PublishDeregister()
+	lt3_broker.PublishDeregister()
 
 	fmt.Printf("Publisher#1 end\n")
 }
 
-var lt2_subop1 SubscriberOperation
-var lt2_sbody1 Body
+var lt3_subop1 SubscriberOperation
+var lt3_sbody1 Body
 
 func newLocalTest2Sub1() error {
 	var err error
-	lt2_sub1_ctx, err = NewContext(lt2_subscriber1_url)
+	lt3_sub1_ctx, err = NewContext(lt3_subscriber1_url)
 	if err != nil {
 		return err
 	}
-	lt2_subscriber1, err = NewClientContext(lt2_sub1_ctx, "subscriber1")
+	lt3_subscriber1, err = NewClientContext(lt3_sub1_ctx, "subscriber1")
 	if err != nil {
 		return err
 	}
-	lt2_subscriber1.SetDomain(IdentifierList([]*Identifier{NewIdentifier("spacecraft1"), NewIdentifier("payload")}))
+	lt3_subscriber1.SetDomain(IdentifierList([]*Identifier{NewIdentifier("spacecraft1"), NewIdentifier("payload")}))
 
-	lt2_subop1 = lt2_subscriber1.NewSubscriberOperation(lt2_broker.Uri(), 200, 1, 1, 1)
-	lt2_sbody1 = lt2_subop1.NewBody()
+	lt3_subop1 = lt3_subscriber1.NewSubscriberOperation(lt3_broker.Uri(), 200, 1, 1, 1)
+	lt3_sbody1 = lt3_subop1.NewBody()
 
 	domains := IdentifierList([]*Identifier{NewIdentifier("*")})
 	eksub := &EntityKey{NewIdentifier("key1"), NewLong(0), NewLong(0), NewLong(0)}
@@ -162,68 +162,68 @@ func newLocalTest2Sub1() error {
 			&domains, true, true, true, true, EntityKeyList([]*EntityKey{eksub}),
 		},
 	})
-	subs := &Subscription{lt2_subid1, erlist}
-	lt2_sbody1.EncodeLastParameter(subs, false)
+	subs := &Subscription{lt3_subid1, erlist}
+	lt3_sbody1.EncodeLastParameter(subs, false)
 
-	lt2_subop1.Register(lt2_sbody1)
+	lt3_subop1.Register(lt3_sbody1)
 	fmt.Printf("subop.Register OK\n")
 	// Register is synchronous, we can clear buffer
-	lt2_sbody1.Reset(true)
+	lt3_sbody1.Reset(true)
 
 	return nil
 }
 
 func runLocalTest2Sub1(t *testing.T) {
-	for lt2_running == true {
+	for lt3_running == true {
 		// Try to get Notify
-		r1, err := lt2_subop1.GetNotify()
+		r1, err := lt3_subop1.GetNotify()
 		if err != nil {
 			fmt.Printf("Subscriber#1, Error in GetNotify: %v\n", err)
 			break
 		}
 		fmt.Printf("\t&&&&& Subscriber1 notified: %d\n", r1.TransactionId)
-		lt2_sub1_not_cpt += 1
+		lt3_sub1_not_cpt += 1
 
 		id, err := r1.DecodeParameter(NullIdentifier)
 		updtHdrlist, err := r1.DecodeParameter(NullUpdateHeaderList)
 		updtlist, err := r1.DecodeLastParameter(NullBlobList, false)
-		lt2_sub1_updt_cpt += len(*updtlist.(*BlobList))
+		lt3_sub1_updt_cpt += len(*updtlist.(*BlobList))
 		fmt.Printf("\t&&&&& Subscriber1 notified: OK, %s \n\t%+v \n\t%#v\n\n", id, updtHdrlist, updtlist)
 	}
 
-	if (lt2_sub1_not_cpt != 2) || (lt2_sub1_updt_cpt != 4) {
-		t.Errorf("Subscriber#1, bad counters: %d %d", lt2_sub1_not_cpt, lt2_sub1_updt_cpt)
+	if (lt3_sub1_not_cpt != 2) || (lt3_sub1_updt_cpt != 4) {
+		t.Errorf("Subscriber#1, bad counters: %d %d", lt3_sub1_not_cpt, lt3_sub1_updt_cpt)
 	}
 
 	// Deregisters subscriber
 
-	idlist := IdentifierList([]*Identifier{&lt2_subid1})
-	lt2_sbody1.EncodeLastParameter(&idlist, false)
-	lt2_subop1.Deregister(lt2_sbody1)
+	idlist := IdentifierList([]*Identifier{&lt3_subid1})
+	lt3_sbody1.EncodeLastParameter(&idlist, false)
+	lt3_subop1.Deregister(lt3_sbody1)
 	fmt.Printf("\t&&&&&Subscriber#1, Deregistered\n")
-	lt2_sbody1.Reset(true)
+	lt3_sbody1.Reset(true)
 
-	lt2_subscriber1.Close()
-	lt2_sub1_ctx.Close()
+	lt3_subscriber1.Close()
+	lt3_sub1_ctx.Close()
 }
 
-var lt2_subop2 SubscriberOperation
-var lt2_sbody2 Body
+var lt3_subop2 SubscriberOperation
+var lt3_sbody2 Body
 
 func newLocalTest2Sub2() error {
 	var err error
-	lt2_sub2_ctx, err = NewContext(lt2_subscriber2_url)
+	lt3_sub2_ctx, err = NewContext(lt3_subscriber2_url)
 	if err != nil {
 		return err
 	}
-	lt2_subscriber2, err = NewClientContext(lt2_sub2_ctx, "subscriber2")
+	lt3_subscriber2, err = NewClientContext(lt3_sub2_ctx, "subscriber2")
 	if err != nil {
 		return err
 	}
-	lt2_subscriber2.SetDomain(IdentifierList([]*Identifier{NewIdentifier("spacecraft1"), NewIdentifier("payload")}))
+	lt3_subscriber2.SetDomain(IdentifierList([]*Identifier{NewIdentifier("spacecraft1"), NewIdentifier("payload")}))
 
-	lt2_subop2 = lt2_subscriber2.NewSubscriberOperation(lt2_broker.Uri(), 200, 1, 1, 1)
-	lt2_sbody2 = lt2_subop2.NewBody()
+	lt3_subop2 = lt3_subscriber2.NewSubscriberOperation(lt3_broker.Uri(), 200, 1, 1, 1)
+	lt3_sbody2 = lt3_subop2.NewBody()
 
 	domains := IdentifierList([]*Identifier{NewIdentifier("camera1")})
 	eksub1 := &EntityKey{NewIdentifier("key1"), NewLong(0), NewLong(0), NewLong(0)}
@@ -233,49 +233,49 @@ func newLocalTest2Sub2() error {
 			&domains, true, true, true, true, EntityKeyList([]*EntityKey{eksub1, eksub2}),
 		},
 	})
-	subs := &Subscription{lt2_subid2, erlist}
-	lt2_sbody2.EncodeLastParameter(subs, false)
+	subs := &Subscription{lt3_subid2, erlist}
+	lt3_sbody2.EncodeLastParameter(subs, false)
 
-	lt2_subop2.Register(lt2_sbody2)
+	lt3_subop2.Register(lt3_sbody2)
 	fmt.Printf("subop.Register OK\n")
 	// Register is synchronous, we can clear buffer
-	lt2_sbody2.Reset(true)
+	lt3_sbody2.Reset(true)
 
 	return nil
 }
 
 func runLocalTest2Sub2(t *testing.T) {
-	for lt2_running == true {
+	for lt3_running == true {
 		// Try to get Notify
-		r1, err := lt2_subop2.GetNotify()
+		r1, err := lt3_subop2.GetNotify()
 		if err != nil {
 			fmt.Printf("Subscriber#1, Error in GetNotify: %v\n", err)
 			break
 		}
 		fmt.Printf("\t&&&&& Subscriber2 notified: %d\n", r1.TransactionId)
-		lt2_sub2_not_cpt += 1
+		lt3_sub2_not_cpt += 1
 
 		id, err := r1.DecodeParameter(NullIdentifier)
 		updtHdrlist, err := r1.DecodeParameter(NullUpdateHeaderList)
 		updtlist, err := r1.DecodeLastParameter(NullBlobList, false)
-		lt2_sub2_updt_cpt += len(*updtlist.(*BlobList))
+		lt3_sub2_updt_cpt += len(*updtlist.(*BlobList))
 		fmt.Printf("\t&&&&& Subscriber2 notified: OK, %s \n\t%+v \n\t%#v\n\n", id, updtHdrlist, updtlist)
 	}
 
-	if (lt2_sub2_not_cpt != 2) || (lt2_sub2_updt_cpt != 5) {
-		t.Errorf("Subscriber#2, bad counters: %d %d", lt2_sub2_not_cpt, lt2_sub2_updt_cpt)
+	if (lt3_sub2_not_cpt != 2) || (lt3_sub2_updt_cpt != 5) {
+		t.Errorf("Subscriber#2, bad counters: %d %d", lt3_sub2_not_cpt, lt3_sub2_updt_cpt)
 	}
 
 	// Deregisters subscriber
 
-	idlist := IdentifierList([]*Identifier{&lt2_subid2})
-	lt2_sbody1.EncodeLastParameter(&idlist, false)
-	lt2_subop1.Deregister(lt2_sbody1)
+	idlist := IdentifierList([]*Identifier{&lt3_subid2})
+	lt3_sbody1.EncodeLastParameter(&idlist, false)
+	lt3_subop1.Deregister(lt3_sbody1)
 	fmt.Printf("\t&&&&&Subscriber#2, Deregistered\n")
-	lt2_sbody1.Reset(true)
+	lt3_sbody1.Reset(true)
 
-	lt2_subscriber2.Close()
-	lt2_sub2_ctx.Close()
+	lt3_subscriber2.Close()
+	lt3_sub2_ctx.Close()
 }
 
 func Test2LocalPubSub(t *testing.T) {
@@ -308,11 +308,11 @@ func Test2LocalPubSub(t *testing.T) {
 	// Waits for subscribers (notify reception)
 	time.Sleep(1000 * time.Millisecond)
 
-	fmt.Printf("##### Finish: %d %d\n", lt2_sub1_not_cpt, lt2_sub1_updt_cpt)
-	fmt.Printf("##### Finish: %d %d\n", lt2_sub2_not_cpt, lt2_sub2_updt_cpt)
+	fmt.Printf("##### Finish: %d %d\n", lt3_sub1_not_cpt, lt3_sub1_updt_cpt)
+	fmt.Printf("##### Finish: %d %d\n", lt3_sub2_not_cpt, lt3_sub2_updt_cpt)
 
-	lt2_subop1.Interrupt()
-	lt2_subop2.Interrupt()
+	lt3_subop1.Interrupt()
+	lt3_subop2.Interrupt()
 
 	// Wait for subscribers (closing)
 	time.Sleep(1000 * time.Millisecond)
