@@ -5,8 +5,8 @@ import (
 )
 
 func init() {
-	// Init("<root>=WARNING")
-	Init("<root>=WARNING;mal=WARNING;mal.transport=WARNING;mal.api=WARNING;isismal=DEBUG;isismal.boot=WARNING;isismal.encoding=WARNING;isismal.transport=DEBUG")
+	Init("<root>=WARNING")
+	// Init("<root>=WARNING;mal=WARNING;mal.broker=DEBUG;mal.transport=WARNING;mal.api=WARNING;isismal=DEBUG;isismal.boot=WARNING;isismal.encoding=WARNING;isismal.transport=DEBUG")
 }
 
 type Logger interface {
