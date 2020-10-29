@@ -33,6 +33,7 @@ import (
 	. "github.com/CNES/ccsdsmo-malgo/mal/api"
 	. "github.com/CNES/ccsdsmo-malgo/mal/broker"
 	_ "github.com/CNES/ccsdsmo-malgo/mal/transport/tcp" // Needed to initialize TCP transport factory
+	"sync"
 	"testing"
 	"time"
 )
@@ -45,6 +46,7 @@ const (
 
 var (
 	lt_running bool = true
+	lt_wg sync.WaitGroup
 
 	//	lt_broker_ctx *Context
 	lt_broker         *BrokerHandler
@@ -96,6 +98,7 @@ func newLocalTestBrokerPub(t *testing.T) {
 }
 
 func localTestPub1(t *testing.T) {
+	defer lt_wg.Done()
 	ekpub1 := &EntityKey{NewIdentifier("key1"), NewLong(1), NewLong(1), NewLong(1)}
 	ekpub2 := &EntityKey{NewIdentifier("key2"), NewLong(2), NewLong(2), NewLong(2)}
 	var eklist = EntityKeyList([]*EntityKey{ekpub1, ekpub2})
@@ -176,6 +179,7 @@ func newLocalTestSub1() error {
 }
 
 func runLocalTestSub1(t *testing.T) {
+	defer lt_wg.Done()
 	for lt_running == true {
 		// Try to get Notify
 		r1, err := lt_subop1.GetNotify()
@@ -247,11 +251,12 @@ func newLocalTestSub2() error {
 }
 
 func runLocalTestSub2(t *testing.T) {
+	defer lt_wg.Done()
 	for lt_running == true {
 		// Try to get Notify
 		r1, err := lt_subop2.GetNotify()
 		if err != nil {
-			fmt.Printf("Subscriber#1, Error in GetNotify: %v\n", err)
+			fmt.Printf("Subscriber#2, Error in GetNotify: %v\n", err)
 			break
 		}
 		fmt.Printf("\t&&&&& Subscriber2 notified: %d\n", r1.TransactionId)
@@ -271,10 +276,10 @@ func runLocalTestSub2(t *testing.T) {
 	// Deregisters subscriber
 
 	idlist := IdentifierList([]*Identifier{&lt_subid2})
-	lt_sbody1.EncodeLastParameter(&idlist, false)
-	lt_subop1.Deregister(lt_sbody1)
+	lt_sbody2.EncodeLastParameter(&idlist, false)
+	lt_subop2.Deregister(lt_sbody2)
 	fmt.Printf("\t&&&&&Subscriber#2, Deregistered\n")
-	lt_sbody1.Reset(true)
+	lt_sbody2.Reset(true)
 
 	lt_subscriber2.Close()
 	lt_sub2_ctx.Close()
@@ -282,7 +287,7 @@ func runLocalTestSub2(t *testing.T) {
 
 func TestLocalPubSub(t *testing.T) {
 	// Waits socket closing from previous test
-	time.Sleep(250 * time.Millisecond)
+	time.Sleep(1000 * time.Millisecond)
 
 	// Creates the broker
 	newLocalTestBrokerPub(t)
@@ -293,18 +298,21 @@ func TestLocalPubSub(t *testing.T) {
 	if err != nil {
 		t.Fatal("Error creating subscriber#1, ", err)
 	}
+	lt_wg.Add(1)
 	go runLocalTestSub1(t)
 
 	err = newLocalTestSub2()
 	if err != nil {
 		t.Fatal("Error creating subscriber#2, ", err)
 	}
+	lt_wg.Add(1)
 	go runLocalTestSub2(t)
 
 	// Waits for subscribers (notify reception)
 	time.Sleep(1000 * time.Millisecond)
 
 	// Creates the publishers and registers it
+	lt_wg.Add(1)
 	go localTestPub1(t)
 
 	// Waits for subscribers (notify reception)
@@ -317,5 +325,5 @@ func TestLocalPubSub(t *testing.T) {
 	lt_subop2.Interrupt()
 
 	// Wait for subscribers (closing)
-	time.Sleep(1000 * time.Millisecond)
+	lt_wg.Wait()
 }

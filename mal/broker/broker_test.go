@@ -43,7 +43,7 @@ const (
 
 func TestPubSub(t *testing.T) {
 	// Waits socket closing from previous test
-	time.Sleep(250 * time.Millisecond)
+	time.Sleep(1000 * time.Millisecond)
 
 	// Creates the broker
 
@@ -196,7 +196,4 @@ func TestPubSub(t *testing.T) {
 	sbody.EncodeLastParameter(&idlist, false)
 	subop.Deregister(sbody)
 	sbody.Reset(true)
-
-	// Waits for socket close
-	time.Sleep(250 * time.Millisecond)
 }

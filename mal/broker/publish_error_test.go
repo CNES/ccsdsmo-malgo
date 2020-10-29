@@ -29,6 +29,7 @@ import (
 	. "github.com/CNES/ccsdsmo-malgo/mal/api"
 	. "github.com/CNES/ccsdsmo-malgo/mal/broker"
 	_ "github.com/CNES/ccsdsmo-malgo/mal/transport/tcp" // Needed to initialize TCP transport factory
+	"sync"
 	"testing"
 	"time"
 )
@@ -45,6 +46,7 @@ const (
 
 var (
 	test3_running bool = true
+	test3_wg sync.WaitGroup
 
 	test3_broker_ctx  *Context
 	test3_broker      *BrokerHandler
@@ -97,6 +99,7 @@ func closeTest3Broker() {
 }
 
 func test3Pub1(t *testing.T) {
+	defer test3_wg.Done()
 	var err error
 	test3_pub1_ctx, err = NewContext(test3_publisher1_url)
 	if err != nil {
@@ -187,6 +190,7 @@ func test3Pub1(t *testing.T) {
 }
 
 func test3Pub2(t *testing.T) {
+	defer test3_wg.Done()
 	var err error
 	test3_pub2_ctx, err = NewContext(test3_publisher2_url)
 	if err != nil {
@@ -250,7 +254,7 @@ func test3Pub2(t *testing.T) {
 
 	// Deregisters publisher
 	pubop.Deregister(nil)
-	fmt.Printf("Publisher#1 end\n")
+	fmt.Printf("Publisher#2 end\n")
 }
 
 var test3_subop1 SubscriberOperation
@@ -268,8 +272,8 @@ func newTest3Sub1() error {
 	}
 	test3_subscriber1.SetDomain(IdentifierList([]*Identifier{NewIdentifier("spacecraft1"), NewIdentifier("payload")}))
 
-	subop1 = test3_subscriber1.NewSubscriberOperation(test3_broker.Uri(), 200, 1, 1, 1)
-	sbody1 = subop1.NewBody()
+	test3_subop1 = test3_subscriber1.NewSubscriberOperation(test3_broker.Uri(), 200, 1, 1, 1)
+	test3_sbody1 = test3_subop1.NewBody()
 
 	domains := IdentifierList([]*Identifier{NewIdentifier("*")})
 	eksub := &EntityKey{NewIdentifier("key1"), NewLong(0), NewLong(0), NewLong(0)}
@@ -279,20 +283,21 @@ func newTest3Sub1() error {
 		},
 	})
 	subs := &Subscription{test3_subid1, erlist}
-	sbody1.EncodeLastParameter(subs, false)
+	test3_sbody1.EncodeLastParameter(subs, false)
 
-	subop1.Register(sbody1)
+	test3_subop1.Register(test3_sbody1)
 	fmt.Printf("subop.Register OK\n")
 	// Register is synchronous, we can clear buffer
-	sbody1.Reset(true)
+	test3_sbody1.Reset(true)
 
 	return nil
 }
 
 func runTest3Sub1(t *testing.T) {
+	defer test3_wg.Done()
 	for test3_running == true {
 		// Try to get Notify
-		r1, err := subop1.GetNotify()
+		r1, err := test3_subop1.GetNotify()
 		if err != nil {
 			fmt.Printf("Subscriber#1, Error in GetNotify: %v\n", err)
 			break
@@ -314,10 +319,10 @@ func runTest3Sub1(t *testing.T) {
 	// Deregisters subscriber
 
 	idlist := IdentifierList([]*Identifier{&test3_subid1})
-	sbody1.EncodeLastParameter(&idlist, false)
-	subop1.Deregister(sbody1)
+	test3_sbody1.EncodeLastParameter(&idlist, false)
+	test3_subop1.Deregister(test3_sbody1)
 	fmt.Printf("\t&&&&&Subscriber#1, Deregistered\n")
-	sbody1.Reset(true)
+	test3_sbody1.Reset(true)
 
 	test3_subscriber1.Close()
 	test3_sub1_ctx.Close()
@@ -338,8 +343,8 @@ func newTest3Sub2() error {
 	}
 	test3_subscriber2.SetDomain(IdentifierList([]*Identifier{NewIdentifier("spacecraft1"), NewIdentifier("payload")}))
 
-	subop2 = test3_subscriber2.NewSubscriberOperation(test3_broker.Uri(), 200, 1, 1, 1)
-	sbody2 = subop2.NewBody()
+	test3_subop2 = test3_subscriber2.NewSubscriberOperation(test3_broker.Uri(), 200, 1, 1, 1)
+	test3_sbody2 = test3_subop2.NewBody()
 
 	domains := IdentifierList([]*Identifier{NewIdentifier("camera2")})
 	eksub1 := &EntityKey{NewIdentifier("key1"), NewLong(0), NewLong(0), NewLong(0)}
@@ -350,22 +355,23 @@ func newTest3Sub2() error {
 		},
 	})
 	subs := &Subscription{test3_subid2, erlist}
-	sbody2.EncodeLastParameter(subs, false)
+	test3_sbody2.EncodeLastParameter(subs, false)
 
-	subop2.Register(sbody2)
+	test3_subop2.Register(test3_sbody2)
 	fmt.Printf("subop.Register OK\n")
 	// Register is synchronous, we can clear buffer
-	sbody2.Reset(true)
+	test3_sbody2.Reset(true)
 
 	return nil
 }
 
 func runTest3Sub2(t *testing.T) {
+	defer test3_wg.Done()
 	for test3_running == true {
 		// Try to get Notify
-		r1, err := subop2.GetNotify()
+		r1, err := test3_subop2.GetNotify()
 		if err != nil {
-			fmt.Printf("Subscriber#1, Error in GetNotify: %v\n", err)
+			fmt.Printf("Subscriber#2, Error in GetNotify: %v\n", err)
 			break
 		}
 		fmt.Printf("\t&&&&& Subscriber2 notified: %d\n", r1.TransactionId)
@@ -385,10 +391,10 @@ func runTest3Sub2(t *testing.T) {
 	// Deregisters subscriber
 
 	idlist := IdentifierList([]*Identifier{&test3_subid2})
-	sbody1.EncodeLastParameter(&idlist, false)
-	subop1.Deregister(sbody1)
+	test3_sbody2.EncodeLastParameter(&idlist, false)
+	test3_subop2.Deregister(test3_sbody2)
 	fmt.Printf("\t&&&&&Subscriber#2, Deregistered\n")
-	sbody1.Reset(true)
+	test3_sbody2.Reset(true)
 
 	test3_subscriber2.Close()
 	test3_sub2_ctx.Close()
@@ -396,7 +402,7 @@ func runTest3Sub2(t *testing.T) {
 
 func Test3PubSub(t *testing.T) {
 	// Waits socket closing from previous test
-	time.Sleep(250 * time.Millisecond)
+	time.Sleep(1000 * time.Millisecond)
 
 	// Creates the broker
 	err := newTest3Broker()
@@ -411,18 +417,21 @@ func Test3PubSub(t *testing.T) {
 	if err != nil {
 		t.Fatal("Error creating subscriber#1, ", err)
 	}
+	test3_wg.Add(1)
 	go runTest3Sub1(t)
 
 	err = newTest3Sub2()
 	if err != nil {
 		t.Fatal("Error creating subscriber#2, ", err)
 	}
+	test3_wg.Add(1)
 	go runTest3Sub2(t)
 
 	// Waits for subscribers (notify reception)
 	time.Sleep(500 * time.Millisecond)
 
 	// Creates the publishers and registers it
+	test3_wg.Add(2)
 	go test3Pub1(t)
 	go test3Pub2(t)
 
@@ -432,9 +441,9 @@ func Test3PubSub(t *testing.T) {
 	fmt.Printf("##### Finish: %d %d\n", test3_sub1_not_cpt, test3_sub1_updt_cpt)
 	fmt.Printf("##### Finish: %d %d\n", test3_sub2_not_cpt, test3_sub2_updt_cpt)
 
-	subop1.Interrupt()
-	subop2.Interrupt()
+	test3_subop1.Interrupt()
+	test3_subop2.Interrupt()
 
 	// Wait for subscribers (closing)
-	time.Sleep(1000 * time.Millisecond)
+	test3_wg.Wait()
 }

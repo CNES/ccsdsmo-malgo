@@ -33,6 +33,7 @@ import (
 	. "github.com/CNES/ccsdsmo-malgo/mal/api"
 	. "github.com/CNES/ccsdsmo-malgo/mal/broker"
 	_ "github.com/CNES/ccsdsmo-malgo/mal/transport/tcp" // Needed to initialize TCP transport factory
+	"sync"
 	"testing"
 	"time"
 )
@@ -45,6 +46,7 @@ const (
 
 var (
 	lt3_running bool = true
+	lt3_wg sync.WaitGroup
 
 	lt3_broker         *LocalBroker
 	lt3_updtHandler    UpdateValueHandler
@@ -67,12 +69,12 @@ var (
 	lt3_subid2 = Identifier("MySubscription2")
 )
 
-func closeLocalTest2BrokerPub() {
+func closeLocalTestL3BrokerPub() {
 	lt3_brokerpub_cctx.Close()
 	lt3_brokerpub_ctx.Close()
 }
 
-func newLocalTest2BrokerPub(t *testing.T) {
+func newLocalTestL3BrokerPub(t *testing.T) {
 	var err error
 	lt3_brokerpub_ctx, err = NewContext(lt3_brokerpub_url)
 	if err != nil {
@@ -95,7 +97,8 @@ func newLocalTest2BrokerPub(t *testing.T) {
 	}
 }
 
-func localTest2Pub1(t *testing.T) {
+func localTestL3Pub1(t *testing.T) {
+	defer lt3_wg.Done()
 	ekpub1 := &EntityKey{NewIdentifier("key1"), NewLong(1), NewLong(1), NewLong(1)}
 	ekpub2 := &EntityKey{NewIdentifier("key2"), NewLong(2), NewLong(2), NewLong(2)}
 	var eklist = EntityKeyList([]*EntityKey{ekpub1, ekpub2})
@@ -140,7 +143,7 @@ func localTest2Pub1(t *testing.T) {
 var lt3_subop1 SubscriberOperation
 var lt3_sbody1 Body
 
-func newLocalTest2Sub1() error {
+func newLocalTestL3Sub1() error {
 	var err error
 	lt3_sub1_ctx, err = NewContext(lt3_subscriber1_url)
 	if err != nil {
@@ -173,7 +176,8 @@ func newLocalTest2Sub1() error {
 	return nil
 }
 
-func runLocalTest2Sub1(t *testing.T) {
+func runLocalTestL3Sub1(t *testing.T) {
+	defer lt3_wg.Done()
 	for lt3_running == true {
 		// Try to get Notify
 		r1, err := lt3_subop1.GetNotify()
@@ -210,7 +214,7 @@ func runLocalTest2Sub1(t *testing.T) {
 var lt3_subop2 SubscriberOperation
 var lt3_sbody2 Body
 
-func newLocalTest2Sub2() error {
+func newLocalTestL3Sub2() error {
 	var err error
 	lt3_sub2_ctx, err = NewContext(lt3_subscriber2_url)
 	if err != nil {
@@ -244,12 +248,13 @@ func newLocalTest2Sub2() error {
 	return nil
 }
 
-func runLocalTest2Sub2(t *testing.T) {
+func runLocalTestL3Sub2(t *testing.T) {
+	defer lt3_wg.Done()
 	for lt3_running == true {
 		// Try to get Notify
 		r1, err := lt3_subop2.GetNotify()
 		if err != nil {
-			fmt.Printf("Subscriber#1, Error in GetNotify: %v\n", err)
+			fmt.Printf("Subscriber#2, Error in GetNotify: %v\n", err)
 			break
 		}
 		fmt.Printf("\t&&&&& Subscriber2 notified: %d\n", r1.TransactionId)
@@ -269,41 +274,44 @@ func runLocalTest2Sub2(t *testing.T) {
 	// Deregisters subscriber
 
 	idlist := IdentifierList([]*Identifier{&lt3_subid2})
-	lt3_sbody1.EncodeLastParameter(&idlist, false)
-	lt3_subop1.Deregister(lt3_sbody1)
+	lt3_sbody2.EncodeLastParameter(&idlist, false)
+	lt3_subop2.Deregister(lt3_sbody2)
 	fmt.Printf("\t&&&&&Subscriber#2, Deregistered\n")
-	lt3_sbody1.Reset(true)
+	lt3_sbody2.Reset(true)
 
 	lt3_subscriber2.Close()
 	lt3_sub2_ctx.Close()
 }
 
-func Test2LocalPubSub(t *testing.T) {
+func TestL3LocalPubSub(t *testing.T) {
 	// Waits socket closing from previous test
-	time.Sleep(250 * time.Millisecond)
+	time.Sleep(1000 * time.Millisecond)
 
 	// Creates the broker
-	newLocalTest2BrokerPub(t)
-	defer closeLocalTest2BrokerPub()
+	newLocalTestL3BrokerPub(t)
+	defer closeLocalTestL3BrokerPub()
 
 	// Creates the subscribers and registers it
-	err := newLocalTest2Sub1()
+	err := newLocalTestL3Sub1()
 	if err != nil {
 		t.Fatal("Error creating subscriber#1, ", err)
 	}
-	go runLocalTest2Sub1(t)
+	lt3_wg.Add(1)
+	go runLocalTestL3Sub1(t)
 
-	err = newLocalTest2Sub2()
+	err = newLocalTestL3Sub2()
 	if err != nil {
 		t.Fatal("Error creating subscriber#2, ", err)
 	}
-	go runLocalTest2Sub2(t)
+	lt3_wg.Add(1)
+	go runLocalTestL3Sub2(t)
 
 	// Waits for subscribers (notify reception)
 	time.Sleep(1000 * time.Millisecond)
 
 	// Creates the publishers and registers it
-	go localTest2Pub1(t)
+	lt3_wg.Add(1)
+	go localTestL3Pub1(t)
 
 	// Waits for subscribers (notify reception)
 	time.Sleep(1000 * time.Millisecond)
@@ -315,5 +323,5 @@ func Test2LocalPubSub(t *testing.T) {
 	lt3_subop2.Interrupt()
 
 	// Wait for subscribers (closing)
-	time.Sleep(1000 * time.Millisecond)
+	lt3_wg.Wait()
 }
