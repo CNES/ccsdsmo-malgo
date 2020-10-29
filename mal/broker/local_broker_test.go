@@ -115,7 +115,7 @@ func localTestPub1(t *testing.T) {
 	updtlist1 := BlobList([]*Blob{updt1, updt2, updt3})
 
 	lt_updtHandler.(*BlobUpdateValueHandler).InitUpdateValueList(&updtlist1)
-	lt_broker.LocalPublish(200, 1, 1, 1, &updtHdrlist1, lt_updtHandler)
+	lt_broker.LocalPublish(200, 1, 1, 1, &updtHdrlist1)
 	fmt.Printf("pubop.Publish OK\n")
 
 	time.Sleep(100 * time.Millisecond)
@@ -130,7 +130,7 @@ func localTestPub1(t *testing.T) {
 	updtlist2 := BlobList([]*Blob{updt4, updt5})
 
 	lt_updtHandler.(*BlobUpdateValueHandler).InitUpdateValueList(&updtlist2)
-	lt_broker.LocalPublish(200, 1, 1, 1, &updtHdrlist2, lt_updtHandler)
+	lt_broker.LocalPublish(200, 1, 1, 1, &updtHdrlist2)
 	fmt.Printf("pubop.Publish OK\n")
 
 	// Deregisters publisher
