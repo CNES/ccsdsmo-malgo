@@ -37,16 +37,16 @@ import (
 const (
 	test3_varint = false
 
-	test3_broker_url      = "maltcp://127.0.0.1:16000"
-	test3_subscriber1_url = "maltcp://127.0.0.1:16001"
-	test3_publisher1_url  = "maltcp://127.0.0.1:16002"
-	test3_subscriber2_url = "maltcp://127.0.0.1:16003"
-	test3_publisher2_url  = "maltcp://127.0.0.1:16004"
+	test3_broker_url      = "maltcp://127.0.0.1:16020"
+	test3_subscriber1_url = "maltcp://127.0.0.1:16021"
+	test3_publisher1_url  = "maltcp://127.0.0.1:16022"
+	test3_subscriber2_url = "maltcp://127.0.0.1:16023"
+	test3_publisher2_url  = "maltcp://127.0.0.1:16024"
 )
 
 var (
 	test3_running bool = true
-	test3_wg sync.WaitGroup
+	test3_wg      sync.WaitGroup
 
 	test3_broker_ctx  *Context
 	test3_broker      *BrokerHandler
