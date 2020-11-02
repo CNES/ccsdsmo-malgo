@@ -1,7 +1,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2018-2019 CNES
+ * Copyright (c) 2018 - 2020 CNES
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,24 +21,14 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package event
+package com
 
 import (
-	. "github.com/CNES/ccsdsmo-malgo/mal"
+	"fmt"
 )
 
-func handleError(details String, err error, msg *Message) {
-	// err is not nil
-	if msg != nil {
-		// msg holds a MAL error message
-		param, err2 := msg.DecodeParameter(NullUInteger)
-		if err2 != nil {
-			logger.Errorf("%s: error decoding error code, %v", details, err2)
-		} else {
-			errorNumber := param.(*UInteger)
-			logger.Errorf("%s: code %v", details, *errorNumber)
-		}
-	} else {
-		logger.Errorf("%s: %v", details, err)
-	}
+// ================================================================================
+// Implements Stringer interface
+func (key *ObjectKey) String() string {
+	return fmt.Sprintf("ObjectKey(%s, %d)", key.Domain, key.InstId)
 }

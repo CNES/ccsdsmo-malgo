@@ -45,6 +45,6 @@ This GO API basically includes 4 packages:
 	go test github.com/CNES/ccsdsmo-malgo/mal/transport/invm
 	go test github.com/CNES/ccsdsmo-malgo/mal/transport/tcp
 	go test github.com/CNES/ccsdsmo-malgo/mal/api
-	go test github.com/CNES/ccsdsmo-malgo/mal/api/broker
+	go test github.com/CNES/ccsdsmo-malgo/mal/broker
 	go test github.com/CNES/ccsdsmo-malgo/tests/encoding
 	go test github.com/CNES/ccsdsmo-malgo/tests/issue1

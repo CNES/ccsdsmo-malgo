@@ -1,7 +1,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2018 - 2020 CNES
+ * Copyright (c) 2020 CNES
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,16 +21,23 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com
+package archive
 
 import (
   "github.com/CNES/ccsdsmo-malgo/mal"
 )
 
 const (
-  AREA_NUMBER mal.UShort = 2
-  AREA_VERSION mal.UOctet = 1
-  AREA_NAME = mal.Identifier("COM")
-  ERROR_INVALID mal.UInteger = 70000
-  ERROR_DUPLICATE mal.UInteger = 70001
+  // standard service identifiers
+  SERVICE_NUMBER mal.UShort = 2
+  SERVICE_NAME = mal.Identifier("Archive")
+
+  // standard operation identifiers
+  RETRIEVE_OPERATION_NUMBER mal.UShort = 1
+  QUERY_OPERATION_NUMBER mal.UShort = 2
+  COUNT_OPERATION_NUMBER mal.UShort = 3
+  STORE_OPERATION_NUMBER mal.UShort = 4
+  UPDATE_OPERATION_NUMBER mal.UShort = 5
+  DELETE_OPERATION_NUMBER mal.UShort = 6
 )
+

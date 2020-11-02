@@ -1,7 +1,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2018 CNES
+ * Copyright (c) 2018 - 2020 CNES
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,13 +21,15 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package event
+package com
 
 import (
-	. "github.com/CNES/ccsdsmo-malgo/mal"
+	"fmt"
 )
 
-const (
-	COM_EVENT_SERVICE_NUMBER          UShort = 0x01
-	COM_EVENT_MONITOR_EVENT_OP_NUMBER UShort = 0x01
-)
+// ================================================================================
+// Implements Stringer interface
+
+func (details *ObjectDetails) String() string {
+	return fmt.Sprintf("ObjectDetails(0x%x, %s)", details.Related, details.Source)
+}
