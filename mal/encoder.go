@@ -551,7 +551,7 @@ func (encoder *GenEncoder) EncodeAttribute(att Attribute) error {
 // Encodes an Attribute that may be null
 // @param att The Attribute to encode.
 func (encoder *GenEncoder) EncodeNullableAttribute(att Attribute) error {
-	if att == att.Null() { // att.IsNull()
+	if att == nil || att == att.Null() { // att.IsNull()
 		return encoder.Self.EncodeNull()
 	} else {
 		err := encoder.Self.EncodeNotNull()
