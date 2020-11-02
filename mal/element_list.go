@@ -1,7 +1,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2018 CNES
+ * Copyright (c) 2018-2020 CNES
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -36,6 +36,10 @@ type ElementList interface {
 	AppendElement(element Element)
 }
 
+var (
+	NullElementList ElementList = nil
+)
+
 // ################################################################################
 // Defines a MAL ElementList generic implementation
 // Be careful, ElementList is not a MAL type: It does not implement Element and
@@ -43,10 +47,6 @@ type ElementList interface {
 // ################################################################################
 
 type ElementListImpl []Element
-
-var (
-	NullElementList *ElementListImpl = nil
-)
 
 func NewElementListImpl(size int) *ElementListImpl {
 	var list ElementListImpl = ElementListImpl(make([]Element, size))
