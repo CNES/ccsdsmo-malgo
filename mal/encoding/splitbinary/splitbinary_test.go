@@ -1586,28 +1586,28 @@ func TestEntityRequestList(t *testing.T) {
 
 // Note (AF): see corresponding comment in encoder about generic view for lists.
 
-func TestOctetElementList(t *testing.T) {
-	var length uint32 = 8192
-	buf := NewBodyBuffer(length)
-	bf := make([]byte, 0, 8)
-	encoder := splitbinary.NewSplitBinaryEncoder(buf, bf)
-
-	var list = []Element{
-		NewOctet(-128),
-		NewOctet(0),
-		NullOctet,
-		NewOctet(127),
-	}
-	encoder.EncodeList(list)
-
-	buf = encoder.Body()
-	decoder := splitbinary.NewSplitBinaryDecoder(buf)
-
-	y, err := decoder.DecodeList(NewOctet(0))
-	if err != nil {
-		t.Fatalf("Error during decode: %v", err)
-	}
-	if !reflect.DeepEqual(list, y) {
-		t.Errorf("Bad decoding, got: %v, want: %v", y, list)
-	}
-}
+//func TestOctetElementList(t *testing.T) {
+//	var length uint32 = 8192
+//	buf := NewBodyBuffer(length)
+//	bf := make([]byte, 0, 8)
+//	encoder := splitbinary.NewSplitBinaryEncoder(buf, bf)
+//
+//	var list = []Element{
+//		NewOctet(-128),
+//		NewOctet(0),
+//		NullOctet,
+//		NewOctet(127),
+//	}
+//	encoder.EncodeList(list)
+//
+//	buf = encoder.Body()
+//	decoder := splitbinary.NewSplitBinaryDecoder(buf)
+//
+//	y, err := decoder.DecodeList(NewOctet(0))
+//	if err != nil {
+//		t.Fatalf("Error during decode: %v", err)
+//	}
+//	if !reflect.DeepEqual(list, y) {
+//		t.Errorf("Bad decoding, got: %v, want: %v", y, list)
+//	}
+//}
