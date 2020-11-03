@@ -117,7 +117,7 @@ func localTestPub1(t *testing.T) {
 	updt3 := &Blob{0, 1}
 	updtlist1 := BlobList([]*Blob{updt1, updt2, updt3})
 
-	lt_updtHandler.(*BlobUpdateValueHandler).InitUpdateValueList(&updtlist1)
+	lt_updtHandler.(*BlobUpdateValueHandler).InitUpdateValueList([]ElementList{&updtlist1})
 	lt_broker.LocalPublish(200, 1, 1, 1, &updtHdrlist1)
 	fmt.Printf("pubop.Publish OK\n")
 
@@ -132,7 +132,7 @@ func localTestPub1(t *testing.T) {
 	updt5 := &Blob{4, 5, 6}
 	updtlist2 := BlobList([]*Blob{updt4, updt5})
 
-	lt_updtHandler.(*BlobUpdateValueHandler).InitUpdateValueList(&updtlist2)
+	lt_updtHandler.(*BlobUpdateValueHandler).InitUpdateValueList([]ElementList{&updtlist2})
 	lt_broker.LocalPublish(200, 1, 1, 1, &updtHdrlist2)
 	fmt.Printf("pubop.Publish OK\n")
 

@@ -25,6 +25,7 @@ package broker
 
 import (
 	"errors"
+	"fmt"
 	. "github.com/CNES/ccsdsmo-malgo/mal"
 	. "github.com/CNES/ccsdsmo-malgo/mal/api"
 	"github.com/CNES/ccsdsmo-malgo/mal/debug"
@@ -192,7 +193,7 @@ type BrokerHandler struct {
 }
 
 type UpdateValueHandler interface {
-	InitUpdateValueList(list ElementList) error
+	InitUpdateValueList(list []ElementList) error
 	DecodeUpdateValueList(body Body) error
 	UpdateValueListSize() int
 	AppendValue(idx int)
@@ -214,8 +215,8 @@ func NewBlobUpdateValueHandler() *BlobUpdateValueHandler {
 
 // Function used to initialize the UpdateValueHandler from a list of values.
 // This function is used with local broker.
-func (handler *BlobUpdateValueHandler) InitUpdateValueList(list ElementList) error {
-	blist, ok := list.(*BlobList)
+func (handler *BlobUpdateValueHandler) InitUpdateValueList(list []ElementList) error {
+	blist, ok := list[0].(*BlobList)
 	if !ok {
 		err := errors.New("Unexpected type of the update value list")
 		logger.Warnf("%s", err.Error())
@@ -272,13 +273,23 @@ func (handler *BlobUpdateValueHandler) ResetValues() {
 // Implements a generic UpdateValueHandler
 
 type GenericUpdateValueHandler struct {
-	list   ElementList
-	values ElementList
+	list   []ElementList
+	values []ElementList
 	// Null value for the list type, nil if abstract
-	valueType ElementList
+	valueType []ElementList
 }
 
-func NewGenericUpdateValueHandler(valueType ElementList) *GenericUpdateValueHandler {
+func NewGenericUpdateValueHandler(valueType ...ElementList) *GenericUpdateValueHandler {
+	if valueType == nil {
+		valueType = make([]ElementList, 0)
+	}
+	// only the last parameter may be abstract
+	for i := 0; i < len(valueType)-1; i++ {
+		if valueType[i] == nil {
+			logger.Errorf("Illegal nil parameter #%d", i+1)
+			return nil
+		}
+	}
 	return &GenericUpdateValueHandler{
 		valueType: valueType,
 	}
@@ -286,50 +297,124 @@ func NewGenericUpdateValueHandler(valueType ElementList) *GenericUpdateValueHand
 
 // Function used to initialize the UpdateValueHandler from a list of values.
 // This function is used with local broker.
-func (handler *GenericUpdateValueHandler) InitUpdateValueList(list ElementList) error {
-	logger.Infof("Broker.Publish, InitUpdateValueList -> %d %v", list.Size(), list)
+func (handler *GenericUpdateValueHandler) InitUpdateValueList(list []ElementList) error {
+	if list == nil {
+		list = make([]ElementList, 0)
+	}
+	logger.Infof("Broker.Publish, InitUpdateValueList -> %d %v", len(list), list)
 
+	if len(list) != len(handler.valueType) {
+		return errors.New("The size of the UpdateValue list does not match the handler configuration.")
+	}
 	handler.list = list
-	handler.values = list.CreateElement().(ElementList)
-
+	handler.values = make([]ElementList, len(list))
+	uvlSize := 0
+	for i := 0; i < len(list); i++ {
+		if list[i] == nil || list[i].IsNull() || list[i].Size() == 0 {
+			// there should be at least 1 value
+			return errors.New("Null or empty UpdateValue list.")
+		}
+		if i == 0 {
+			uvlSize = list[i].Size()
+		} else if list[i].Size() != uvlSize {
+			// all lists should have the same size
+			return fmt.Errorf("The size of UpdateValue list #%d (%d) differs from the first (%d)", i+1, list[i].Size(), uvlSize)
+		}
+		handler.values[i] = list[i].CreateElement().(ElementList)
+	}
 	return nil
 }
 
 // Function used to create the UpdateValueHandler from the encoded message.
 // This function is used with shared broker.
 func (handler *GenericUpdateValueHandler) DecodeUpdateValueList(body Body) error {
-	p, err := body.DecodeLastParameter(handler.valueType, handler.valueType == nil)
-	if err != nil {
-		return err
+	handler.list = make([]ElementList, len(handler.valueType))
+	handler.values = make([]ElementList, len(handler.valueType))
+	uvlSize := 0
+	for i := 0; i < len(handler.valueType); i++ {
+		isLast := (i == len(handler.valueType)-1)
+		var p Element
+		var err error
+		if !isLast {
+			p, err = body.DecodeParameter(handler.valueType[i])
+			if err != nil {
+				return err
+			}
+			// p cannot be nil, i.e. NullElement
+			handler.list[i] = p.(ElementList)
+		} else {
+			p, err = body.DecodeLastParameter(handler.valueType[i], handler.valueType[i] == nil)
+			if err != nil {
+				return err
+			}
+			if p == nil {
+				handler.list[i] = nil
+			} else {
+				handler.list[i] = p.(ElementList)
+			}
+		}
+		if err != nil {
+			return err
+		}
+		if p == nil || p.IsNull() || handler.list[i].Size() == 0 {
+			return fmt.Errorf("Null UpdateValue list #%d.", i+1)
+		}
+		list := p.(ElementList)
+		if list.Size() == 0 {
+			return fmt.Errorf("Empty UpdateValue list #%d.", i+1)
+		}
+		if i == 0 {
+			uvlSize = list.Size()
+		} else if list.Size() != uvlSize {
+			// all lists should have the same size
+			return fmt.Errorf("The size of UpdateValue list #%d (%d) differs from the first (%d)", i+1, list.Size(), uvlSize)
+		}
+		logger.Infof("Broker.Publish, DecodeUpdateValueList(%d) -> %v", i, list)
+		
+		handler.list[i] = list
+		handler.values[i] = list.CreateElement().(ElementList)
 	}
-	list := p.(ElementList)
-	logger.Infof("Broker.Publish, DecodeUpdateValueList -> %d %v", list.Size(), list)
-
-	handler.list = list
-	handler.values = list.CreateElement().(ElementList)
 
 	return nil
 }
 
 func (handler *GenericUpdateValueHandler) UpdateValueListSize() int {
-	return handler.list.Size()
+	if handler.list == nil || len(handler.list) == 0 || handler.list[0] == nil {
+		return 0
+	}
+	return handler.list[0].Size()
 }
 
 func (handler *GenericUpdateValueHandler) AppendValue(idx int) {
-	handler.values.AppendElement(handler.list.GetElementAt(idx))
+	for i := 0; i < len(handler.list); i++ {
+		handler.values[i].AppendElement(handler.list[i].GetElementAt(idx))
+	}
 }
 
 func (handler *GenericUpdateValueHandler) EncodeUpdateValueList(body Body) error {
-	err := body.EncodeLastParameter(handler.values, handler.valueType == nil)
-	if err != nil {
-		return err
+	for i := 0; i < len(handler.valueType); i++ {
+		isLast := (i == len(handler.valueType)-1)
+		var err error
+		if !isLast {
+			err = body.EncodeParameter(handler.values[i])
+		} else {
+			err = body.EncodeLastParameter(handler.values[i], handler.valueType[i] == nil)
+		}
+		if err != nil {
+			return err
+		}
+		handler.values[i] = handler.values[i].CreateElement().(ElementList)
 	}
-	handler.values = handler.values.CreateElement().(ElementList)
 	return nil
 }
 
 func (handler *GenericUpdateValueHandler) ResetValues() {
-	handler.values = handler.values.CreateElement().(ElementList)
+	if handler.values == nil {
+		return
+	}
+	for i := 0; i < len(handler.values); i++ {
+		handler.values[i] = handler.values[i].CreateElement().(ElementList)
+	}
 }
 
 // ################################################################################
@@ -519,8 +604,9 @@ func (handler *BrokerHandler) publish(pub *Message, transaction PublisherTransac
 func (handler *BrokerHandler) doPublish(pub *Message, uhlist *UpdateHeaderList, updtHandler UpdateValueHandler) error {
 	logger.Debugf("Broker.doPublish -> %v", uhlist)
 
-	if len(*uhlist) != updtHandler.UpdateValueListSize() {
-		return errors.New("Bad header and value list lengths")
+	uvlSize := updtHandler.UpdateValueListSize()
+	if len(*uhlist) != uvlSize {
+		return fmt.Errorf("The UpdateValue list size (%d) does not match the UpdateHeader list size (%d).", uvlSize, len(*uhlist))
 	}
 
 	// TODO (AF): Verify the publication validity see 3.5.6.8 e, f
@@ -654,7 +740,7 @@ func (handler *BrokerHandler) LocalPublishDeregister() error {
 }
 
 //func (broker *LocalBroker) Publish(uhlist *UpdateHeaderList, updtHandler UpdateValueHandler) error {
-func (broker *LocalBroker) Publish(uhlist *UpdateHeaderList, uvlist ElementList) error {
+func (broker *LocalBroker) Publish(uhlist *UpdateHeaderList, uvlist ...ElementList) error {
 	broker.handler.updtHandler.InitUpdateValueList(uvlist)
 	return broker.handler.LocalPublish(broker.area, broker.areaVersion, broker.service, broker.operation, uhlist)
 }
