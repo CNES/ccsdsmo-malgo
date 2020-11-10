@@ -1,29 +1,7 @@
-/**
- * MIT License
- *
- * Copyright (c) 2020 CNES
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
- */
 package archive
 
 import (
+  "fmt"
   "github.com/CNES/ccsdsmo-malgo/mal"
   "github.com/CNES/ccsdsmo-malgo/com"
 )
@@ -52,7 +30,7 @@ const (
 )
 
 // Conversion table OVAL->NVAL
-var nvalTable = []uint32 {
+var nvalTable_ExpressionOperator = []uint32 {
   EXPRESSIONOPERATOR_EQUAL_NVAL,
   EXPRESSIONOPERATOR_DIFFER_NVAL,
   EXPRESSIONOPERATOR_GREATER_NVAL,
@@ -63,21 +41,48 @@ var nvalTable = []uint32 {
   EXPRESSIONOPERATOR_ICONTAINS_NVAL,
 }
 
+// Conversion map NVAL->OVAL
+var ovalMap_ExpressionOperator map[uint32]uint32
+
 var (
-  EXPRESSIONOPERATOR_EQUAL = ExpressionOperator(EXPRESSIONOPERATOR_EQUAL_OVAL)
-  EXPRESSIONOPERATOR_DIFFER = ExpressionOperator(EXPRESSIONOPERATOR_DIFFER_OVAL)
-  EXPRESSIONOPERATOR_GREATER = ExpressionOperator(EXPRESSIONOPERATOR_GREATER_OVAL)
-  EXPRESSIONOPERATOR_GREATER_OR_EQUAL = ExpressionOperator(EXPRESSIONOPERATOR_GREATER_OR_EQUAL_OVAL)
-  EXPRESSIONOPERATOR_LESS = ExpressionOperator(EXPRESSIONOPERATOR_LESS_OVAL)
-  EXPRESSIONOPERATOR_LESS_OR_EQUAL = ExpressionOperator(EXPRESSIONOPERATOR_LESS_OR_EQUAL_OVAL)
-  EXPRESSIONOPERATOR_CONTAINS = ExpressionOperator(EXPRESSIONOPERATOR_CONTAINS_OVAL)
-  EXPRESSIONOPERATOR_ICONTAINS = ExpressionOperator(EXPRESSIONOPERATOR_ICONTAINS_OVAL)
+  EXPRESSIONOPERATOR_EQUAL = ExpressionOperator(EXPRESSIONOPERATOR_EQUAL_NVAL)
+  EXPRESSIONOPERATOR_DIFFER = ExpressionOperator(EXPRESSIONOPERATOR_DIFFER_NVAL)
+  EXPRESSIONOPERATOR_GREATER = ExpressionOperator(EXPRESSIONOPERATOR_GREATER_NVAL)
+  EXPRESSIONOPERATOR_GREATER_OR_EQUAL = ExpressionOperator(EXPRESSIONOPERATOR_GREATER_OR_EQUAL_NVAL)
+  EXPRESSIONOPERATOR_LESS = ExpressionOperator(EXPRESSIONOPERATOR_LESS_NVAL)
+  EXPRESSIONOPERATOR_LESS_OR_EQUAL = ExpressionOperator(EXPRESSIONOPERATOR_LESS_OR_EQUAL_NVAL)
+  EXPRESSIONOPERATOR_CONTAINS = ExpressionOperator(EXPRESSIONOPERATOR_CONTAINS_NVAL)
+  EXPRESSIONOPERATOR_ICONTAINS = ExpressionOperator(EXPRESSIONOPERATOR_ICONTAINS_NVAL)
 )
 
 var NullExpressionOperator *ExpressionOperator = nil
-func NewExpressionOperator(i uint32) *ExpressionOperator {
-  var val ExpressionOperator = ExpressionOperator(i)
-  return &val
+
+func init() {
+  ovalMap_ExpressionOperator = make(map[uint32]uint32)
+  for oval, nval := range nvalTable_<Enum> {
+    ovalMap_ExpressionOperator[nval] = uint32(oval)
+  }
+}
+
+func (receiver ExpressionOperator) GetNumericValue() uint32 {
+  return uint32(receiver)
+}
+func (receiver ExpressionOperator) GetOrdinalValue() uint32 {
+  nvalue := receiver.GetNumericValue()
+  return ovalMap_ExpressionOperator[nvalue]
+}
+func ExpressionOperatorFromNumericValue(nval uint32) (ExpressionOperator, error) {
+  _, ok := ovalMap_ExpressionOperator[nval]
+  if !ok {
+    return ExpressionOperator(0), fmt.Errorf("Invalid numeric value for ExpressionOperator: %v", nval)
+  }
+  return ExpressionOperator(nval), nil
+}
+func ExpressionOperatorFromOrdinalValue(oval uint32) (ExpressionOperator, error) {
+  if oval >= uint32(len(nvalTable_ExpressionOperator)) {
+    return ExpressionOperator(0), fmt.Errorf("Invalid ordinal value for ExpressionOperator: %v", oval)
+  }
+  return ExpressionOperator(nvalTable_ExpressionOperator[oval]), nil
 }
 
 // ================================================================================
@@ -118,7 +123,7 @@ func (receiver *ExpressionOperator) GetTypeShortForm() mal.Integer {
 
 // Allows the creation of an element in a generic way, i.e., using the MAL Element polymorphism.
 func (receiver *ExpressionOperator) CreateElement() mal.Element {
-  return NewExpressionOperator(0)
+  return NullExpressionOperator
 }
 
 func (receiver *ExpressionOperator) IsNull() bool {
@@ -137,7 +142,7 @@ func (receiver *ExpressionOperator) Encode(encoder mal.Encoder) error {
     return specific(receiver, encoder)
   }
 
-  value := mal.NewUOctet(uint8(uint32(*receiver)))
+  value := mal.NewUOctet(codedNativeType(receiver.GetOrdinalValue()))
   return encoder.EncodeUOctet(value)
 }
 
@@ -155,7 +160,7 @@ func (receiver *ExpressionOperator) Decode(decoder mal.Decoder) (mal.Element, er
   if err != nil {
     return receiver.Null(), err
   }
-  value := ExpressionOperator(uint32(uint8(*elem)))
-  return &value, nil
+  value, err := ExpressionOperatorFromOrdinalValue(uint32(uint8(*elem)))
+  return &value, err
 }
 
