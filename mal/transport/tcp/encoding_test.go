@@ -43,6 +43,8 @@ func TestMessage(t *testing.T) {
 		UriTo:            &to,
 		Timestamp:        *TimeNow(),
 		Body:             body,
+		QoSLevel:         QOSLEVEL_BESTEFFORT,
+		Session:          SESSIONTYPE_LIVE,
 		InteractionType:  MAL_INTERACTIONTYPE_PROGRESS,
 		InteractionStage: MAL_IP_STAGE_PROGRESS_UPDATE,
 		Domain: IdentifierList([]*Identifier{

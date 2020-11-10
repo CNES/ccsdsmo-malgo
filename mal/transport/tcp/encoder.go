@@ -72,8 +72,18 @@ func (transport *TCPTransport) encode(msg *Message) ([]byte, error) {
 	if msg.IsErrorMessage {
 		b = 0x80
 	}
-	b |= (byte(msg.QoSLevel) << 4)
-	b |= byte(msg.Session)
+	oval, err := msg.QoSLevel.GetOrdinalValue()
+	if err != nil {
+		logger.Errorf("TCPTransport.encode, cannot encode QoSLevel: %s", err.Error())
+		return nil, err
+	}
+	b |= (byte(oval) << 4)
+	oval, err = msg.Session.GetOrdinalValue()
+	if err != nil {
+		logger.Errorf("TCPTransport.encode, cannot encode Session: %s", err.Error())
+		return nil, err
+	}
+	b |= byte(oval)
 	err = encoder.Write(b)
 	if err != nil {
 		logger.Errorf("TCPTransport.encode, cannot write Flags: %s", err.Error())

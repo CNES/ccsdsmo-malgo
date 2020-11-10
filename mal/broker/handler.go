@@ -370,7 +370,7 @@ func (handler *GenericUpdateValueHandler) DecodeUpdateValueList(body Body) error
 			return fmt.Errorf("The size of UpdateValue list #%d (%d) differs from the first (%d)", i+1, list.Size(), uvlSize)
 		}
 		logger.Infof("Broker.Publish, DecodeUpdateValueList(%d) -> %v", i, list)
-		
+
 		handler.list[i] = list
 		handler.values[i] = list.CreateElement().(ElementList)
 	}

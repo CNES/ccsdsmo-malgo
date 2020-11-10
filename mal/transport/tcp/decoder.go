@@ -79,8 +79,16 @@ func (transport *TCPTransport) decode(buf []byte, from string) (*Message, error)
 		return nil, err
 	}
 	isError := ((b >> 7) & 0x01) == binary.TRUE
-	qos := (b >> 4) & 0x07
-	session := b & 0xF
+	qos, err := QoSLevelFromOrdinalValue(uint32((b >> 4) & 0x07))
+	if err != nil {
+		logger.Errorf("TCPTransport.decode, cannot decode qos level: %s", err.Error())
+		return nil, err
+	}
+	session, err := SessionTypeFromOrdinalValue(uint32(b & 0xF))
+	if err != nil {
+		logger.Errorf("TCPTransport.decode, cannot decode session type: %s", err.Error())
+		return nil, err
+	}
 
 	transactionId, err := decoder.DecodeULong()
 	if err != nil {

@@ -80,6 +80,8 @@ func TestTCP1(t *testing.T) {
 		TransactionId:    consumer.TransactionId(),
 		InteractionType:  MAL_INTERACTIONTYPE_SEND,
 		InteractionStage: MAL_IP_STAGE_SEND,
+		QoSLevel:         QOSLEVEL_BESTEFFORT,
+		Session:          SESSIONTYPE_LIVE,
 		Body:             body,
 	}
 	consumer.Send(msg1)
@@ -92,6 +94,8 @@ func TestTCP1(t *testing.T) {
 		TransactionId:    consumer.TransactionId(),
 		InteractionType:  MAL_INTERACTIONTYPE_SEND,
 		InteractionStage: MAL_IP_STAGE_SEND,
+		QoSLevel:         QOSLEVEL_BESTEFFORT,
+		Session:          SESSIONTYPE_LIVE,
 		Body:             body,
 	}
 	consumer.Send(msg2)
@@ -160,6 +164,8 @@ func TestTCP2(t *testing.T) {
 		TransactionId:    consumer.TransactionId(),
 		InteractionType:  MAL_INTERACTIONTYPE_SEND,
 		InteractionStage: MAL_IP_STAGE_SEND,
+		QoSLevel:         QOSLEVEL_BESTEFFORT,
+		Session:          SESSIONTYPE_LIVE,
 		Body:             body,
 	}
 	consumer.Send(msg1)
@@ -172,6 +178,8 @@ func TestTCP2(t *testing.T) {
 		TransactionId:    consumer.TransactionId(),
 		InteractionType:  MAL_INTERACTIONTYPE_SEND,
 		InteractionStage: MAL_IP_STAGE_SEND,
+		QoSLevel:         QOSLEVEL_BESTEFFORT,
+		Session:          SESSIONTYPE_LIVE,
 		Body:             body,
 	}
 	consumer.Send(msg2)

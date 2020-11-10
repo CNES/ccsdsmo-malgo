@@ -195,63 +195,8 @@ const (
 	ERROR_SHUTDOWN_MESSAGE              String = "The component is being shutdown."
 )
 
-// Enumeration values
-const (
-	INTERACTIONTYPE_SEND_OVAL = iota
-	INTERACTIONTYPE_SUBMIT_OVAL
-	INTERACTIONTYPE_REQUEST_OVAL
-	INTERACTIONTYPE_INVOKE_OVAL
-	INTERACTIONTYPE_PROGRESS_OVAL
-	INTERACTIONTYPE_PUBSUB_OVAL
-)
-
-var (
-	// InteractionType is currently defined as a UOctet
-	INTERACTIONTYPE_SEND     = InteractionType(UOctet(uint8(INTERACTIONTYPE_SEND_OVAL)))
-	INTERACTIONTYPE_SUBMIT   = InteractionType(UOctet(uint8(INTERACTIONTYPE_SUBMIT_OVAL)))
-	INTERACTIONTYPE_REQUEST  = InteractionType(UOctet(uint8(INTERACTIONTYPE_REQUEST_OVAL)))
-	INTERACTIONTYPE_INVOKE   = InteractionType(UOctet(uint8(INTERACTIONTYPE_INVOKE_OVAL)))
-	INTERACTIONTYPE_PROGRESS = InteractionType(UOctet(uint8(INTERACTIONTYPE_PROGRESS_OVAL)))
-	INTERACTIONTYPE_PUBSUB   = InteractionType(UOctet(uint8(INTERACTIONTYPE_PUBSUB_OVAL)))
-)
-
-const (
-	SESSIONTYPE_LIVE_OVAL = iota
-	SESSIONTYPE_SIMULATION_OVAL
-	SESSIONTYPE_REPLAY_OVAL
-)
-
-var (
-	// SessionType is currently defined as a UOctet
-	SESSIONTYPE_LIVE       = SessionType(UOctet(uint8(SESSIONTYPE_LIVE_OVAL)))
-	SESSIONTYPE_SIMULATION = SessionType(UOctet(uint8(SESSIONTYPE_SIMULATION_OVAL)))
-	SESSIONTYPE_REPLAY     = SessionType(UOctet(uint8(SESSIONTYPE_REPLAY_OVAL)))
-)
-
-const (
-	QOSLEVEL_BESTEFFORT_OVAL = iota
-	QOSLEVEL_ASSURED_OVAL
-	QOSLEVEL_QUEUED_OVAL
-	QOSLEVEL_TIMELY_OVAL
-)
-const (
-	// QoSLevel is currently defined as a UOctet
-	QOSLEVEL_BESTEFFORT = QoSLevel(UOctet(uint8(QOSLEVEL_BESTEFFORT_OVAL)))
-	QOSLEVEL_ASSURED    = QoSLevel(UOctet(uint8(QOSLEVEL_ASSURED_OVAL)))
-	QOSLEVEL_QUEUED     = QoSLevel(UOctet(uint8(QOSLEVEL_QUEUED_OVAL)))
-	QOSLEVEL_TIMELY     = QoSLevel(UOctet(uint8(QOSLEVEL_TIMELY_OVAL)))
-)
-
-const (
-	UPDATETYPE_CREATION_OVAL = iota
-	UPDATETYPE_UPDATE_OVAL
-	UPDATETYPE_MODIFICATION_OVAL
-	UPDATETYPE_DELETION_OVAL
-)
-const (
-	// UpdateType is currently defined as a uint8
-	UPDATETYPE_CREATION     = UpdateType(uint8(UPDATETYPE_CREATION_OVAL))
-	UPDATETYPE_UPDATE       = UpdateType(uint8(UPDATETYPE_UPDATE_OVAL))
-	UPDATETYPE_MODIFICATION = UpdateType(uint8(UPDATETYPE_MODIFICATION_OVAL))
-	UPDATETYPE_DELETION     = UpdateType(uint8(UPDATETYPE_DELETION_OVAL))
-)
+// The MAL area defines 4 enumeration types
+// Those types are originally defined in the message.go file. This definition has not been changed for the moment
+// to avoid potential migration bugs.
+// A complementary definition has been added in the corresponding type files. Those files are derived from the files
+// produced by the code generator. They have been modified to comply with the original definition of the types.

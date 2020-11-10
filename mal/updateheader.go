@@ -98,7 +98,7 @@ func (u *UpdateHeader) Encode(encoder Encoder) error {
 	if err != nil {
 		return err
 	}
-	err = encoder.EncodeSmallEnum(uint8(u.UpdateType))
+	err = u.UpdateType.Encode(encoder)
 	if err != nil {
 		return err
 	}
@@ -124,10 +124,11 @@ func DecodeUpdateHeader(decoder Decoder) (*UpdateHeader, error) {
 	if err != nil {
 		return nil, err
 	}
-	updateType, err := decoder.DecodeSmallEnum()
+	updateType_elem, err := NullUpdateType.Decode(decoder)
 	if err != nil {
 		return nil, err
 	}
+	updateType := *updateType_elem.(*UpdateType)
 	key, err := DecodeEntityKey(decoder)
 	if err != nil {
 		return nil, err

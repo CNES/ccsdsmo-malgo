@@ -77,7 +77,9 @@ func NewClientContext(ctx *Context, service string) (*ClientContext, error) {
 	operations := make(map[ULong]OperationHandler)
 	handlers := make(map[uint64](*pDesc))
 	cctx := &ClientContext{
-		Ctx: ctx, Uri: uri, operations: operations, handlers: handlers, txcounter: 0, concurrency: false}
+		Ctx: ctx, Uri: uri, operations: operations, handlers: handlers, txcounter: 0, concurrency: false,
+		QoSLevel: QOSLEVEL_BESTEFFORT, Session: SESSIONTYPE_LIVE,
+	}
 	err := ctx.RegisterEndPoint(uri, cctx)
 	if err != nil {
 		return nil, err
