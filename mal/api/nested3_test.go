@@ -125,15 +125,15 @@ func newTestNested3Provider2(ctx *Context) (*TestNested3Provider2, error) {
 			transaction := t.(InvokeTransaction)
 			par, err := msg.DecodeLastParameter(NullString, false)
 			fmt.Println("\t$$$$$ Provider2 receive: ", *par.(*String), err)
-			
+
 			transaction.Ack(nil, false)
 			fmt.Println("\t$$$$$ Provider2 ack sent: OK")
 			provider.nbmsg += 1
 			time.Sleep(250 * time.Millisecond)
-			
+
 			// Note (AF): Be careful, the body of a previously decoded message should be used in a
 			// newly message to send (the encoder is nil).
-			
+
 			transaction.Reply(msg.Body, false)
 			fmt.Println("\t$$$$$ Provider2 reply sent: OK")
 		} else {

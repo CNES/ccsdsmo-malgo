@@ -23,8 +23,6 @@
  */
 package mal
 
-import ()
-
 type Pair struct {
 	First  Attribute
 	Second Attribute

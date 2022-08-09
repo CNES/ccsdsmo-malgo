@@ -38,8 +38,8 @@ import (
  * in the extra information is specific to service operations, and cannot be known by generic mal functions.
  */
 type MalError struct {
-    Code mal.UInteger
-    ExtraInfo mal.Element
+	Code      mal.UInteger
+	ExtraInfo mal.Element
 }
 
 func NewMalError(code mal.UInteger, extraInfo ...mal.Element) *MalError {
@@ -47,7 +47,7 @@ func NewMalError(code mal.UInteger, extraInfo ...mal.Element) *MalError {
 	if len(extraInfo) == 1 {
 		e = extraInfo[0]
 	}
-	return &MalError{ code, e }
+	return &MalError{code, e}
 }
 
 func (e *MalError) Error() string {

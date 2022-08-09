@@ -23,8 +23,6 @@
  */
 package mal
 
-import ()
-
 // TODO (AF): currently never used
 
 type AttributeList interface {

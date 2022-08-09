@@ -49,11 +49,11 @@ var (
 	LONG2     Long     = 0
 	LONG3     Long     = 2147483647
 	BOOL5     Boolean  = false
-	FLOAT1    Float    = 1.25E6
-	FLOAT2    Float    = -5.8E-2
+	FLOAT1    Float    = 1.25e6
+	FLOAT2    Float    = -5.8e-2
 	BOOL6     Boolean  = false
-	DOUBLE1   Double   = 1.25E6
-	DOUBLE2   Double   = -5.8E-2
+	DOUBLE1   Double   = 1.25e6
+	DOUBLE2   Double   = -5.8e-2
 	BOOL7     Boolean  = false
 	BLOB1     Blob     = Blob{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
 	BOOL8     Boolean  = false

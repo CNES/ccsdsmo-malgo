@@ -23,8 +23,6 @@
  */
 package mal
 
-import ()
-
 // This file implements as much as possible of the new go language mapping defined along with the generator
 
 const (

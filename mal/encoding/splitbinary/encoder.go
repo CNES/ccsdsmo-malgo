@@ -27,8 +27,6 @@ import (
 	"github.com/CNES/ccsdsmo-malgo/mal/encoding/binary"
 )
 
-import ()
-
 type SplitBinaryEncoder struct {
 	binary.BinaryEncoder
 }

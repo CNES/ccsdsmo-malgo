@@ -23,8 +23,6 @@
  */
 package mal
 
-import ()
-
 type Composite interface {
 	Element
 	Composite() Composite

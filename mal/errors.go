@@ -23,8 +23,6 @@
  */
 package mal
 
-import ()
-
 const (
 	MAL_ERROR_DELIVERY_FAILED       UInteger = 65536
 	MAL_ERROR_DELIVERY_TIMEDOUT     UInteger = 65537

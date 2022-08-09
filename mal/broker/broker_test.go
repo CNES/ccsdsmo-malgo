@@ -124,7 +124,7 @@ func TestPubSub(t *testing.T) {
 	domains := IdentifierList([]*Identifier{NewIdentifier("*")})
 	eksub := &EntityKey{NewIdentifier("key1"), NewLong(0), NewLong(0), NewLong(0)}
 	var erlist = EntityRequestList([]*EntityRequest{
-		&EntityRequest{
+		{
 			&domains, true, true, true, true, EntityKeyList([]*EntityKey{eksub}),
 		},
 	})

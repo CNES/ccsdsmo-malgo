@@ -23,8 +23,6 @@
  */
 package mal
 
-import ()
-
 const MAL_ATTRIBUTE_AREA_NUMBER UShort = 0x01
 const MAL_ATTRIBUTE_AREA_VERSION UOctet = 0x01
 const MAL_ATTRIBUTE_AREA_SERVICE_NUMBER UShort = 0x0
