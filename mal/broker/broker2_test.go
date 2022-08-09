@@ -45,7 +45,7 @@ const (
 )
 
 var (
-	running bool = true
+	running  bool = true
 	test2_wg sync.WaitGroup
 
 	test2_broker_ctx  *Context
@@ -258,7 +258,7 @@ func newTest2Sub1() error {
 	domains := IdentifierList([]*Identifier{NewIdentifier("*")})
 	eksub := &EntityKey{NewIdentifier("key1"), NewLong(0), NewLong(0), NewLong(0)}
 	var erlist = EntityRequestList([]*EntityRequest{
-		&EntityRequest{
+		{
 			&domains, true, true, true, true, EntityKeyList([]*EntityKey{eksub}),
 		},
 	})
@@ -330,7 +330,7 @@ func newTest2Sub2() error {
 	eksub1 := &EntityKey{NewIdentifier("key1"), NewLong(0), NewLong(0), NewLong(0)}
 	eksub2 := &EntityKey{NewIdentifier("key2"), NewLong(0), NewLong(0), NewLong(0)}
 	var erlist = EntityRequestList([]*EntityRequest{
-		&EntityRequest{
+		{
 			&domains, true, true, true, true, EntityKeyList([]*EntityKey{eksub1, eksub2}),
 		},
 	})

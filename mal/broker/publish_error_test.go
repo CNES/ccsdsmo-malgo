@@ -278,7 +278,7 @@ func newTest3Sub1() error {
 	domains := IdentifierList([]*Identifier{NewIdentifier("*")})
 	eksub := &EntityKey{NewIdentifier("key1"), NewLong(0), NewLong(0), NewLong(0)}
 	var erlist = EntityRequestList([]*EntityRequest{
-		&EntityRequest{
+		{
 			&domains, true, true, true, true, EntityKeyList([]*EntityKey{eksub}),
 		},
 	})
@@ -350,7 +350,7 @@ func newTest3Sub2() error {
 	eksub1 := &EntityKey{NewIdentifier("key1"), NewLong(0), NewLong(0), NewLong(0)}
 	eksub2 := &EntityKey{NewIdentifier("key2"), NewLong(0), NewLong(0), NewLong(0)}
 	var erlist = EntityRequestList([]*EntityRequest{
-		&EntityRequest{
+		{
 			&domains, true, true, true, true, EntityKeyList([]*EntityKey{eksub1, eksub2}),
 		},
 	})

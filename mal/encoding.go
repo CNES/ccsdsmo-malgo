@@ -23,8 +23,6 @@
  */
 package mal
 
-import ()
-
 type Buffer interface {
 	Write(v byte) error
 	Write16(v uint16) error

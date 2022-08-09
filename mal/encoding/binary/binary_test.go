@@ -401,7 +401,7 @@ func TestFloat(t *testing.T) {
 
 	var list [65536]Float
 	for i := 0; i < len(list); i++ {
-		list[i] = Float(2 * (rand.Float32() - 0.5) * 3.4E+38)
+		list[i] = Float(2 * (rand.Float32() - 0.5) * 3.4e+38)
 	}
 	for _, x := range list {
 		err := encoder.EncodeFloat(&x)
@@ -642,10 +642,10 @@ func TestAttribute(t *testing.T) {
 	var list = []Attribute{
 		NewBoolean(false),
 		NewBoolean(true),
-		NewDuration(12.34E56),
+		NewDuration(12.34e56),
 		NewDuration(1000),
-		NewFloat(123.45E12),
-		NewDouble(12345.67E89),
+		NewFloat(123.45e12),
+		NewDouble(12345.67e89),
 		NewIdentifier("BOOM"),
 		NewOctet(-127),
 		NewUOctet(255),
@@ -656,7 +656,7 @@ func TestAttribute(t *testing.T) {
 		NewLong(-1),
 		NewULong(9223372036854775807),
 		NewString("Hello world"),
-		NewDouble(9.99999E99),
+		NewDouble(9.99999e99),
 		NewOctet(0),
 		NewURI("http://www.scalagent.com"),
 		NewUOctet(0),
@@ -693,11 +693,11 @@ func TestNullableAttribute(t *testing.T) {
 		NewBoolean(false),
 		NullBoolean,
 		NewBoolean(true),
-		NewDuration(12.34E56),
+		NewDuration(12.34e56),
 		NullDuration,
 		NewDuration(1000),
-		NewFloat(123.45E12),
-		NewDouble(12345.67E89),
+		NewFloat(123.45e12),
+		NewDouble(12345.67e89),
 		NullUInteger,
 		NewIdentifier("BOOM"),
 		NewOctet(-127),
@@ -712,7 +712,7 @@ func TestNullableAttribute(t *testing.T) {
 		NewULong(9223372036854775807),
 		NewString("Hello world"),
 		NullString,
-		NewDouble(9.99999E99),
+		NewDouble(9.99999e99),
 		NewOctet(0),
 		NewURI("http://www.scalagent.com"),
 		NewUOctet(0),
@@ -748,10 +748,10 @@ func TestElement(t *testing.T) {
 	var list = []Element{
 		NewBoolean(false),
 		NewBoolean(true),
-		NewDuration(12.34E56),
+		NewDuration(12.34e56),
 		NewDuration(1000),
-		NewFloat(123.45E12),
-		NewDouble(12345.67E89),
+		NewFloat(123.45e12),
+		NewDouble(12345.67e89),
 		NewIdentifier("BOOM"),
 		NewOctet(-127),
 		NewUOctet(255),
@@ -762,7 +762,7 @@ func TestElement(t *testing.T) {
 		NewLong(-1),
 		NewULong(9223372036854775807),
 		NewString("Hello world"),
-		NewDouble(9.99999E99),
+		NewDouble(9.99999e99),
 		NewOctet(0),
 		NewURI("http://www.scalagent.com"),
 		NewUOctet(0),
@@ -797,12 +797,12 @@ func TestNullableElement(t *testing.T) {
 		NewBoolean(false),
 		NullBlob,
 		NewBoolean(true),
-		NewDuration(12.34E56),
+		NewDuration(12.34e56),
 		NullBoolean,
 		NullURI,
 		NewDuration(1000),
-		NewFloat(123.45E12),
-		NewDouble(12345.67E89),
+		NewFloat(123.45e12),
+		NewDouble(12345.67e89),
 		NullString,
 		NewIdentifier("BOOM"),
 		NewOctet(-127),
@@ -817,7 +817,7 @@ func TestNullableElement(t *testing.T) {
 		NewLong(-1),
 		NewULong(9223372036854775807),
 		NewString("Hello world"),
-		NewDouble(9.99999E99),
+		NewDouble(9.99999e99),
 		NewOctet(0),
 		NewURI("http://www.scalagent.com"),
 		NewUOctet(0),
@@ -1162,9 +1162,9 @@ func TestFloatList(t *testing.T) {
 
 	var idlist = []*Float{
 		NewFloat(12.4),
-		NewFloat(16.54E12),
+		NewFloat(16.54e12),
 		NullFloat,
-		NewFloat(-17.99E-15),
+		NewFloat(-17.99e-15),
 		nil,
 	}
 	var x = FloatList(idlist)
@@ -1269,11 +1269,11 @@ func TestEntityKey(t *testing.T) {
 	encoder := binary.NewBinaryEncoder(buf, VARINT)
 
 	var list = []*EntityKey{
-		&EntityKey{NewIdentifier("abcde"), NewLong(0), NewLong(1), NewLong(2)},
-		&EntityKey{NewIdentifier("fghijklmn"), NewLong(3), NewLong(4), NewLong(5)},
-		&EntityKey{nil, NewLong(6), NewLong(7), nil},
-		&EntityKey{NewIdentifier("opqrst"), nil, nil, NewLong(2)},
-		&EntityKey{nil, nil, nil, nil},
+		{NewIdentifier("abcde"), NewLong(0), NewLong(1), NewLong(2)},
+		{NewIdentifier("fghijklmn"), NewLong(3), NewLong(4), NewLong(5)},
+		{nil, NewLong(6), NewLong(7), nil},
+		{NewIdentifier("opqrst"), nil, nil, NewLong(2)},
+		{nil, nil, nil, nil},
 	}
 	for _, x := range list {
 		err := x.Encode(encoder)
@@ -1342,7 +1342,7 @@ func TestEntityRequest(t *testing.T) {
 	key2 := EntityKey{NewIdentifier("fghijklmn"), NewLong(3), NewLong(4), NewLong(5)}
 
 	var list = []*EntityRequest{
-		&EntityRequest{
+		{
 			NullIdentifierList,
 			true,
 			false,
@@ -1352,7 +1352,7 @@ func TestEntityRequest(t *testing.T) {
 				&key2,
 			},
 		},
-		&EntityRequest{
+		{
 			&IdentifierList{
 				NewIdentifier("domain"),
 			},
@@ -1364,7 +1364,7 @@ func TestEntityRequest(t *testing.T) {
 				&key1,
 			},
 		},
-		&EntityRequest{
+		{
 			&IdentifierList{
 				NewIdentifier("domain1"),
 				NewIdentifier("domain2"),
@@ -1412,7 +1412,7 @@ func TestEntityRequestList(t *testing.T) {
 	key5 := EntityKey{nil, nil, nil, nil}
 
 	var list = []*EntityRequest{
-		&EntityRequest{
+		{
 			NullIdentifierList,
 			true,
 			false,
@@ -1422,7 +1422,7 @@ func TestEntityRequestList(t *testing.T) {
 				&key2, &key3, &key5,
 			},
 		},
-		&EntityRequest{
+		{
 			&IdentifierList{
 				NewIdentifier("domain"),
 				NullIdentifier,
@@ -1435,7 +1435,7 @@ func TestEntityRequestList(t *testing.T) {
 				&key1, NullEntityKey, nil, &key2, &key4,
 			},
 		},
-		&EntityRequest{
+		{
 			&IdentifierList{
 				NewIdentifier("domain1"),
 				NewIdentifier("domain2"),
@@ -1448,7 +1448,7 @@ func TestEntityRequestList(t *testing.T) {
 				&key1, NullEntityKey, NullEntityKey, &key2,
 			},
 		},
-		&EntityRequest{
+		{
 			nil,
 			false,
 			false,
@@ -1516,10 +1516,10 @@ func TestAbstractElement(t *testing.T) {
 	var list = []Element{
 		NewBoolean(false),
 		NewBoolean(true),
-		NewDuration(12.34E56),
+		NewDuration(12.34e56),
 		NewDuration(1000),
-		NewFloat(123.45E12),
-		NewDouble(12345.67E89),
+		NewFloat(123.45e12),
+		NewDouble(12345.67e89),
 		NewIdentifier("BOOM"),
 		NewOctet(-127),
 		NewUOctet(255),
@@ -1530,7 +1530,7 @@ func TestAbstractElement(t *testing.T) {
 		NewLong(-1),
 		NewULong(9223372036854775807),
 		NewString("Hello world"),
-		NewDouble(9.99999E99),
+		NewDouble(9.99999e99),
 		NewOctet(0),
 		NewURI("http://www.scalagent.com"),
 		NewUOctet(0),
@@ -1573,12 +1573,12 @@ func TestNullableAbstractElement(t *testing.T) {
 		NewBoolean(false),
 		NullBlob,
 		NewBoolean(true),
-		NewDuration(12.34E56),
+		NewDuration(12.34e56),
 		NullBoolean,
 		NullURI,
 		NewDuration(1000),
-		NewFloat(123.45E12),
-		NewDouble(12345.67E89),
+		NewFloat(123.45e12),
+		NewDouble(12345.67e89),
 		NullString,
 		NewIdentifier("BOOM"),
 		NewOctet(-127),
@@ -1593,17 +1593,17 @@ func TestNullableAbstractElement(t *testing.T) {
 		NewLong(-1),
 		NewULong(9223372036854775807),
 		NewString("Hello world"),
-		NewDouble(9.99999E99),
+		NewDouble(9.99999e99),
 		NewOctet(0),
 		NewURI("http://www.scalagent.com"),
 		NewUOctet(0),
 		NullBlobList,
 		NullStringList,
 		NullBlobList,
-		NewDuration(12.34E56),
+		NewDuration(12.34e56),
 		NewDuration(1000),
-		NewFloat(123.45E12),
-		NewDouble(12345.67E89),
+		NewFloat(123.45e12),
+		NewDouble(12345.67e89),
 		NewIdentifier("BOOM"),
 		NewOctet(-127),
 		NewUOctet(255),
@@ -1614,7 +1614,7 @@ func TestNullableAbstractElement(t *testing.T) {
 		NewLong(-1),
 		NewULong(9223372036854775807),
 		NewString("Hello world"),
-		NewDouble(9.99999E99),
+		NewDouble(9.99999e99),
 		NewOctet(0),
 		NewURI("http://www.scalagent.com"),
 		NewUOctet(0),

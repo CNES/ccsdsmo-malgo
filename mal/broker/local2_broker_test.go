@@ -46,7 +46,7 @@ const (
 
 var (
 	lt2_running bool = true
-	lt2_wg sync.WaitGroup
+	lt2_wg      sync.WaitGroup
 
 	lt2_broker         *LocalBroker
 	lt2_updtHandler    UpdateValueHandler
@@ -161,7 +161,7 @@ func newLocalTest2Sub1() error {
 	domains := IdentifierList([]*Identifier{NewIdentifier("*")})
 	eksub := &EntityKey{NewIdentifier("key1"), NewLong(0), NewLong(0), NewLong(0)}
 	var erlist = EntityRequestList([]*EntityRequest{
-		&EntityRequest{
+		{
 			&domains, true, true, true, true, EntityKeyList([]*EntityKey{eksub}),
 		},
 	})
@@ -233,7 +233,7 @@ func newLocalTest2Sub2() error {
 	eksub1 := &EntityKey{NewIdentifier("key1"), NewLong(0), NewLong(0), NewLong(0)}
 	eksub2 := &EntityKey{NewIdentifier("key2"), NewLong(0), NewLong(0), NewLong(0)}
 	var erlist = EntityRequestList([]*EntityRequest{
-		&EntityRequest{
+		{
 			&domains, true, true, true, true, EntityKeyList([]*EntityKey{eksub1, eksub2}),
 		},
 	})
